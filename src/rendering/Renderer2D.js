@@ -245,6 +245,11 @@ export class Renderer2D extends Renderer {
     // Draw ball
     this.drawBall(gameState.ball, gameState.isSinging);
 
+    // Draw pitch guidance arrows if user is off-pitch for > 1 second
+    if (gameState.showPitchGuidance && gameState.targetGate && gameState.ball) {
+      this.drawPitchGuidance(gameState.ball, gameState.targetGate);
+    }
+
     // Draw current target indicator
     if (gameState.targetGate && gameState.isPlaying) {
       this.drawTargetIndicator(gameState.targetGate);
@@ -488,6 +493,104 @@ export class Renderer2D extends Renderer {
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
     this.ctx.fillText('♪', x, y);
+  }
+
+  /**
+   * Draw pitch guidance arrows (chevrons) when user is off-pitch
+   * @param {Ball} ball - The ball
+   * @param {Gate} targetGate - The target gate
+   */
+  drawPitchGuidance(ball, targetGate) {
+    const holeBounds = targetGate.getHoleBounds();
+    const ballY = ball.y;
+    const targetY = holeBounds.center;
+    const ballX = ball.x;
+
+    // Determine if ball needs to go up or down
+    const needsToGoUp = ballY > targetY;
+    const needsToGoDown = ballY < targetY;
+
+    // Don't show arrows if ball is close to target (within reasonable range)
+    const distanceFromTarget = Math.abs(ballY - targetY);
+    if (distanceFromTarget < 30) return;
+
+    // Animated bounce
+    const time = Date.now() / 300;
+    const bounce = Math.sin(time * 2) * 5;
+
+    // Draw chevrons
+    const chevronSize = 20;
+    const chevronSpacing = 15;
+    const numChevrons = 3;
+
+    for (let i = 0; i < numChevrons; i++) {
+      const alpha = 0.8 - (i * 0.2); // Fade out further chevrons
+      const offset = i * chevronSpacing;
+
+      if (needsToGoUp) {
+        // Draw upward chevrons above the ball
+        this.drawChevron(
+          ballX,
+          ballY - ball.radius - 25 - offset + bounce,
+          chevronSize,
+          'up',
+          alpha
+        );
+      } else if (needsToGoDown) {
+        // Draw downward chevrons below the ball
+        this.drawChevron(
+          ballX,
+          ballY + ball.radius + 25 + offset - bounce,
+          chevronSize,
+          'down',
+          alpha
+        );
+      }
+    }
+  }
+
+  /**
+   * Draw a single chevron arrow
+   * @param {number} x - X position
+   * @param {number} y - Y position
+   * @param {number} size - Size of chevron
+   * @param {string} direction - 'up' or 'down'
+   * @param {number} alpha - Opacity (0-1)
+   */
+  drawChevron(x, y, size, direction, alpha) {
+    const thickness = 4;
+    const angle = direction === 'up' ? -Math.PI / 4 : Math.PI / 4;
+
+    this.ctx.save();
+    this.ctx.translate(x, y);
+
+    // Chevron color (orange/gold)
+    this.ctx.strokeStyle = `rgba(255, 140, 0, ${alpha})`;
+    this.ctx.lineWidth = thickness;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+
+    // Draw chevron as two lines forming a V or ^
+    this.ctx.beginPath();
+    if (direction === 'up') {
+      // Upward pointing chevron (^)
+      this.ctx.moveTo(-size / 2, size / 4);
+      this.ctx.lineTo(0, -size / 4);
+      this.ctx.lineTo(size / 2, size / 4);
+    } else {
+      // Downward pointing chevron (v)
+      this.ctx.moveTo(-size / 2, -size / 4);
+      this.ctx.lineTo(0, size / 4);
+      this.ctx.lineTo(size / 2, -size / 4);
+    }
+    this.ctx.stroke();
+
+    // Add a subtle glow
+    this.ctx.strokeStyle = `rgba(255, 193, 7, ${alpha * 0.5})`;
+    this.ctx.lineWidth = thickness + 2;
+    this.ctx.stroke();
+
+    this.ctx.restore();
   }
 
   /**

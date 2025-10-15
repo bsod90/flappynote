@@ -19,10 +19,19 @@ export class AudioAnalyzer {
     this.agcSpeed = options.agcSpeed || 0.15; // How fast AGC adapts (0-1, higher = faster)
     this.currentGain = 3.5; // Starting gain (increased from 2.5)
 
+    // Temporal smoothing (median filter)
+    this.pitchHistorySize = options.pitchHistorySize || 5; // Number of recent pitches to track
+    this.pitchHistory = []; // Rolling window of recent pitch detections
+
+    // Drone noise cancellation
+    this.droneFrequencies = null; // Array of drone frequencies to filter out
+    this.droneNotchFilters = []; // Notch filters for drone cancellation
+
     this.audioContext = null;
     this.analyser = null;
     this.microphone = null;
     this.gainNode = null;
+    this.highPassFilter = null; // High-pass filter to remove low frequencies
     this.scriptProcessor = null;
 
     this.isActive = false;
@@ -30,12 +39,16 @@ export class AudioAnalyzer {
     // Debug info
     this.lastRMS = 0;
     this.lastCorrelation = 0;
+    this.rawFrequency = null; // Store raw frequency before smoothing
 
-    // Initialize YIN pitch detector
-    this.detectPitchYIN = Pitchfinder.YIN({
-      sampleRate: 44100, // Will be updated when audio context is created
-      threshold: 0.15, // YIN threshold (0.1-0.15 is good for singing)
-    });
+    // YIN threshold settings (adaptive based on frequency)
+    this.baseYinThreshold = 0.15; // Default threshold for lower voices
+    this.highVoiceThreshold = 0.12; // Lower threshold for higher voices (more sensitive)
+    this.highVoiceFreqBoundary = 250; // Hz - frequencies above this use high voice threshold
+
+    // Initialize YIN pitch detectors for different voice ranges
+    this.detectPitchYIN_Low = null; // For lower voices (threshold 0.15)
+    this.detectPitchYIN_High = null; // For higher voices (threshold 0.12)
   }
 
   /**
@@ -58,18 +71,31 @@ export class AudioAnalyzer {
 
       this.microphone = this.audioContext.createMediaStreamSource(stream);
 
+      // Create high-pass filter at 180Hz to remove low frequencies
+      // This helps eliminate rumble and reduces drone interference
+      this.highPassFilter = this.audioContext.createBiquadFilter();
+      this.highPassFilter.type = 'highpass';
+      this.highPassFilter.frequency.value = 180; // Cut off below 180Hz
+      this.highPassFilter.Q.value = 0.7; // Gentle slope
+
       // Create gain node for automatic gain control
       this.gainNode = this.audioContext.createGain();
       this.gainNode.gain.value = this.currentGain;
 
-      // Connect: microphone → gain → analyser
-      this.microphone.connect(this.gainNode);
+      // Connect: microphone → high-pass filter → gain → analyser
+      this.microphone.connect(this.highPassFilter);
+      this.highPassFilter.connect(this.gainNode);
       this.gainNode.connect(this.analyser);
 
-      // Reinitialize YIN with actual sample rate
-      this.detectPitchYIN = Pitchfinder.YIN({
+      // Initialize YIN pitch detectors for different voice ranges
+      this.detectPitchYIN_Low = Pitchfinder.YIN({
         sampleRate: this.audioContext.sampleRate,
-        threshold: 0.15, // YIN threshold (0.1-0.15 is good for singing)
+        threshold: this.baseYinThreshold, // 0.15 - for lower voices
+      });
+
+      this.detectPitchYIN_High = Pitchfinder.YIN({
+        sampleRate: this.audioContext.sampleRate,
+        threshold: this.highVoiceThreshold, // 0.12 - for higher voices (more sensitive)
       });
 
       this.isActive = true;
@@ -86,6 +112,9 @@ export class AudioAnalyzer {
       this.microphone.disconnect();
       this.microphone.mediaStream.getTracks().forEach(track => track.stop());
     }
+    if (this.highPassFilter) {
+      this.highPassFilter.disconnect();
+    }
     if (this.gainNode) {
       this.gainNode.disconnect();
     }
@@ -96,6 +125,10 @@ export class AudioAnalyzer {
       this.audioContext.close();
     }
     this.isActive = false;
+
+    // Clear pitch history
+    this.pitchHistory = [];
+    this.rawFrequency = null;
   }
 
   /**
@@ -111,7 +144,7 @@ export class AudioAnalyzer {
   }
 
   /**
-   * Detect pitch using YIN algorithm
+   * Detect pitch using YIN algorithm with temporal smoothing
    * @param {Float32Array} buffer - Audio buffer
    * @returns {number|null} Detected frequency in Hz, or null if no pitch detected
    */
@@ -126,23 +159,94 @@ export class AudioAnalyzer {
     this._updateAGC(rms);
 
     if (rms < this.threshold) {
+      // Clear history when no signal detected
+      this.pitchHistory = [];
+      this.rawFrequency = null;
       return null;
     }
 
-    // Use YIN algorithm for pitch detection
-    const frequency = this.detectPitchYIN(buffer);
+    // Use adaptive YIN algorithm for pitch detection
+    // Try both detectors and pick the best result
+    const freqLow = this.detectPitchYIN_Low ? this.detectPitchYIN_Low(buffer) : null;
+    const freqHigh = this.detectPitchYIN_High ? this.detectPitchYIN_High(buffer) : null;
+
+    // Choose which detector result to use based on frequency range
+    let rawFrequency = null;
+
+    if (freqLow && freqHigh) {
+      // Both detected - use high voice detector if frequency is above boundary
+      if (freqLow > this.highVoiceFreqBoundary || freqHigh > this.highVoiceFreqBoundary) {
+        rawFrequency = freqHigh; // Use more sensitive detector for high voices
+      } else {
+        rawFrequency = freqLow; // Use standard detector for low voices
+      }
+    } else if (freqLow) {
+      rawFrequency = freqLow;
+    } else if (freqHigh) {
+      rawFrequency = freqHigh;
+    }
 
     // YIN returns null if no pitch detected
-    if (!frequency) {
+    if (!rawFrequency) {
+      // Clear history when detection fails
+      this.pitchHistory = [];
+      this.rawFrequency = null;
       return null;
     }
 
     // Validate frequency is in expected range
-    if (frequency < this.minFrequency || frequency > this.maxFrequency) {
+    if (rawFrequency < this.minFrequency || rawFrequency > this.maxFrequency) {
+      this.pitchHistory = [];
+      this.rawFrequency = null;
       return null;
     }
 
-    return frequency;
+    // Store raw frequency for debug
+    this.rawFrequency = rawFrequency;
+
+    // Apply temporal smoothing (median filter)
+    return this._applyTemporalSmoothing(rawFrequency);
+  }
+
+  /**
+   * Apply temporal smoothing using median filter
+   * Reduces pitch jumping by taking median of recent detections
+   * Uses adaptive smoothing: less smoothing for higher voices (faster response)
+   * @private
+   * @param {number} frequency - Raw detected frequency
+   * @returns {number} Smoothed frequency
+   */
+  _applyTemporalSmoothing(frequency) {
+    // Adaptive smoothing: higher voices get less smoothing for faster response
+    const isHighVoice = frequency > this.highVoiceFreqBoundary;
+    const minHistorySize = isHighVoice ? 2 : 3; // Higher voices need less smoothing
+    const effectiveHistorySize = isHighVoice ? Math.min(3, this.pitchHistorySize) : this.pitchHistorySize;
+
+    // Add new frequency to history
+    this.pitchHistory.push(frequency);
+
+    // Keep history at effective size (smaller for high voices)
+    while (this.pitchHistory.length > effectiveHistorySize) {
+      this.pitchHistory.shift(); // Remove oldest
+    }
+
+    // If we don't have enough history yet, return raw frequency
+    if (this.pitchHistory.length < minHistorySize) {
+      return frequency;
+    }
+
+    // Calculate median of pitch history
+    const sorted = [...this.pitchHistory].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+
+    // Return median value
+    if (sorted.length % 2 === 0) {
+      // Even number: average of two middle values
+      return (sorted[mid - 1] + sorted[mid]) / 2;
+    } else {
+      // Odd number: middle value
+      return sorted[mid];
+    }
   }
 
   /**
@@ -188,6 +292,83 @@ export class AudioAnalyzer {
   }
 
   /**
+   * Enable drone noise cancellation
+   * Creates notch filters at drone frequency and harmonics
+   * @param {number} rootFrequency - Root frequency of the drone
+   */
+  enableDroneCancellation(rootFrequency) {
+    if (!this.audioContext || !this.highPassFilter || !this.gainNode) return;
+
+    // First, disable any existing drone cancellation
+    this.disableDroneCancellation();
+
+    // Define the drone frequencies we want to filter out
+    // Include all drone harmonics: root, 1.5x (fifth), 2x (octave), 4x (2 octaves)
+    this.droneFrequencies = [
+      rootFrequency,        // Fundamental
+      rootFrequency * 1.5,  // Perfect fifth (Sol)
+      rootFrequency * 2,    // Octave above
+      rootFrequency * 4,    // 2 octaves above
+    ];
+
+    // Create notch filters for each drone frequency
+    const lastNode = this.highPassFilter; // Start from high-pass filter
+    let currentNode = lastNode;
+
+    this.droneFrequencies.forEach((freq, index) => {
+      const notchFilter = this.audioContext.createBiquadFilter();
+      notchFilter.type = 'notch';
+      notchFilter.frequency.value = freq;
+      notchFilter.Q.value = 15; // Very narrow, surgical notch (increased from 10)
+
+      // Chain the filters: previous node → notch filter
+      currentNode.disconnect();
+      currentNode.connect(notchFilter);
+
+      if (index === this.droneFrequencies.length - 1) {
+        // Last filter connects to gain node
+        notchFilter.connect(this.gainNode);
+      }
+
+      currentNode = notchFilter;
+      this.droneNotchFilters.push(notchFilter);
+    });
+
+    console.log(`Drone cancellation enabled at ${rootFrequency.toFixed(1)}Hz and harmonics (${this.droneFrequencies.length} notches)`);
+  }
+
+  /**
+   * Disable drone noise cancellation
+   * Removes all notch filters
+   */
+  disableDroneCancellation() {
+    if (this.droneNotchFilters.length === 0) return;
+
+    // Disconnect all notch filters
+    this.droneNotchFilters.forEach(filter => {
+      try {
+        filter.disconnect();
+      } catch (e) {
+        // Filter may already be disconnected
+      }
+    });
+
+    // Reconnect high-pass filter directly to gain node
+    if (this.highPassFilter && this.gainNode) {
+      try {
+        this.highPassFilter.disconnect();
+        this.highPassFilter.connect(this.gainNode);
+      } catch (e) {
+        // May already be connected
+      }
+    }
+
+    this.droneNotchFilters = [];
+    this.droneFrequencies = null;
+    console.log('Drone cancellation disabled');
+  }
+
+  /**
    * Get debug information
    * @returns {object} Debug stats
    */
@@ -199,6 +380,10 @@ export class AudioAnalyzer {
       isActive: this.isActive,
       currentGain: this.currentGain,
       targetRMS: this.targetRMS,
+      rawFrequency: this.rawFrequency,
+      pitchHistorySize: this.pitchHistory.length,
+      droneCancellationActive: this.droneNotchFilters.length > 0,
+      droneFrequencies: this.droneFrequencies,
     };
   }
 }

@@ -37,7 +37,22 @@ class TralalaGame {
     // Check for debug mode (enabled by default in development)
     this.debugEnabled = import.meta.env.DEV || localStorage.getItem('tralala-debug') === 'true';
 
+    // Track gate completions for funnel
+    this.lastGateIndex = -1;
+
     this.initialize();
+  }
+
+  /**
+   * Track Google Analytics event
+   * @param {string} eventName - Event name
+   * @param {object} params - Event parameters
+   */
+  trackEvent(eventName, params = {}) {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', eventName, params);
+      console.log('GA Event:', eventName, params);
+    }
   }
 
   /**
@@ -90,6 +105,13 @@ class TralalaGame {
 
     // Initial render
     this.render();
+
+    // Track page load
+    this.trackEvent('page_load', {
+      root_note: this.rootNoteSelect.value,
+      scale_type: this.scaleTypeSelect.value,
+      direction: this.directionSelect.value,
+    });
   }
 
   /**
@@ -110,6 +132,11 @@ class TralalaGame {
       if (this.droneToggle.checked) {
         const frequency = this.gameState.scaleManager.getFrequency(0);
         this.tonePlayer.updateDroneFrequency(frequency);
+
+        // Update drone cancellation frequency if pitch detector is active
+        if (this.pitchDetector && this.gameState.isPlaying) {
+          this.pitchDetector.enableDroneCancellation(frequency);
+        }
       }
 
       this.saveSettings();
@@ -135,9 +162,19 @@ class TralalaGame {
         const rootNote = rootNoteName.length === 1 ? `${rootNoteName}3` : rootNoteName;
         const frequency = this.gameState.scaleManager.getFrequency(0);
         this.tonePlayer.startDrone(frequency);
+
+        // Enable drone noise cancellation if pitch detector is running
+        if (this.pitchDetector && this.gameState.isPlaying) {
+          this.pitchDetector.enableDroneCancellation(frequency);
+        }
       } else {
         // Stop drone
         this.tonePlayer.stopDrone();
+
+        // Disable drone noise cancellation
+        if (this.pitchDetector) {
+          this.pitchDetector.disableDroneCancellation();
+        }
       }
       this.saveSettings();
     });
@@ -211,10 +248,25 @@ class TralalaGame {
       if (this.droneToggle.checked) {
         const frequency = this.gameState.scaleManager.getFrequency(0);
         this.tonePlayer.startDrone(frequency);
+
+        // Enable drone noise cancellation
+        this.pitchDetector.enableDroneCancellation(frequency);
       }
 
       // Start game
       this.gameState.start();
+
+      // Track game start (reuse scaleInfo from above)
+      this.trackEvent('game_start', {
+        root_note: this.rootNoteSelect.value,
+        scale_type: this.scaleTypeSelect.value,
+        direction: this.directionSelect.value,
+        num_gates: scaleInfo.degrees.length,
+        drone_enabled: this.droneToggle.checked,
+      });
+
+      // Reset gate tracking
+      this.lastGateIndex = -1;
 
       this.startButton.style.display = 'none';
       this.resetButton.disabled = false;
@@ -265,6 +317,8 @@ class TralalaGame {
     // Stop pitch detection
     if (this.pitchDetector) {
       this.pitchDetector.stop();
+      // Disable drone cancellation
+      this.pitchDetector.disableDroneCancellation();
     }
 
     // Stop drone if it's playing (but keep the checkbox checked)
@@ -272,6 +326,10 @@ class TralalaGame {
 
     // Reset game state
     this.gameState.reset();
+
+    // Reset tracking flags
+    this.gameCompletionTracked = false;
+    this.lastGateIndex = -1;
 
     // Reset UI
     this.startButton.style.display = 'inline-block';
@@ -331,11 +389,53 @@ class TralalaGame {
         const targetNote = state.targetGate.degreeLabel;
         this.updateStatus(`Sing: ${targetNote}`);
       }
+
+      // Track gate completions for funnel
+      if (state.currentGateIndex > this.lastGateIndex) {
+        this.lastGateIndex = state.currentGateIndex;
+        const gateNumber = state.currentGateIndex; // 1-indexed in display, 0-indexed here
+        const totalGates = state.gates.length;
+
+        this.trackEvent('gate_completed', {
+          gate_number: gateNumber,
+          total_gates: totalGates,
+          progress_percent: Math.round((gateNumber / totalGates) * 100),
+          root_note: this.rootNoteSelect.value,
+          scale_type: this.scaleTypeSelect.value,
+        });
+      }
     }
 
     if (state.isGameOver) {
       const won = state.currentGateIndex >= state.gates.length;
       this.updateStatus(won ? 'You win! Great job!' : 'Game over. Try again!');
+
+      // Track game completion (only once)
+      if (!this.gameCompletionTracked) {
+        this.gameCompletionTracked = true;
+
+        if (won) {
+          this.trackEvent('game_completed', {
+            root_note: this.rootNoteSelect.value,
+            scale_type: this.scaleTypeSelect.value,
+            direction: this.directionSelect.value,
+            score: state.score,
+            accuracy: state.accuracy,
+            elapsed_time: Math.round(state.elapsedTime),
+            total_gates: state.gates.length,
+            perfect_hits: state.perfectHits.length,
+          });
+        } else {
+          this.trackEvent('game_failed', {
+            root_note: this.rootNoteSelect.value,
+            scale_type: this.scaleTypeSelect.value,
+            direction: this.directionSelect.value,
+            gates_completed: state.currentGateIndex,
+            total_gates: state.gates.length,
+          });
+        }
+      }
+
       // Change reset button text and style to "Play Again" when won
       if (won) {
         this.resetButton.textContent = 'Play Again';

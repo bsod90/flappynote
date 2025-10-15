@@ -145,6 +145,21 @@ export class PitchDetector {
   }
 
   /**
+   * Enable drone noise cancellation
+   * @param {number} frequency - Root frequency of the drone
+   */
+  enableDroneCancellation(frequency) {
+    this.analyzer.enableDroneCancellation(frequency);
+  }
+
+  /**
+   * Disable drone noise cancellation
+   */
+  disableDroneCancellation() {
+    this.analyzer.disableDroneCancellation();
+  }
+
+  /**
    * Get debug information from analyzer
    * @returns {object} Debug stats
    */

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Primary Meta Tags -->
+  <title>How to Play Flappy Note - Pitch Training Game Guide | Tips & Instructions</title>
+  <meta name="title" content="How to Play Flappy Note - Pitch Training Game Guide | Tips & Instructions">
+  <meta name="description" content="Learn how to play Flappy Note, the pitch-matching singing game. Complete guide on game mechanics, vocal training tips, choosing the right root note, using the drone feature, and improving your ear training skills. Perfect for beginners learning to sing.">
+  <meta name="keywords" content="flappy note help, how to play flappy note, pitch training guide, singing game tutorial, vocal training tips, solfege syllables, ear training help, singing practice guide, pitch matching instructions">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://flappynote.com/help.html">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://flappynote.com/help.html">
+  <meta property="og:title" content="How to Play Flappy Note - Pitch Training Game Guide">
+  <meta property="og:description" content="Learn how to play Flappy Note and improve your pitch-matching skills. Complete guide with tips for vocal training, ear training, and singing practice.">
+  <meta property="og:image" content="https://flappynote.com/og-image.png">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://flappynote.com/help.html">
+  <meta name="twitter:title" content="How to Play Flappy Note - Pitch Training Game Guide">
+  <meta name="twitter:description" content="Learn how to play Flappy Note and improve your pitch-matching skills. Complete guide with tips for vocal training, ear training, and singing practice.">
+  <meta name="twitter:image" content="https://flappynote.com/og-image.png">
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(180deg, #4ec0ca 0%, #8ed6ff 100%);
+      color: #333;
+      line-height: 1.6;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .help-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 {
+      color: #ff6b35;
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      text-align: center;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      color: #4ecdc4;
+      font-size: 1.8rem;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      border-bottom: 3px solid #4ecdc4;
+      padding-bottom: 10px;
+    }
+
+    h3 {
+      color: #ff6b35;
+      font-size: 1.3rem;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      margin-bottom: 15px;
+      font-size: 1.05rem;
+    }
+
+    ul, ol {
+      margin-left: 30px;
+      margin-bottom: 15px;
+    }
+
+    li {
+      margin-bottom: 10px;
+      font-size: 1.05rem;
+    }
+
+    .back-button {
+      display: inline-block;
+      padding: 12px 24px;
+      background: linear-gradient(180deg, #5ac54f 0%, #4a9d3f 100%);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 0 #3e7e32, 0 6px 15px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+      border: 3px solid #7ee67e;
+      margin-bottom: 30px;
+    }
+
+    .back-button:hover {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #3e7e32, 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .back-button:active {
+      transform: translateY(4px);
+      box-shadow: 0 0 0 #3e7e32, 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .tip-box {
+      background: rgba(78, 205, 196, 0.1);
+      border-left: 5px solid #4ecdc4;
+      padding: 15px 20px;
+      margin: 20px 0;
+      border-radius: 5px;
+    }
+
+    .tip-box strong {
+      color: #4ecdc4;
+      font-size: 1.1rem;
+    }
+
+    .warning-box {
+      background: rgba(255, 107, 53, 0.1);
+      border-left: 5px solid #ff6b35;
+      padding: 15px 20px;
+      margin: 20px 0;
+      border-radius: 5px;
+    }
+
+    .warning-box strong {
+      color: #ff6b35;
+      font-size: 1.1rem;
+    }
+
+    code {
+      background: rgba(0, 0, 0, 0.05);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .footer-links {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    .footer-links a {
+      color: #4ecdc4;
+      text-decoration: none;
+      font-weight: 600;
+      margin: 0 15px;
+    }
+
+    .footer-links a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .help-container {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+      }
+
+      h3 {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="help-container">
+    <a href="/" class="back-button">← Back to Game</a>
+
+    <h1>How to Play Flappy Note</h1>
+
+    <p>
+      <strong>Flappy Note</strong> is a pitch-training game with Flappy Bird-style visuals and vocal training mechanics.
+      Control a bird by matching musical notes with your voice as you navigate through gates representing different scale degrees.
+    </p>
+
+    <h2>🎮 Game Mechanics</h2>
+
+    <h3>The Objective</h3>
+    <p>
+      Guide your bird through gates by singing the correct pitch. Each gate displays a <strong>solfege syllable</strong>
+      (Do, Re, Mi, Fa, Sol, La, Ti) that tells you which note to sing. When you match the target pitch with your voice,
+      the bird rises and glows to show you're on pitch. Stop singing or sing the wrong note, and the bird falls.
+    </p>
+
+    <h3>What are Solfege Syllables?</h3>
+    <p>
+      The game uses <strong>solfege syllables</strong> - a musical system where each scale degree has a name:
+    </p>
+    <ul>
+      <li><strong>Do</strong> - The root note (1st degree)</li>
+      <li><strong>Re</strong> - 2nd degree</li>
+      <li><strong>Mi</strong> - 3rd degree</li>
+      <li><strong>Fa</strong> - 4th degree</li>
+      <li><strong>Sol</strong> - 5th degree</li>
+      <li><strong>La</strong> - 6th degree</li>
+      <li><strong>Ti</strong> - 7th degree</li>
+    </ul>
+    <p>
+      These syllables help you learn the relationships between notes in a scale, which is fundamental to ear training and sight-singing.
+    </p>
+
+    <h3>Visual Feedback</h3>
+    <ul>
+      <li><strong>Bird glows and rises</strong> when you're singing the correct pitch</li>
+      <li><strong>Chevron arrows</strong> appear after 1 second of being off-pitch, pointing up or down to guide you</li>
+      <li><strong>Score increases</strong> each time you successfully pass through a gate</li>
+    </ul>
+
+    <h2>⚙️ Settings & Configuration</h2>
+
+    <h3>Root Note Selection</h3>
+    <p>
+      You can choose any of the 12 chromatic notes (C, C#/Db, D, D#/Eb, E, F, F#/Gb, G, G#/Ab, A, A#/Bb, B) as your root note.
+    </p>
+
+    <div class="tip-box">
+      <strong>Tip:</strong> The default root note is <strong>D</strong>, but if this is too high or too low for your vocal range,
+      pick a different one! There's no "correct" choice - choose what's comfortable for your voice. Most male voices work well
+      with C-F, while female voices often prefer F-A.
+    </div>
+
+    <h3>Scales & Modes</h3>
+    <p>Practice different musical patterns:</p>
+    <ul>
+      <li><strong>Major Scale</strong> - The classic "Do Re Mi" scale (great for beginners)</li>
+      <li><strong>Natural Minor</strong> - Darker, more melancholic sound</li>
+      <li><strong>Harmonic Minor</strong> - Minor scale with a raised 7th degree</li>
+      <li><strong>Melodic Minor</strong> - Ascending and descending variations</li>
+      <li><strong>Pentatonic Major</strong> - 5-note scale common in folk music</li>
+      <li><strong>Blues Scale</strong> - Classic blues sound with flatted notes</li>
+      <li><strong>Chromatic</strong> - All 12 notes (advanced challenge!)</li>
+      <li><strong>Church Modes</strong> - Dorian, Mixolydian, etc.</li>
+      <li><strong>7th Chords</strong> - Major 7th, Dominant 7th, Minor 7th, and more</li>
+    </ul>
+
+    <h3>Direction</h3>
+    <ul>
+      <li><strong>Ascending ↑</strong> - Notes go up the scale (Do → Re → Mi...)</li>
+      <li><strong>Descending ↓</strong> - Notes go down the scale (Ti → La → Sol...)</li>
+      <li><strong>Random 🎲</strong> - Notes appear in random order (advanced ear training)</li>
+    </ul>
+
+    <h2>🎧 Using the Root Drone</h2>
+
+    <p>
+      The <strong>Root Drone</strong> is a continuous reference tone that plays the root note (Do) and its harmonics in the background.
+    </p>
+
+    <h3>Benefits of Using the Drone</h3>
+    <ul>
+      <li>Helps you develop <strong>relative pitch</strong> by giving you a constant reference point</li>
+      <li>Improves your ability to hear intervals and relationships between notes</li>
+      <li>Makes it easier to stay in tune, especially for beginners</li>
+      <li>Trains your ear to recognize harmonic relationships</li>
+    </ul>
+
+    <div class="warning-box">
+      <strong>Important:</strong> The drone can interfere with pitch detection, especially if you're playing through speakers.
+      For the best experience, <strong>use headphones</strong> when the drone is enabled. This prevents the microphone from
+      picking up the drone sound and confusing the pitch detector.
+    </div>
+
+    <h2>🎯 Who Is This Game For?</h2>
+
+    <ul>
+      <li><strong>Beginner singers</strong> learning to match pitch and develop vocal control</li>
+      <li><strong>Music students</strong> practicing ear training and solfege</li>
+      <li><strong>Choir members</strong> improving their ability to find and hold notes</li>
+      <li><strong>Vocalists</strong> warming up or practicing scales in a fun way</li>
+      <li><strong>Anyone</strong> curious about music theory and pitch relationships</li>
+    </ul>
+
+    <h2>💡 Tips for Success</h2>
+
+    <ol>
+      <li><strong>Start simple:</strong> Begin with Major Scale in ascending direction before trying harder modes</li>
+      <li><strong>Find your range:</strong> Adjust the root note until you're singing comfortably in the middle of your range</li>
+      <li><strong>Use headphones:</strong> Especially when using the drone feature for better pitch detection</li>
+      <li><strong>Watch the arrows:</strong> If chevrons appear, they'll guide you to adjust your pitch up or down</li>
+      <li><strong>Practice regularly:</strong> Even 5-10 minutes daily will improve your pitch-matching skills</li>
+      <li><strong>Listen to the reference:</strong> Click the gate to hear what the target note should sound like</li>
+      <li><strong>Be patient:</strong> Pitch-matching is a skill that develops over time</li>
+    </ol>
+
+    <h2>🐛 Feedback & Issues</h2>
+
+    <p>
+      Found a bug? Have a feature request? Want to share your experience?
+    </p>
+    <p>
+      Please leave feedback in our
+      <a href="https://github.com/bsod90/flappynote/issues" target="_blank" rel="noopener noreferrer" style="color: #4ecdc4; font-weight: 600;">
+        GitHub Issues
+      </a>.
+      We'd love to hear from you!
+    </p>
+
+    <div class="tip-box">
+      <strong>Troubleshooting:</strong> If the game isn't detecting your pitch accurately:
+      <ul style="margin-top: 10px;">
+        <li>Make sure you've granted microphone permissions</li>
+        <li>Use headphones to prevent feedback</li>
+        <li>Reduce background noise</li>
+        <li>Try adjusting your distance from the microphone</li>
+        <li>Sing louder or with more sustained tone</li>
+      </ul>
+    </div>
+
+    <h2>🎵 Ready to Play?</h2>
+
+    <p style="text-align: center; margin-top: 30px;">
+      <a href="/" class="back-button">Start Playing Flappy Note →</a>
+    </p>
+
+    <div class="footer-links">
+      <a href="https://github.com/bsod90/flappynote" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a href="/">Play Game</a>
+      <a href="https://github.com/bsod90/flappynote/issues" target="_blank" rel="noopener noreferrer">Report Issues</a>
+    </div>
+  </div>
+</body>
+</html>

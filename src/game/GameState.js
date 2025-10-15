@@ -31,6 +31,10 @@ export class GameState {
     this.pitchTrace = [];
     this.perfectHits = []; // Store positions where perfect pitch was hit
 
+    // Pitch guidance (show arrows when off-pitch)
+    this.offPitchStartTime = null; // When user started being off-pitch
+    this.showPitchGuidance = false; // Whether to show up/down arrows
+
     this.initializeGates();
   }
 
@@ -284,11 +288,29 @@ export class GameState {
         // Singing the correct scale degree (any octave)
         this.isSinging = true;
         this.lastSingingTime = Date.now();
+
+        // Reset off-pitch tracking when on correct pitch
+        this.offPitchStartTime = null;
+        this.showPitchGuidance = false;
       } else {
         this.isSinging = false;
+
+        // Track how long user has been off-pitch
+        if (this.offPitchStartTime === null) {
+          this.offPitchStartTime = Date.now();
+        } else {
+          // Check if user has been off-pitch for more than 1 second
+          const offPitchDuration = Date.now() - this.offPitchStartTime;
+          if (offPitchDuration > 1000) {
+            this.showPitchGuidance = true;
+          }
+        }
       }
     } else {
       this.isSinging = false;
+      // Reset off-pitch tracking when not singing
+      this.offPitchStartTime = null;
+      this.showPitchGuidance = false;
     }
   }
 
@@ -422,6 +444,7 @@ export class GameState {
       scaleInfo: this.scaleManager.getScaleInfo(),
       pitchTrace: this.pitchTrace,
       perfectHits: this.perfectHits,
+      showPitchGuidance: this.showPitchGuidance,
     };
   }
 }
