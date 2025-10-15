@@ -26,8 +26,13 @@ export class Renderer2D extends Renderer {
     // Camera offset for horizontal scrolling
     this.cameraX = 0;
 
-    // Initial resize - do it synchronously
-    this.handleResize();
+    // Initial resize - use requestAnimationFrame to ensure browser has finished layout
+    // This fixes the race condition where canvas sizes before CSS/viewport is stable
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this.handleResize();
+      });
+    });
 
     // Listen for window resize
     window.addEventListener('resize', () => {
