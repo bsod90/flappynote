@@ -17,6 +17,7 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  padding-bottom: 40px; /* Space for fixed footer */
 }
 
 h1 {
