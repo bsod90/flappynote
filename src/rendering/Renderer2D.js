@@ -33,7 +33,18 @@ export class Renderer2D extends Renderer {
    */
   handleResize() {
     const rect = this.canvas.getBoundingClientRect();
-    this.resize(rect.width, rect.height);
+    const dpr = window.devicePixelRatio || 1;
+
+    // Set canvas internal size (accounting for device pixel ratio)
+    this.canvas.width = rect.width * dpr;
+    this.canvas.height = rect.height * dpr;
+
+    // Set canvas display size
+    this.canvas.style.width = `${rect.width}px`;
+    this.canvas.style.height = `${rect.height}px`;
+
+    // Scale context to account for device pixel ratio
+    this.ctx.scale(dpr, dpr);
 
     // Update game config canvas dimensions for responsive layout
     GAME_CONFIG.CANVAS_WIDTH = rect.width;
@@ -539,8 +550,14 @@ export class Renderer2D extends Renderer {
    * @param {number} height
    */
   resize(width, height) {
-    this.canvas.width = width;
-    this.canvas.height = height;
+    const dpr = window.devicePixelRatio || 1;
+    this.canvas.width = width * dpr;
+    this.canvas.height = height * dpr;
+    this.canvas.style.width = `${width}px`;
+    this.canvas.style.height = `${height}px`;
+    if (this.ctx) {
+      this.ctx.scale(dpr, dpr);
+    }
   }
 
   /**

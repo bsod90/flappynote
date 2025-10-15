@@ -118,6 +118,9 @@ class TralalaGame {
     // Handle window resize
     window.addEventListener('resize', () => {
       this.renderer.handleResize();
+      if (this.gameState) {
+        this.gameState.repositionGates();
+      }
     });
   }
 

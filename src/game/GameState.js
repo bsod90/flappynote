@@ -284,6 +284,40 @@ export class GameState {
   }
 
   /**
+   * Reposition gates when canvas is resized
+   */
+  repositionGates() {
+    const degrees = this.gates.map(gate => ({
+      degree: gate.scaleDegree,
+      label: gate.degreeLabel,
+      frequency: gate.targetFrequency
+    }));
+
+    const gateSpacing = GAME_CONFIG.getGateSpacing(degrees.length);
+    const startX = GAME_CONFIG.getGateStartX();
+
+    degrees.forEach((degreeInfo, index) => {
+      const x = startX + (index * gateSpacing);
+
+      const allDegrees = this.scaleManager.getAllDegrees();
+      const minFreq = this.scaleManager.getFrequency(0);
+      const maxFreq = this.scaleManager.getFrequency(allDegrees.length - 1);
+      const normalizedPitch = (degreeInfo.frequency - minFreq) / (maxFreq - minFreq);
+
+      const topMargin = GAME_CONFIG.CANVAS_HEIGHT * 0.15;
+      const bottomMargin = GAME_CONFIG.CANVAS_HEIGHT * 0.20;
+      const availableHeight = GAME_CONFIG.CANVAS_HEIGHT - topMargin - bottomMargin;
+      const targetY = GAME_CONFIG.CANVAS_HEIGHT - bottomMargin - (normalizedPitch * availableHeight);
+
+      this.gates[index].x = x;
+      this.gates[index].y = targetY;
+    });
+
+    // Also reposition the ball
+    this.ball.reset();
+  }
+
+  /**
    * Get game state for rendering
    * @returns {object}
    */
