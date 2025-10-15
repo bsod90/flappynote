@@ -60,6 +60,13 @@ class TralalaGame {
     const direction = this.directionSelect.value;
     this.gameState = new GameState(rootNote, scaleType, direction);
 
+    // Force a resize after game state is initialized to ensure gates are positioned correctly
+    // This handles the race condition where canvas dimensions aren't stable on first load
+    setTimeout(() => {
+      this.renderer.handleResize();
+      this.gameState.repositionGates();
+    }, 0);
+
     // Initialize pitch detector
     this.pitchDetector = new PitchDetector({
       updateInterval: 30, // Faster updates for better mobile response
