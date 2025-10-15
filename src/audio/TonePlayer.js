@@ -124,7 +124,7 @@ export class TonePlayer {
     // Create main gain node for the drone
     this.droneGainNode = ctx.createGain();
     this.droneGainNode.gain.setValueAtTime(0, now);
-    this.droneGainNode.gain.linearRampToValueAtTime(0.08, now + 2); // Slow fade in over 2 seconds
+    this.droneGainNode.gain.linearRampToValueAtTime(0.15, now + 2); // Slow fade in over 2 seconds (louder)
     this.droneGainNode.connect(ctx.destination);
 
     // Create a low-pass filter for warmth

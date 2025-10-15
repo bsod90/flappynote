@@ -207,6 +207,12 @@ class TralalaGame {
       this.updateStatus(isChord ? 'Playing reference: 1-3-5...' : 'Playing reference: 1-5-8...');
       await this.playReferenceTones();
 
+      // Start drone if it's enabled
+      if (this.droneToggle.checked) {
+        const frequency = this.gameState.scaleManager.getFrequency(0);
+        this.tonePlayer.startDrone(frequency);
+      }
+
       // Start game
       this.gameState.start();
 
