@@ -41,9 +41,12 @@ export class GameState {
     this.gates = [];
     let degrees = this.scaleManager.getAllDegrees();
 
-    // Reverse degrees if direction is down
+    // Handle direction
     if (this.direction === 'down') {
       degrees = [...degrees].reverse();
+    } else if (this.direction === 'random') {
+      // Shuffle the degrees array
+      degrees = this.shuffleArray([...degrees]);
     }
 
     const gateSpacing = GAME_CONFIG.getGateSpacing(degrees.length);
@@ -309,11 +312,25 @@ export class GameState {
 
   /**
    * Set direction and regenerate gates
-   * @param {string} direction - 'up' or 'down'
+   * @param {string} direction - 'up', 'down', or 'random'
    */
   setDirection(direction) {
     this.direction = direction;
     this.initializeGates();
+  }
+
+  /**
+   * Shuffle an array using Fisher-Yates algorithm
+   * @param {Array} array - Array to shuffle
+   * @returns {Array} Shuffled array
+   */
+  shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
   }
 
   /**
