@@ -43,9 +43,6 @@ class TralalaGame {
    * Initialize the game
    */
   initialize() {
-    // Check microphone support
-    this.checkMicrophoneSupport();
-
     // Load settings from localStorage
     this.loadSettings();
 
@@ -152,6 +149,13 @@ class TralalaGame {
    */
   async handleStart() {
     try {
+      // Check microphone support before attempting to start
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        this.showMicrophoneWarning();
+        this.updateStatus('Microphone not supported in this browser');
+        return;
+      }
+
       this.startButton.disabled = true;
       this.updateStatus('Requesting microphone access...');
 
@@ -350,35 +354,32 @@ class TralalaGame {
   }
 
   /**
-   * Check if microphone is supported and warn if not
+   * Show microphone warning banner
    */
-  checkMicrophoneSupport() {
-    // Check if mediaDevices API is available
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      // Show warning banner
-      const warning = document.createElement('div');
-      warning.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        background: #ff6b35;
-        color: white;
-        padding: 12px 20px;
-        text-align: center;
-        font-weight: 600;
-        z-index: 9999;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-      `;
-      warning.innerHTML = `
-        ⚠️ Microphone not supported in this browser. Please open in Safari or Chrome.
-      `;
-      document.body.prepend(warning);
+  showMicrophoneWarning() {
+    // Check if warning already exists
+    if (document.getElementById('mic-warning')) return;
 
-      // Disable start button
-      this.startButton.disabled = true;
-      this.updateStatus('Microphone not available');
-    }
+    // Show warning banner
+    const warning = document.createElement('div');
+    warning.id = 'mic-warning';
+    warning.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #ff6b35;
+      color: white;
+      padding: 12px 20px;
+      text-align: center;
+      font-weight: 600;
+      z-index: 9999;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    `;
+    warning.innerHTML = `
+      ⚠️ Microphone not supported. Please open in Safari or Chrome.
+    `;
+    document.body.prepend(warning);
   }
 
   /**

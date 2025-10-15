@@ -16,7 +16,11 @@ export class Renderer2D extends Renderer {
    */
   initialize() {
     this.ctx = this.canvas.getContext('2d');
-    this.handleResize();
+
+    // Delay initial resize to allow CSS to settle (fixes initial render issues on mobile)
+    setTimeout(() => {
+      this.handleResize();
+    }, 100);
 
     // Flappy Bird style - disable anti-aliasing for pixelated look
     this.ctx.imageSmoothingEnabled = false;
@@ -28,7 +32,11 @@ export class Renderer2D extends Renderer {
     this.cameraX = 0;
 
     // Listen for window resize
-    window.addEventListener('resize', () => this.handleResize());
+    window.addEventListener('resize', () => {
+      // Debounce resize to avoid excessive recalculations
+      clearTimeout(this.resizeTimeout);
+      this.resizeTimeout = setTimeout(() => this.handleResize(), 50);
+    });
   }
 
   /**
