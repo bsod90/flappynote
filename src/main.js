@@ -29,6 +29,7 @@ class TralalaGame {
     this.debugToggle = document.getElementById('debug-toggle');
     this.settingsToggle = document.getElementById('settings-toggle');
     this.settingsPanel = document.getElementById('settings-panel');
+    this.droneToggle = document.getElementById('drone-toggle');
 
     this.lastFrameTime = 0;
     this.animationId = null;
@@ -104,6 +105,13 @@ class TralalaGame {
       const rootNote = rootNoteName.length === 1 ? `${rootNoteName}3` : rootNoteName;
       this.gameState.setRootNote(rootNote);
       this.updateStatus('Root note changed. Click Start to begin.');
+
+      // Update drone frequency if it's playing
+      if (this.droneToggle.checked) {
+        const frequency = this.gameState.scaleManager.getFrequency(0);
+        this.tonePlayer.updateDroneFrequency(frequency);
+      }
+
       this.saveSettings();
     });
 
@@ -116,6 +124,21 @@ class TralalaGame {
     this.directionSelect.addEventListener('change', (e) => {
       this.gameState.setDirection(e.target.value);
       this.updateStatus('Direction changed. Click Start to begin.');
+      this.saveSettings();
+    });
+
+    // Drone toggle
+    this.droneToggle.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        // Start drone on current root note
+        const rootNoteName = this.rootNoteSelect.value;
+        const rootNote = rootNoteName.length === 1 ? `${rootNoteName}3` : rootNoteName;
+        const frequency = this.gameState.scaleManager.getFrequency(0);
+        this.tonePlayer.startDrone(frequency);
+      } else {
+        // Stop drone
+        this.tonePlayer.stopDrone();
+      }
       this.saveSettings();
     });
 
@@ -236,6 +259,13 @@ class TralalaGame {
     // Stop pitch detection
     if (this.pitchDetector) {
       this.pitchDetector.stop();
+    }
+
+    // Stop drone if it's playing
+    if (this.droneToggle.checked) {
+      this.tonePlayer.stopDrone();
+      this.droneToggle.checked = false;
+      this.saveSettings();
     }
 
     // Reset game state
@@ -520,6 +550,10 @@ class TralalaGame {
       if (settings.direction) {
         this.directionSelect.value = settings.direction;
       }
+
+      if (settings.droneEnabled) {
+        this.droneToggle.checked = settings.droneEnabled;
+      }
     } catch (error) {
       console.warn('Failed to load settings:', error);
     }
@@ -534,6 +568,7 @@ class TralalaGame {
         rootNote: this.rootNoteSelect.value,
         scaleType: this.scaleTypeSelect.value,
         direction: this.directionSelect.value,
+        droneEnabled: this.droneToggle.checked,
       };
 
       localStorage.setItem('flappynote-settings', JSON.stringify(settings));
@@ -552,6 +587,10 @@ class TralalaGame {
 
     if (this.pitchDetector) {
       this.pitchDetector.stop();
+    }
+
+    if (this.tonePlayer) {
+      this.tonePlayer.stop();
     }
 
     this.renderer.dispose();
