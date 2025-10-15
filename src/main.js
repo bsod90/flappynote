@@ -267,12 +267,8 @@ class TralalaGame {
       this.pitchDetector.stop();
     }
 
-    // Stop drone if it's playing
-    if (this.droneToggle.checked) {
-      this.tonePlayer.stopDrone();
-      this.droneToggle.checked = false;
-      this.saveSettings();
-    }
+    // Stop drone if it's playing (but keep the checkbox checked)
+    this.tonePlayer.stopDrone();
 
     // Reset game state
     this.gameState.reset();
