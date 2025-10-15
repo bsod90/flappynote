@@ -1,0 +1,38 @@
+{
+  "name": "flappynote",
+  "version": "1.0.0",
+  "description": "A browser-based pitch-matching game that helps you learn musical scales by singing",
+  "homepage": "https://flappynote.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bsod90/flappynote.git"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:pitch-engine": "vitest run src/pitch-engine",
+    "test:browser": "playwright test"
+  },
+  "keywords": [
+    "music",
+    "pitch",
+    "game",
+    "education"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.41.0",
+    "happy-dom": "^20.0.0",
+    "jsdom": "^27.0.0",
+    "vite": "^5.0.0",
+    "vitest": "^1.2.0"
+  },
+  "dependencies": {
+    "pitchfinder": "^2.3.2"
+  }
+}

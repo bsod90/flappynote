@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Sky blue background -->
+  <rect width="64" height="64" fill="#4ec0ca" rx="8"/>
+
+  <!-- Musical note (eighth note) in dark color -->
+  <g transform="translate(32, 38)">
+    <!-- Note head (filled ellipse) -->
+    <ellipse cx="0" cy="0" rx="10" ry="7" fill="#2c3e50" transform="rotate(-20)"/>
+
+    <!-- Note stem -->
+    <rect x="7" y="-28" width="3" height="28" fill="#2c3e50"/>
+
+    <!-- Flag (eighth note flag - curved) -->
+    <path d="M 10 -28 Q 20 -28, 20 -18 L 10 -18 Z" fill="#2c3e50"/>
+
+    <!-- Small wings on sides -->
+    <ellipse cx="-8" cy="0" rx="7" ry="4" fill="white" opacity="0.9"/>
+    <ellipse cx="8" cy="0" rx="7" ry="4" fill="white" opacity="0.9"/>
+  </g>
+
+  <!-- Musical sparkle -->
+  <text x="14" y="24" font-size="12" fill="#ffd700" opacity="0.8">♪</text>
+</svg>
