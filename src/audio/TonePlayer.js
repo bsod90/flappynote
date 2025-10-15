@@ -39,9 +39,10 @@ export class TonePlayer {
     const end = start + duration;
 
     // Envelope: fade in and out to avoid clicks
+    // Higher volume (0.5) for better audibility on mobile
     gainNode.gain.setValueAtTime(0, start);
-    gainNode.gain.linearRampToValueAtTime(0.3, start + 0.05);
-    gainNode.gain.setValueAtTime(0.3, end - 0.05);
+    gainNode.gain.linearRampToValueAtTime(0.5, start + 0.05);
+    gainNode.gain.setValueAtTime(0.5, end - 0.05);
     gainNode.gain.linearRampToValueAtTime(0, end);
 
     oscillator.start(start);

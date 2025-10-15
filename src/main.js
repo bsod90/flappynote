@@ -43,6 +43,12 @@ class TralalaGame {
    * Initialize the game
    */
   initialize() {
+    // Check microphone support
+    this.checkMicrophoneSupport();
+
+    // Load settings from localStorage
+    this.loadSettings();
+
     // Initialize renderer
     this.renderer.initialize();
 
@@ -85,16 +91,19 @@ class TralalaGame {
       const rootNote = rootNoteName.length === 1 ? `${rootNoteName}3` : rootNoteName;
       this.gameState.setRootNote(rootNote);
       this.updateStatus('Root note changed. Click Start to begin.');
+      this.saveSettings();
     });
 
     this.scaleTypeSelect.addEventListener('change', (e) => {
       this.gameState.setScaleType(e.target.value);
       this.updateStatus('Mode changed. Click Start to begin.');
+      this.saveSettings();
     });
 
     this.directionSelect.addEventListener('change', (e) => {
       this.gameState.setDirection(e.target.value);
       this.updateStatus('Direction changed. Click Start to begin.');
+      this.saveSettings();
     });
 
     // Settings toggle (mobile)
@@ -338,6 +347,78 @@ class TralalaGame {
    */
   updateStatus(message) {
     this.statusDisplay.textContent = message;
+  }
+
+  /**
+   * Check if microphone is supported and warn if not
+   */
+  checkMicrophoneSupport() {
+    // Check if mediaDevices API is available
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      // Show warning banner
+      const warning = document.createElement('div');
+      warning.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: #ff6b35;
+        color: white;
+        padding: 12px 20px;
+        text-align: center;
+        font-weight: 600;
+        z-index: 9999;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      `;
+      warning.innerHTML = `
+        ⚠️ Microphone not supported in this browser. Please open in Safari or Chrome.
+      `;
+      document.body.prepend(warning);
+
+      // Disable start button
+      this.startButton.disabled = true;
+      this.updateStatus('Microphone not available');
+    }
+  }
+
+  /**
+   * Load settings from localStorage
+   */
+  loadSettings() {
+    try {
+      const settings = JSON.parse(localStorage.getItem('flappynote-settings') || '{}');
+
+      if (settings.rootNote) {
+        this.rootNoteSelect.value = settings.rootNote;
+      }
+
+      if (settings.scaleType) {
+        this.scaleTypeSelect.value = settings.scaleType;
+      }
+
+      if (settings.direction) {
+        this.directionSelect.value = settings.direction;
+      }
+    } catch (error) {
+      console.warn('Failed to load settings:', error);
+    }
+  }
+
+  /**
+   * Save settings to localStorage
+   */
+  saveSettings() {
+    try {
+      const settings = {
+        rootNote: this.rootNoteSelect.value,
+        scaleType: this.scaleTypeSelect.value,
+        direction: this.directionSelect.value,
+      };
+
+      localStorage.setItem('flappynote-settings', JSON.stringify(settings));
+    } catch (error) {
+      console.warn('Failed to save settings:', error);
+    }
   }
 
   /**

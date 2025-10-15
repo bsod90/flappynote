@@ -8,14 +8,19 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background: linear-gradient(180deg, #4ec0ca 0%, #8ed6ff 100%);
   color: #333;
+  /* Use dvh (dynamic viewport height) for mobile browsers with dynamic address bars */
   min-height: 100vh;
+  min-height: 100dvh;
   max-height: 100vh;
+  max-height: 100dvh;
   overflow: hidden;
 }
 
 #app {
   width: 100%;
-  height: 100vh; /* Full height by default */
+  /* Use dvh (dynamic viewport height) for mobile browsers */
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -25,6 +30,7 @@ body {
 @media (min-width: 769px) {
   #app {
     height: calc(100vh - 40px);
+    height: calc(100dvh - 40px);
   }
 }
 
@@ -363,35 +369,24 @@ button:disabled {
     width: 100%;
   }
 
-  /* Show mobile footer in expanded settings */
+  /* Hide mobile footer in expanded settings */
   .mobile-footer {
-    display: block;
-    text-align: center;
-    padding-top: 10px;
-    margin-top: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.3);
-    color: #fff;
-    font-size: 0.85rem;
-  }
-
-  .mobile-footer a {
-    color: #ffd700;
-    text-decoration: none;
-    font-weight: 600;
-  }
-
-  .mobile-footer a:hover {
-    text-decoration: underline;
-  }
-
-  /* Hide footer on mobile */
-  #game-footer {
     display: none;
   }
 
-  /* Remove padding since footer is hidden */
-  #app {
-    padding-bottom: 0;
+  /* Show non-sticky footer on mobile - user scrolls to see it */
+  #game-footer {
+    display: block;
+    position: static; /* Not fixed on mobile */
+    background: rgba(255, 255, 255, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 8px;
+    font-size: 0.85rem;
+  }
+
+  /* Ensure canvas doesn't scroll */
+  #game-canvas {
+    overflow: hidden;
   }
 }
 
