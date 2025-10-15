@@ -43,6 +43,9 @@ class TralalaGame {
    * Initialize the game
    */
   initialize() {
+    // Check if we're in an embedded browser and show warning
+    this.checkEmbeddedBrowser();
+
     // Load settings from localStorage
     this.loadSettings();
 
@@ -354,7 +357,87 @@ class TralalaGame {
   }
 
   /**
-   * Show microphone warning banner
+   * Check if we're in an embedded browser (LinkedIn, Instagram, Facebook, etc.)
+   */
+  checkEmbeddedBrowser() {
+    const ua = navigator.userAgent || '';
+
+    // Detect common embedded browsers
+    const isEmbedded =
+      ua.includes('FBAN') ||       // Facebook App
+      ua.includes('FBAV') ||       // Facebook App
+      ua.includes('Instagram') ||  // Instagram
+      ua.includes('LinkedIn') ||   // LinkedIn
+      ua.includes('Twitter') ||    // Twitter
+      ua.includes('Line/') ||      // Line
+      ua.includes('MicroMessenger'); // WeChat
+
+    if (isEmbedded) {
+      this.showEmbeddedBrowserWarning();
+    }
+  }
+
+  /**
+   * Show embedded browser warning banner
+   */
+  showEmbeddedBrowserWarning() {
+    // Check if warning already exists or was dismissed
+    if (document.getElementById('embedded-warning') ||
+        localStorage.getItem('flappynote-embedded-warning-dismissed') === 'true') {
+      return;
+    }
+
+    // Show warning banner
+    const warning = document.createElement('div');
+    warning.id = 'embedded-warning';
+    warning.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #ff6b35;
+      color: white;
+      padding: 12px 40px 12px 20px;
+      text-align: center;
+      font-weight: 600;
+      z-index: 9999;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    `;
+    warning.innerHTML = `
+      ⚠️ For best experience, open in Safari or Chrome
+    `;
+
+    // Add close button
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '×';
+    closeBtn.style.cssText = `
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+    `;
+    closeBtn.onclick = () => {
+      warning.remove();
+      localStorage.setItem('flappynote-embedded-warning-dismissed', 'true');
+    };
+
+    warning.appendChild(closeBtn);
+    document.body.prepend(warning);
+  }
+
+  /**
+   * Show microphone warning banner (when user clicks start)
    */
   showMicrophoneWarning() {
     // Check if warning already exists
@@ -370,7 +453,7 @@ class TralalaGame {
       right: 0;
       background: #ff6b35;
       color: white;
-      padding: 12px 20px;
+      padding: 12px 40px 12px 20px;
       text-align: center;
       font-weight: 600;
       z-index: 9999;
@@ -379,6 +462,30 @@ class TralalaGame {
     warning.innerHTML = `
       ⚠️ Microphone not supported. Please open in Safari or Chrome.
     `;
+
+    // Add close button
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '×';
+    closeBtn.style.cssText = `
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+    `;
+    closeBtn.onclick = () => warning.remove();
+
+    warning.appendChild(closeBtn);
     document.body.prepend(warning);
   }
 

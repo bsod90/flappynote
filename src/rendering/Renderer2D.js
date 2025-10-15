@@ -17,11 +17,6 @@ export class Renderer2D extends Renderer {
   initialize() {
     this.ctx = this.canvas.getContext('2d');
 
-    // Delay initial resize to allow CSS to settle (fixes initial render issues on mobile)
-    setTimeout(() => {
-      this.handleResize();
-    }, 100);
-
     // Flappy Bird style - disable anti-aliasing for pixelated look
     this.ctx.imageSmoothingEnabled = false;
 
@@ -30,6 +25,9 @@ export class Renderer2D extends Renderer {
 
     // Camera offset for horizontal scrolling
     this.cameraX = 0;
+
+    // Initial resize - do it synchronously
+    this.handleResize();
 
     // Listen for window resize
     window.addEventListener('resize', () => {
