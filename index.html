@@ -29,55 +29,79 @@
 <body>
   <div id="app">
     <div id="ui-container">
-      <h1>Flappy Note</h1>
       <div id="controls">
-        <div class="control-group">
-          <label for="root-note">Root Note:</label>
-          <select id="root-note">
-            <option value="C">C</option>
-            <option value="D">D</option>
-            <option value="E">E</option>
-            <option value="F">F</option>
-            <option value="G">G</option>
-            <option value="A">A</option>
-            <option value="B">B</option>
-          </select>
+        <!-- Title -->
+        <h1>Flappy Note</h1>
+
+        <!-- Settings group (desktop: inline, mobile: collapsible) -->
+        <div id="settings-group">
+          <button id="settings-toggle" class="settings-toggle">Settings ⚙️</button>
+          <div id="settings-panel" class="settings-panel">
+          <div class="control-group">
+            <label for="root-note">Root Note:</label>
+            <select id="root-note">
+              <option value="C">C</option>
+              <option value="D">D</option>
+              <option value="E">E</option>
+              <option value="F">F</option>
+              <option value="G">G</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="scale-type">Mode:</label>
+            <select id="scale-type">
+              <optgroup label="Scales">
+                <option value="major" selected>Major Scale</option>
+                <option value="minor">Natural Minor</option>
+                <option value="harmonicMinor">Harmonic Minor</option>
+                <option value="melodicMinor">Melodic Minor</option>
+                <option value="pentatonic">Pentatonic Major</option>
+                <option value="blues">Blues Scale</option>
+                <option value="chromatic">Chromatic</option>
+              </optgroup>
+              <optgroup label="Modes">
+                <option value="dorian">Dorian</option>
+                <option value="mixolydian">Mixolydian</option>
+              </optgroup>
+              <optgroup label="7th Chords">
+                <option value="major7">Major 7th</option>
+                <option value="dominant7">Dominant 7th</option>
+                <option value="minor7">Minor 7th</option>
+                <option value="minorMajor7">Minor Major 7th</option>
+                <option value="halfDiminished7">Half Diminished 7th</option>
+                <option value="diminished7">Diminished 7th</option>
+              </optgroup>
+              <optgroup label="Advanced">
+                <option value="wholeTone">Whole Tone</option>
+                <option value="diminished">Diminished</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="direction">Direction:</label>
+            <select id="direction">
+              <option value="up" selected>Ascending ↑</option>
+              <option value="down">Descending ↓</option>
+            </select>
+          </div>
+
+          <!-- GitHub link in expanded settings (mobile only) -->
+          <div class="mobile-footer">
+            Made with ❤️ and AI |
+            <a href="https://github.com/bsod90/flappynote" target="_blank" rel="noopener noreferrer">
+              GitHub
+            </a>
+          </div>
+          </div>
         </div>
-        <div class="control-group">
-          <label for="scale-type">Mode:</label>
-          <select id="scale-type">
-            <optgroup label="Scales">
-              <option value="major" selected>Major Scale</option>
-              <option value="minor">Natural Minor</option>
-              <option value="harmonicMinor">Harmonic Minor</option>
-              <option value="melodicMinor">Melodic Minor</option>
-              <option value="pentatonic">Pentatonic Major</option>
-              <option value="blues">Blues Scale</option>
-              <option value="chromatic">Chromatic</option>
-            </optgroup>
-            <optgroup label="Modes">
-              <option value="dorian">Dorian</option>
-              <option value="mixolydian">Mixolydian</option>
-            </optgroup>
-            <optgroup label="Chords">
-              <option value="majorTriad">Major Triad</option>
-              <option value="minorTriad">Minor Triad</option>
-            </optgroup>
-            <optgroup label="Advanced">
-              <option value="wholeTone">Whole Tone</option>
-              <option value="diminished">Diminished</option>
-            </optgroup>
-          </select>
+
+        <!-- Button group -->
+        <div id="button-group">
+          <button id="start-button">Start Game</button>
+          <button id="reset-button" disabled>Reset</button>
         </div>
-        <div class="control-group">
-          <label for="direction">Direction:</label>
-          <select id="direction">
-            <option value="up" selected>Ascending ↑</option>
-            <option value="down">Descending ↓</option>
-          </select>
-        </div>
-        <button id="start-button">Start Game</button>
-        <button id="reset-button" disabled>Reset</button>
       </div>
       <div id="game-info">
         <div id="pitch-display">Pitch: --</div>

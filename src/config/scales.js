@@ -33,20 +33,40 @@ export const SCALES = {
     intervals: [0, 2, 4, 5, 7, 9, 10, 12],
     degrees: ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Te', 'Do'],
   },
-  majorTriad: {
-    name: 'Major Triad',
-    intervals: [0, 4, 7, 12, 16, 19, 24, 28],
-    degrees: ['Do', 'Mi', 'Sol', 'Do', 'Mi', 'Sol', 'Do', 'Mi'],
+  major7: {
+    name: 'Major 7th',
+    intervals: [0, 4, 7, 11, 12],
+    degrees: ['Do', 'Mi', 'Sol', 'Ti', 'Do'],
   },
-  minorTriad: {
-    name: 'Minor Triad',
-    intervals: [0, 3, 7, 12, 15, 19, 24, 27],
-    degrees: ['Do', 'Me', 'Sol', 'Do', 'Me', 'Sol', 'Do', 'Me'],
+  dominant7: {
+    name: 'Dominant 7th',
+    intervals: [0, 4, 7, 10, 12],
+    degrees: ['Do', 'Mi', 'Sol', 'Te', 'Do'],
+  },
+  minor7: {
+    name: 'Minor 7th',
+    intervals: [0, 3, 7, 10, 12],
+    degrees: ['Do', 'Me', 'Sol', 'Te', 'Do'],
+  },
+  minorMajor7: {
+    name: 'Minor Major 7th',
+    intervals: [0, 3, 7, 11, 12],
+    degrees: ['Do', 'Me', 'Sol', 'Ti', 'Do'],
+  },
+  halfDiminished7: {
+    name: 'Half Diminished 7th',
+    intervals: [0, 3, 6, 10, 12],
+    degrees: ['Do', 'Me', 'Fi', 'Te', 'Do'],
+  },
+  diminished7: {
+    name: 'Diminished 7th',
+    intervals: [0, 3, 6, 9, 12],
+    degrees: ['Do', 'Me', 'Fi', 'La', 'Do'],
   },
   chromatic: {
     name: 'Chromatic Scale',
-    intervals: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-    degrees: ['Do', 'Di', 'Re', 'Ri', 'Mi', 'Fa', 'Fi', 'Sol', 'Si', 'La', 'Li', 'Ti'],
+    intervals: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    degrees: ['Do', 'Di', 'Re', 'Ri', 'Mi', 'Fa', 'Fi', 'Sol', 'Si', 'La', 'Li', 'Ti', 'Do'],
   },
   pentatonic: {
     name: 'Pentatonic Major',

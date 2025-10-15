@@ -21,6 +21,12 @@ export class GameState {
     this.lastSingingTime = 0;
     this.direction = direction; // 'up' or 'down'
 
+    // Timer and accuracy tracking
+    this.startTime = null;
+    this.elapsedTime = 0;
+    this.totalAccuracy = 0;
+    this.accuracyCount = 0;
+
     this.initializeGates();
   }
 
@@ -49,9 +55,16 @@ export class GameState {
       const maxFreq = this.scaleManager.getFrequency(allDegrees.length - 1); // Last note in scale
       const normalizedPitch = (degreeInfo.frequency - minFreq) / (maxFreq - minFreq);
 
-      // Map to canvas with generous margins (15% top, 20% bottom for more air)
-      const topMargin = GAME_CONFIG.CANVAS_HEIGHT * 0.15;
-      const bottomMargin = GAME_CONFIG.CANVAS_HEIGHT * 0.20;
+      // Map to canvas with margins (adjust for mobile vs desktop)
+      const isMobile = GAME_CONFIG.CANVAS_WIDTH < 769;
+      // Detect Chrome mobile (different viewport behavior than Safari)
+      const isChromeMobile = isMobile && /Chrome/.test(navigator.userAgent) && /Mobile/.test(navigator.userAgent);
+
+      // Mobile: Use percentage-based margins
+      // Chrome mobile needs more aggressive bottom margin due to dynamic address bar
+      const topMargin = isMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.05 : GAME_CONFIG.CANVAS_HEIGHT * 0.15;
+      const bottomMargin = isChromeMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.30 :
+                           (isMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.20 : GAME_CONFIG.CANVAS_HEIGHT * 0.20);
       const availableHeight = GAME_CONFIG.CANVAS_HEIGHT - topMargin - bottomMargin;
       const targetY = GAME_CONFIG.CANVAS_HEIGHT - bottomMargin - (normalizedPitch * availableHeight);
 
@@ -75,6 +88,10 @@ export class GameState {
     this.isGameOver = false;
     this.score = 0;
     this.currentGateIndex = 0;
+    this.startTime = Date.now();
+    this.elapsedTime = 0;
+    this.totalAccuracy = 0;
+    this.accuracyCount = 0;
     this.ball.reset();
     this.gates.forEach(gate => {
       gate.passed = false;
@@ -99,6 +116,10 @@ export class GameState {
     this.currentGateIndex = 0;
     this.isSinging = false;
     this.currentPitch = null;
+    this.startTime = null;
+    this.elapsedTime = 0;
+    this.totalAccuracy = 0;
+    this.accuracyCount = 0;
     this.ball.reset();
     this.initializeGates();
   }
@@ -109,6 +130,11 @@ export class GameState {
    */
   update(deltaTime) {
     if (!this.isPlaying || this.isGameOver) return;
+
+    // Update elapsed time
+    if (this.startTime) {
+      this.elapsedTime = (Date.now() - this.startTime) / 1000; // Convert to seconds
+    }
 
     // New physics model: ball gravitates toward the pitch height you're singing
     if (this.currentPitch) {
@@ -159,9 +185,16 @@ export class GameState {
     const clampedNormalized = Math.max(0, Math.min(1, normalizedPitch));
 
     // Map to canvas height (inverted - high pitch = low Y value)
-    // Use SAME margins as gates
-    const topMargin = GAME_CONFIG.CANVAS_HEIGHT * 0.15;
-    const bottomMargin = GAME_CONFIG.CANVAS_HEIGHT * 0.20;
+    // Use SAME margins as gates (adjust for mobile vs desktop)
+    const isMobile = GAME_CONFIG.CANVAS_WIDTH < 769;
+    // Detect Chrome mobile (different viewport behavior than Safari)
+    const isChromeMobile = isMobile && /Chrome/.test(navigator.userAgent) && /Mobile/.test(navigator.userAgent);
+
+    // Mobile: Use percentage-based margins
+    // Chrome mobile needs more aggressive bottom margin due to dynamic address bar
+    const topMargin = isMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.05 : GAME_CONFIG.CANVAS_HEIGHT * 0.15;
+    const bottomMargin = isChromeMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.30 :
+                         (isMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.20 : GAME_CONFIG.CANVAS_HEIGHT * 0.20);
     const availableHeight = GAME_CONFIG.CANVAS_HEIGHT - topMargin - bottomMargin;
     return GAME_CONFIG.CANVAS_HEIGHT - bottomMargin - (clampedNormalized * availableHeight);
   }
@@ -195,6 +228,16 @@ export class GameState {
     if (currentGate.hasPassedThrough(ballPos.x) && !currentGate.passed) {
       const isPerfect = currentGate.isPerfectlyAligned(ballPos.y);
       currentGate.markAsPassed(isPerfect);
+
+      // Calculate accuracy (0-100%) based on vertical alignment
+      const targetY = currentGate.y;
+      const distanceFromTarget = Math.abs(ballPos.y - targetY);
+      const maxDistance = GAME_CONFIG.HOLE_HEIGHT / 2 + GAME_CONFIG.HOLE_TOLERANCE;
+      const accuracy = Math.max(0, Math.min(100, 100 * (1 - distanceFromTarget / maxDistance)));
+
+      // Track total accuracy
+      this.totalAccuracy += accuracy;
+      this.accuracyCount++;
 
       this.score += GAME_CONFIG.POINTS_PER_GATE;
       if (isPerfect) {
@@ -304,8 +347,15 @@ export class GameState {
       const maxFreq = this.scaleManager.getFrequency(allDegrees.length - 1);
       const normalizedPitch = (degreeInfo.frequency - minFreq) / (maxFreq - minFreq);
 
-      const topMargin = GAME_CONFIG.CANVAS_HEIGHT * 0.15;
-      const bottomMargin = GAME_CONFIG.CANVAS_HEIGHT * 0.20;
+      const isMobile = GAME_CONFIG.CANVAS_WIDTH < 769;
+      // Detect Chrome mobile (different viewport behavior than Safari)
+      const isChromeMobile = isMobile && /Chrome/.test(navigator.userAgent) && /Mobile/.test(navigator.userAgent);
+
+      // Mobile: Use percentage-based margins
+      // Chrome mobile needs more aggressive bottom margin due to dynamic address bar
+      const topMargin = isMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.05 : GAME_CONFIG.CANVAS_HEIGHT * 0.15;
+      const bottomMargin = isChromeMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.30 :
+                           (isMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.20 : GAME_CONFIG.CANVAS_HEIGHT * 0.20);
       const availableHeight = GAME_CONFIG.CANVAS_HEIGHT - topMargin - bottomMargin;
       const targetY = GAME_CONFIG.CANVAS_HEIGHT - bottomMargin - (normalizedPitch * availableHeight);
 
@@ -322,10 +372,16 @@ export class GameState {
    * @returns {object}
    */
   getState() {
+    const averageAccuracy = this.accuracyCount > 0 ? this.totalAccuracy / this.accuracyCount : 0;
+    // Ensure accuracy is never NaN
+    const accuracy = isNaN(averageAccuracy) ? 0 : Math.round(averageAccuracy);
+
     return {
       ball: this.ball,
       gates: this.gates,
       score: this.score,
+      elapsedTime: this.elapsedTime,
+      accuracy: accuracy,
       isPlaying: this.isPlaying,
       isGameOver: this.isGameOver,
       isSinging: this.isSinging,

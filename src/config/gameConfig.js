@@ -28,7 +28,7 @@ export const GAME_CONFIG = {
   DRAG: 0.98,
 
   // Gates - dynamically calculated
-  GATE_THICKNESS: 10,
+  GATE_THICKNESS: 50,         // 5x thicker for Flappy Bird style
   GATE_COLOR: '#4ECDC4',
   HOLE_HEIGHT: 80,
   HOLE_TOLERANCE: 20,         // Extra space for forgiveness
@@ -46,8 +46,22 @@ export const GAME_CONFIG = {
 
   // Calculate gate spacing based on canvas width and number of gates
   getGateSpacing(numGates = 8) {
-    const availableWidth = this.CANVAS_WIDTH * 0.6; // Use 60% of width
-    return availableWidth / (numGates - 1);
+    // For many gates (like chromatic scale = 13 notes), use wider spacing
+    // For chromatic or scales with many notes, allow horizontal scrolling
+    const minSpacing = 150; // Minimum comfortable spacing
+    const maxSpacing = 250; // Maximum spacing for better gameplay
+
+    // Calculate based on canvas, but enforce minimum spacing
+    const availableWidth = this.CANVAS_WIDTH * 0.6;
+    const calculatedSpacing = availableWidth / (numGates - 1);
+
+    // Use wider spacing for many gates (allows scrolling)
+    if (numGates > 10) {
+      return Math.max(minSpacing, Math.min(maxSpacing, 180));
+    }
+
+    // For narrow screens, ensure minimum spacing
+    return Math.max(minSpacing, calculatedSpacing);
   },
 
   getGateStartX() {

@@ -24,6 +24,9 @@ export class Renderer2D extends Renderer {
     // Background animation
     this.scrollOffset = 0;
 
+    // Camera offset for horizontal scrolling
+    this.cameraX = 0;
+
     // Listen for window resize
     window.addEventListener('resize', () => this.handleResize());
   }
@@ -35,20 +38,28 @@ export class Renderer2D extends Renderer {
     const rect = this.canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
 
+    // For mobile Chrome, rect.height can change when address bar shows/hides
+    // Use the actual rect dimensions which are more stable
+    const width = rect.width;
+    const height = rect.height;
+
     // Set canvas internal size (accounting for device pixel ratio)
-    this.canvas.width = rect.width * dpr;
-    this.canvas.height = rect.height * dpr;
+    this.canvas.width = width * dpr;
+    this.canvas.height = height * dpr;
 
     // Set canvas display size
-    this.canvas.style.width = `${rect.width}px`;
-    this.canvas.style.height = `${rect.height}px`;
+    this.canvas.style.width = `${width}px`;
+    this.canvas.style.height = `${height}px`;
 
     // Store device pixel ratio for use in render loop
     this.dpr = dpr;
 
     // Update game config canvas dimensions for responsive layout
-    GAME_CONFIG.CANVAS_WIDTH = rect.width;
-    GAME_CONFIG.CANVAS_HEIGHT = rect.height;
+    // IMPORTANT: Use actual rendered dimensions, not viewport height
+    GAME_CONFIG.CANVAS_WIDTH = width;
+    GAME_CONFIG.CANVAS_HEIGHT = height;
+
+    console.log(`Canvas resized: ${width}x${height}, DPR: ${dpr}`);
   }
 
   /**
@@ -154,11 +165,59 @@ export class Renderer2D extends Renderer {
   }
 
   /**
+   * Update camera position to follow the ball
+   * @param {Ball} ball - The ball to follow
+   */
+  updateCamera(ball) {
+    // Keep ball centered on screen horizontally when scrolling is needed
+    const targetCameraX = ball.x - GAME_CONFIG.CANVAS_WIDTH / 3;
+
+    // Smoothly interpolate camera position
+    this.cameraX = targetCameraX;
+
+    // Don't scroll left of the start
+    this.cameraX = Math.max(0, this.cameraX);
+  }
+
+  /**
+   * Check if horizontal scrolling is needed
+   * @param {array} gates - Array of gates
+   * @returns {boolean}
+   */
+  needsScrolling(gates) {
+    if (gates.length === 0) return false;
+
+    // Only enable scrolling on narrow screens (mobile/tablet)
+    if (GAME_CONFIG.CANVAS_WIDTH >= 769) return false;
+
+    // Get the rightmost gate position
+    const lastGate = gates[gates.length - 1];
+    const rightmostX = lastGate.x + GAME_CONFIG.GATE_THICKNESS;
+
+    // If gates extend beyond 70% of canvas width, enable scrolling
+    return rightmostX > GAME_CONFIG.CANVAS_WIDTH * 0.7;
+  }
+
+  /**
    * Render the game state
    * @param {object} gameState - Current game state from GameState.getState()
    */
   render(gameState) {
     this.clear();
+
+    // Check if we need horizontal scrolling
+    const scrollingEnabled = this.needsScrolling(gameState.gates);
+
+    // Update camera if scrolling is enabled and game is playing
+    if (scrollingEnabled && gameState.isPlaying) {
+      this.updateCamera(gameState.ball);
+    } else {
+      this.cameraX = 0; // Reset camera when not scrolling
+    }
+
+    // Apply camera transform
+    this.ctx.save();
+    this.ctx.translate(-this.cameraX, 0);
 
     // Draw gates
     gameState.gates.forEach(gate => {
@@ -173,7 +232,10 @@ export class Renderer2D extends Renderer {
       this.drawTargetIndicator(gameState.targetGate);
     }
 
-    // Draw game over or win message
+    // Restore camera transform
+    this.ctx.restore();
+
+    // Draw game over or win message (no camera offset)
     if (gameState.isGameOver) {
       this.drawGameOverMessage(gameState);
     }
@@ -508,11 +570,6 @@ export class Renderer2D extends Renderer {
     if (won) {
       this.drawMedal(centerX - 110, centerY - 5, '#ffd700', '#ff8c00');
     }
-
-    // Instructions
-    this.ctx.fillStyle = '#666';
-    this.ctx.font = '18px Arial';
-    this.ctx.fillText('Click Reset to try again', centerX, centerY + 95);
   }
 
   /**

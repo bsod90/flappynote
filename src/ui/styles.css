@@ -15,35 +15,70 @@ body {
 
 #app {
   width: 100%;
-  height: 100vh;
+  height: 100vh; /* Full height by default */
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  padding-bottom: 40px; /* Space for fixed footer */
+}
+
+/* Desktop: account for footer */
+@media (min-width: 769px) {
+  #app {
+    height: calc(100vh - 40px);
+  }
 }
 
 h1 {
-  text-align: center;
   color: #fff;
-  margin: 5px 0;
+  margin: 0;
   font-size: 2rem;
   text-shadow: 3px 3px 0px #ff6b35, 5px 5px 10px rgba(0, 0, 0, 0.3);
   font-weight: 900;
   letter-spacing: 2px;
+  white-space: nowrap;
 }
 
 #ui-container {
-  padding: 5px 20px;
+  padding: 10px 20px 5px 20px; /* Add 1 line padding at top */
   flex-shrink: 0;
 }
 
 #controls {
   display: flex;
-  gap: 10px;
+  gap: 20px; /* Space between title, settings, and buttons */
   margin-bottom: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* Keep everything in one row on desktop */
   align-items: flex-end;
   justify-content: center;
+}
+
+#settings-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+}
+
+#button-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: nowrap;
+  justify-content: center;
+}
+
+.settings-panel {
+  display: flex; /* Default: settings inline on desktop */
+  gap: 10px;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+}
+
+.settings-toggle {
+  display: none; /* Hidden on desktop */
+}
+
+.mobile-footer {
+  display: none; /* Hidden on desktop */
 }
 
 .control-group {
@@ -168,10 +203,11 @@ button:disabled {
 }
 
 #score-display {
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   font-weight: 900;
   color: #ff6b35;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  font-family: 'Courier New', monospace;
 }
 
 #status-display {
@@ -184,6 +220,7 @@ button:disabled {
   display: block;
   width: 100%;
   flex: 1;
+  min-height: 0; /* Allow flex item to shrink below content size */
   background: linear-gradient(180deg, #4ec0ca 0%, #8ed6ff 100%);
   border-radius: 15px 15px 0 0;
   box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -191,16 +228,160 @@ button:disabled {
 
 @media (max-width: 768px) {
   h1 {
-    font-size: 2rem;
+    display: none; /* Hide title on mobile to save space */
+  }
+
+  #ui-container {
+    padding: 3px 8px; /* Reduce padding even more */
   }
 
   #controls {
     flex-direction: column;
     align-items: stretch;
+    margin-bottom: 3px; /* Reduce margin */
+    gap: 3px; /* Reduce gap */
+  }
+
+  /* Reverse order on mobile: buttons first, then settings */
+  #button-group {
+    order: 1;
+    flex-direction: row;
+    gap: 4px; /* Reduce gap */
+  }
+
+  #settings-group {
+    order: 2;
+  }
+
+  #button-group button {
+    flex: 1;
+    padding: 6px 8px; /* Reduce padding */
+    font-size: 0.8rem; /* Slightly smaller font */
+  }
+
+  /* Reduce button shadows on mobile to prevent overflow */
+  #start-button {
+    box-shadow: 0 3px 0 #3e7e32, 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  #start-button:hover:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 2px 0 #3e7e32, 0 3px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  #start-button:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow: 0 0 0 #3e7e32, 0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  #reset-button {
+    box-shadow: 0 3px 0 #c7451f, 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  #reset-button:hover:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 2px 0 #c7451f, 0 3px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  #reset-button:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow: 0 0 0 #c7451f, 0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Hide status display on mobile */
+  #status-display {
+    display: none;
+  }
+
+  /* Make game-info grid 2 columns on mobile (Pitch, Score) */
+  #game-info {
+    grid-template-columns: 1fr 1fr;
+    padding: 3px;
+    gap: 3px;
+    margin-bottom: 3px;
+  }
+
+  #game-info > div {
+    padding: 6px 3px;
+  }
+
+  /* Fix pitch display nowrap to prevent twitching */
+  #pitch-display {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.85rem;
+  }
+
+  #score-display {
+    font-size: 0.9rem;
+  }
+
+  /* Show settings toggle on mobile */
+  .settings-toggle {
+    display: block;
+    background: linear-gradient(180deg, #4ECDC4 0%, #3ba89d 100%);
+    color: white;
+    box-shadow: 0 3px 0 #2a857c, 0 4px 8px rgba(0, 0, 0, 0.3);
+    border: 3px solid #7ee6e6;
+    padding: 6px 8px;
+    font-size: 0.8rem;
+  }
+
+  .settings-toggle:hover:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 2px 0 #2a857c, 0 3px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  .settings-toggle:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow: 0 0 0 #2a857c, 0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Make settings panel collapsible */
+  .settings-panel {
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin-top: 10px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .settings-panel.expanded {
+    display: flex; /* Show when expanded */
+  }
+
+  .control-group {
+    width: 100%;
   }
 
   button {
     width: 100%;
+  }
+
+  /* Show mobile footer in expanded settings */
+  .mobile-footer {
+    display: block;
+    text-align: center;
+    padding-top: 10px;
+    margin-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    font-size: 0.85rem;
+  }
+
+  .mobile-footer a {
+    color: #ffd700;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .mobile-footer a:hover {
+    text-decoration: underline;
   }
 
   /* Hide footer on mobile */

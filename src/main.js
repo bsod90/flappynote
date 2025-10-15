@@ -27,6 +27,8 @@ class TralalaGame {
     this.scoreDisplay = document.getElementById('score-display');
     this.statusDisplay = document.getElementById('status-display');
     this.debugToggle = document.getElementById('debug-toggle');
+    this.settingsToggle = document.getElementById('settings-toggle');
+    this.settingsPanel = document.getElementById('settings-panel');
 
     this.lastFrameTime = 0;
     this.animationId = null;
@@ -54,8 +56,9 @@ class TralalaGame {
 
     // Initialize pitch detector
     this.pitchDetector = new PitchDetector({
-      updateInterval: 50,
-      threshold: 0.005, // RMS threshold for sensitivity (lower = more sensitive)
+      updateInterval: 30, // Faster updates for better mobile response
+      threshold: 0.0001, // Ultra-low threshold for maximum sensitivity (especially for low notes on iPhone)
+      bufferSize: 8192, // Extra large buffer for better low-frequency detection on mobile
       onPitchDetected: (pitchData) => this.handlePitchDetected(pitchData),
     });
 
@@ -92,6 +95,17 @@ class TralalaGame {
     this.directionSelect.addEventListener('change', (e) => {
       this.gameState.setDirection(e.target.value);
       this.updateStatus('Direction changed. Click Start to begin.');
+    });
+
+    // Settings toggle (mobile)
+    this.settingsToggle.addEventListener('click', () => {
+      this.settingsPanel.classList.toggle('expanded');
+      // Update button text
+      if (this.settingsPanel.classList.contains('expanded')) {
+        this.settingsToggle.textContent = 'Hide Settings ▲';
+      } else {
+        this.settingsToggle.textContent = 'Settings ⚙️';
+      }
     });
 
     // Debug toggle
@@ -135,8 +149,10 @@ class TralalaGame {
       // Start pitch detection
       await this.pitchDetector.start();
 
-      // Play reference tones (1-5-1)
-      this.updateStatus('Playing reference: 1-5-1...');
+      // Play reference tones (dynamically show correct pattern)
+      const scaleInfo = this.gameState.scaleManager.getScaleInfo();
+      const isChord = scaleInfo.degrees.length <= 5;
+      this.updateStatus(isChord ? 'Playing reference: 1-3-5...' : 'Playing reference: 1-5-8...');
       await this.playReferenceTones();
 
       // Start game
@@ -156,18 +172,30 @@ class TralalaGame {
   }
 
   /**
-   * Play reference tones (1-5-8 pattern)
+   * Play reference tones (1-3-5 for chords, 1-5-8 for scales)
    */
   async playReferenceTones() {
     const scaleInfo = this.gameState.scaleManager.getScaleInfo();
     const degrees = scaleInfo.degrees;
 
-    // Play Do - Sol - Do (octave higher) (1-5-8)
-    const sequence = [
-      { frequency: degrees[0].frequency, duration: 0.5 }, // Do
-      { frequency: degrees[4].frequency, duration: 0.5 }, // Sol
-      { frequency: degrees[0].frequency * 2, duration: 0.7 }, // Do (octave higher)
-    ];
+    // For chords (5 notes or fewer), play 1-3-5 (Do-Mi-Sol)
+    // For scales (more than 5 notes), play 1-5-8 (Do-Sol-Do)
+    let sequence;
+    if (degrees.length <= 5) {
+      // Chord: Play 1st, 2nd, 3rd notes (Do-Mi-Sol)
+      sequence = [
+        { frequency: degrees[0].frequency, duration: 0.5 }, // 1st note (Do)
+        { frequency: degrees[1].frequency, duration: 0.5 }, // 2nd note (Mi)
+        { frequency: degrees[2].frequency, duration: 0.7 }, // 3rd note (Sol)
+      ];
+    } else {
+      // Scale: Play 1st, 5th, 8th notes (Do-Sol-Do octave)
+      sequence = [
+        { frequency: degrees[0].frequency, duration: 0.5 }, // Do
+        { frequency: degrees[4].frequency, duration: 0.5 }, // Sol
+        { frequency: degrees[0].frequency * 2, duration: 0.7 }, // Do (octave higher)
+      ];
+    }
 
     await this.tonePlayer.playSequence(sequence);
   }
@@ -188,6 +216,10 @@ class TralalaGame {
     this.startButton.style.display = 'inline-block';
     this.startButton.disabled = false;
     this.resetButton.disabled = true;
+    this.resetButton.textContent = 'Reset'; // Reset button text
+    this.resetButton.style.background = ''; // Reset button style
+    this.resetButton.style.borderColor = '';
+    this.resetButton.style.boxShadow = '';
     this.rootNoteSelect.disabled = false;
     this.scaleTypeSelect.disabled = false;
 
@@ -243,6 +275,18 @@ class TralalaGame {
     if (state.isGameOver) {
       const won = state.currentGateIndex >= state.gates.length;
       this.updateStatus(won ? 'You win! Great job!' : 'Game over. Try again!');
+      // Change reset button text and style to "Play Again" when won
+      if (won) {
+        this.resetButton.textContent = 'Play Again';
+        this.resetButton.style.background = 'linear-gradient(180deg, #5ac54f 0%, #4a9d3f 100%)';
+        this.resetButton.style.borderColor = '#7ee67e';
+        this.resetButton.style.boxShadow = '0 6px 0 #3e7e32, 0 8px 15px rgba(0, 0, 0, 0.3)';
+      } else {
+        this.resetButton.textContent = 'Reset';
+        this.resetButton.style.background = '';
+        this.resetButton.style.borderColor = '';
+        this.resetButton.style.boxShadow = '';
+      }
     }
 
     // Update debug overlay
@@ -282,7 +326,7 @@ class TralalaGame {
 
   /**
    * Update score display
-   * @param {number} score
+   * @param {number} score - Calculated score
    */
   updateScoreDisplay(score) {
     this.scoreDisplay.textContent = `Score: ${score}`;
