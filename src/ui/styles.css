@@ -9,7 +9,8 @@ body {
   background: linear-gradient(180deg, #4ec0ca 0%, #8ed6ff 100%);
   color: #333;
   min-height: 100vh;
-  overflow-x: hidden;
+  max-height: 100vh;
+  overflow: hidden;
 }
 
 #app {
@@ -199,6 +200,16 @@ button:disabled {
 
   button {
     width: 100%;
+  }
+
+  /* Hide footer on mobile */
+  #game-footer {
+    display: none;
+  }
+
+  /* Remove padding since footer is hidden */
+  #app {
+    padding-bottom: 0;
   }
 }
 

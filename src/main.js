@@ -114,6 +114,11 @@ class TralalaGame {
         this.debugOverlay.toggle();
       }
     });
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      this.renderer.handleResize();
+    });
   }
 
   /**
