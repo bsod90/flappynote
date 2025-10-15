@@ -523,29 +523,28 @@ export class Renderer2D extends Renderer {
    * @param {object} hit - {x, y} position
    */
   drawPerfectHitHighlight(hit) {
-    // Animated star burst
+    // Animated glow pulse
     const time = Date.now() / 200;
     const pulseScale = 1 + Math.sin(time) * 0.2;
 
     // Outer glow
     const gradient = this.ctx.createRadialGradient(
       hit.x, hit.y, 0,
-      hit.x, hit.y, 30 * pulseScale
+      hit.x, hit.y, 25 * pulseScale
     );
-    gradient.addColorStop(0, 'rgba(255, 215, 0, 0.6)');
-    gradient.addColorStop(0.5, 'rgba(255, 193, 7, 0.3)');
+    gradient.addColorStop(0, 'rgba(255, 215, 0, 0.8)');
+    gradient.addColorStop(0.5, 'rgba(255, 193, 7, 0.4)');
     gradient.addColorStop(1, 'rgba(255, 193, 7, 0)');
     this.ctx.fillStyle = gradient;
     this.ctx.beginPath();
-    this.ctx.arc(hit.x, hit.y, 30 * pulseScale, 0, Math.PI * 2);
+    this.ctx.arc(hit.x, hit.y, 25 * pulseScale, 0, Math.PI * 2);
     this.ctx.fill();
 
-    // Draw star
-    this.ctx.fillStyle = '#ffd700';
-    this.ctx.font = `${24 * pulseScale}px Arial`;
-    this.ctx.textAlign = 'center';
-    this.ctx.textBaseline = 'middle';
-    this.ctx.fillText('⭐', hit.x, hit.y);
+    // Inner bright spot
+    this.ctx.fillStyle = 'rgba(255, 223, 0, 0.9)';
+    this.ctx.beginPath();
+    this.ctx.arc(hit.x, hit.y, 8 * pulseScale, 0, Math.PI * 2);
+    this.ctx.fill();
   }
 
   /**
