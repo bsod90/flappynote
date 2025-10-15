@@ -404,7 +404,7 @@ class TralalaGame {
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     `;
     warning.innerHTML = `
-      ⚠️ For best experience, open in Safari or Chrome
+      ⚠️ This game needs microphone access. Please open this link in Safari or Chrome.
     `;
 
     // Add close button
