@@ -43,8 +43,8 @@ export class Renderer2D extends Renderer {
     this.canvas.style.width = `${rect.width}px`;
     this.canvas.style.height = `${rect.height}px`;
 
-    // Scale context to account for device pixel ratio
-    this.ctx.scale(dpr, dpr);
+    // Store device pixel ratio for use in render loop
+    this.dpr = dpr;
 
     // Update game config canvas dimensions for responsive layout
     GAME_CONFIG.CANVAS_WIDTH = rect.width;
@@ -55,12 +55,19 @@ export class Renderer2D extends Renderer {
    * Clear the canvas and draw Flappy Bird style background
    */
   clear() {
+    // Save context state and apply DPR scaling
+    this.ctx.save();
+    this.ctx.scale(this.dpr || 1, this.dpr || 1);
+
+    const width = GAME_CONFIG.CANVAS_WIDTH;
+    const height = GAME_CONFIG.CANVAS_HEIGHT;
+
     // Sky gradient (bright blue like Flappy Bird)
-    const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+    const gradient = this.ctx.createLinearGradient(0, 0, 0, height);
     gradient.addColorStop(0, '#4ec0ca');
     gradient.addColorStop(1, '#8ed6ff');
     this.ctx.fillStyle = gradient;
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.fillRect(0, 0, width, height);
 
     // Animate clouds (wrap at a large number to avoid precision issues)
     this.scrollOffset += 0.5;
@@ -78,8 +85,8 @@ export class Renderer2D extends Renderer {
    */
   drawClouds() {
     this.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    const cloudY1 = this.canvas.height * 0.15;
-    const cloudY2 = this.canvas.height * 0.35;
+    const cloudY1 = GAME_CONFIG.CANVAS_HEIGHT * 0.15;
+    const cloudY2 = GAME_CONFIG.CANVAS_HEIGHT * 0.35;
 
     // Draw multiple clouds across the screen with seamless wrapping
     this.drawCloudLayer(0.3, cloudY1, 60, 0);
@@ -99,12 +106,12 @@ export class Renderer2D extends Renderer {
     const baseX = ((this.scrollOffset * speed + offset) % loopWidth);
 
     // Draw enough clouds to cover the screen
-    const numClouds = Math.ceil(this.canvas.width / spacing) + 2;
+    const numClouds = Math.ceil(GAME_CONFIG.CANVAS_WIDTH / spacing) + 2;
 
     for (let i = -1; i < numClouds; i++) {
       const cloudX = baseX + (i * spacing) - cloudWidth;
       // Only draw if visible
-      if (cloudX > -cloudWidth * 2 && cloudX < this.canvas.width + cloudWidth) {
+      if (cloudX > -cloudWidth * 2 && cloudX < GAME_CONFIG.CANVAS_WIDTH + cloudWidth) {
         this.drawCloud(cloudX, y, size);
       }
     }
@@ -126,20 +133,20 @@ export class Renderer2D extends Renderer {
    */
   drawGround() {
     const groundHeight = 40;
-    const groundY = this.canvas.height - groundHeight;
+    const groundY = GAME_CONFIG.CANVAS_HEIGHT - groundHeight;
 
     // Ground base
     this.ctx.fillStyle = '#ded895';
-    this.ctx.fillRect(0, groundY, this.canvas.width, groundHeight);
+    this.ctx.fillRect(0, groundY, GAME_CONFIG.CANVAS_WIDTH, groundHeight);
 
     // Ground top stripe
     this.ctx.fillStyle = '#c2c270';
-    this.ctx.fillRect(0, groundY, this.canvas.width, 8);
+    this.ctx.fillRect(0, groundY, GAME_CONFIG.CANVAS_WIDTH, 8);
 
     // Grass tufts
     this.ctx.fillStyle = '#a0a060';
-    for (let i = 0; i < this.canvas.width; i += 30) {
-      const offset = (i + this.scrollOffset * 2) % this.canvas.width;
+    for (let i = 0; i < GAME_CONFIG.CANVAS_WIDTH; i += 30) {
+      const offset = (i + this.scrollOffset * 2) % GAME_CONFIG.CANVAS_WIDTH;
       this.ctx.fillRect(offset, groundY + 8, 3, 6);
       this.ctx.fillRect(offset + 8, groundY + 8, 3, 6);
       this.ctx.fillRect(offset + 16, groundY + 8, 3, 6);
@@ -170,6 +177,9 @@ export class Renderer2D extends Renderer {
     if (gameState.isGameOver) {
       this.drawGameOverMessage(gameState);
     }
+
+    // Restore context state
+    this.ctx.restore();
   }
 
   /**
@@ -443,11 +453,11 @@ export class Renderer2D extends Renderer {
   drawGameOverMessage(gameState) {
     // Semi-transparent overlay
     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.fillRect(0, 0, GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
 
     const won = gameState.currentGateIndex >= gameState.gates.length;
-    const centerX = this.canvas.width / 2;
-    const centerY = this.canvas.height / 2;
+    const centerX = GAME_CONFIG.CANVAS_WIDTH / 2;
+    const centerY = GAME_CONFIG.CANVAS_HEIGHT / 2;
 
     // Draw medal background panel
     this.ctx.fillStyle = '#f0e68c';
@@ -555,9 +565,7 @@ export class Renderer2D extends Renderer {
     this.canvas.height = height * dpr;
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
-    if (this.ctx) {
-      this.ctx.scale(dpr, dpr);
-    }
+    this.dpr = dpr;
   }
 
   /**
