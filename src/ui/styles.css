@@ -109,11 +109,25 @@ h1 {
   vertical-align: middle;
 }
 
-.control-group label[for="drone-toggle"] {
+.drone-toggle-group {
+  align-self: flex-end;
+}
+
+.drone-label {
   display: flex;
   align-items: center;
   cursor: pointer;
   user-select: none;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.drone-label:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 215, 0, 0.4);
 }
 
 select {

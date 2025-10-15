@@ -198,6 +198,28 @@ export class TonePlayer {
     osc4Gain.connect(filter);
     osc4.start(now);
     this.droneOscillators.push(osc4);
+
+    // Octave above (for mobile speaker audibility)
+    const osc5 = ctx.createOscillator();
+    const osc5Gain = ctx.createGain();
+    osc5.frequency.value = frequency * 2;
+    osc5.type = 'sine';
+    osc5Gain.gain.value = 0.2;
+    osc5.connect(osc5Gain);
+    osc5Gain.connect(filter);
+    osc5.start(now);
+    this.droneOscillators.push(osc5);
+
+    // Two octaves above (even more mobile audibility)
+    const osc6 = ctx.createOscillator();
+    const osc6Gain = ctx.createGain();
+    osc6.frequency.value = frequency * 4;
+    osc6.type = 'sine';
+    osc6Gain.gain.value = 0.12;
+    osc6.connect(osc6Gain);
+    osc6Gain.connect(filter);
+    osc6.start(now);
+    this.droneOscillators.push(osc6);
   }
 
   /**
@@ -262,6 +284,8 @@ export class TonePlayer {
       this.droneOscillators[1].frequency.linearRampToValueAtTime(frequency * 1.002, now + 0.5);
       this.droneOscillators[2].frequency.linearRampToValueAtTime(frequency / 2, now + 0.5);
       this.droneOscillators[3].frequency.linearRampToValueAtTime(frequency * 1.5, now + 0.5);
+      this.droneOscillators[4].frequency.linearRampToValueAtTime(frequency * 2, now + 0.5);
+      this.droneOscillators[5].frequency.linearRampToValueAtTime(frequency * 4, now + 0.5);
     }
   }
 
