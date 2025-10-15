@@ -72,6 +72,34 @@ npm run test:browser
 npm run build
 ```
 
+### Deployment
+
+To deploy to AWS S3 and CloudFront:
+
+1. Copy `.env.example` to `.env` and fill in your credentials:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Add your AWS credentials and account ID to `.env`:
+   ```
+   VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+   AWS_ACCESS_KEY_ID=your_access_key
+   AWS_SECRET_ACCESS_KEY=your_secret_key
+   AWS_ACCOUNT_ID=your_account_id
+   ```
+
+3. Run the deployment script:
+   ```bash
+   ./deploy.sh
+   ```
+
+The script will:
+- Verify AWS credentials and account ID
+- Build the production bundle
+- Deploy to S3
+- Invalidate CloudFront cache
+
 ### Project Structure
 ```
 src/
