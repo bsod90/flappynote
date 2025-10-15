@@ -225,6 +225,18 @@ export class Renderer2D extends Renderer {
     this.ctx.save();
     this.ctx.translate(-this.cameraX, 0);
 
+    // Draw pitch trace behind everything
+    if (gameState.pitchTrace && gameState.pitchTrace.length > 1) {
+      this.drawPitchTrace(gameState.pitchTrace);
+    }
+
+    // Draw perfect hit highlights
+    if (gameState.perfectHits && gameState.perfectHits.length > 0) {
+      gameState.perfectHits.forEach(hit => {
+        this.drawPerfectHitHighlight(hit);
+      });
+    }
+
     // Draw gates
     gameState.gates.forEach(gate => {
       this.drawGate(gate);
@@ -243,7 +255,7 @@ export class Renderer2D extends Renderer {
 
     // Draw game over or win message (no camera offset)
     if (gameState.isGameOver) {
-      this.drawGameOverMessage(gameState);
+      this.drawGameOverMessage(gameState, gameState.pitchTrace, gameState.gates);
     }
 
     // Restore context state
@@ -479,6 +491,64 @@ export class Renderer2D extends Renderer {
   }
 
   /**
+   * Draw pitch trace showing the path the ball took
+   * @param {Array} pitchTrace - Array of {x, y} positions
+   */
+  drawPitchTrace(pitchTrace) {
+    if (pitchTrace.length < 2) return;
+
+    // Draw trace as a semi-transparent gradient line
+    this.ctx.strokeStyle = 'rgba(255, 193, 7, 0.3)';
+    this.ctx.lineWidth = 8;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(pitchTrace[0].x, pitchTrace[0].y);
+
+    for (let i = 1; i < pitchTrace.length; i++) {
+      this.ctx.lineTo(pitchTrace[i].x, pitchTrace[i].y);
+    }
+
+    this.ctx.stroke();
+
+    // Add a glow effect
+    this.ctx.strokeStyle = 'rgba(255, 223, 0, 0.15)';
+    this.ctx.lineWidth = 16;
+    this.ctx.stroke();
+  }
+
+  /**
+   * Draw highlight at perfect pitch hit location
+   * @param {object} hit - {x, y} position
+   */
+  drawPerfectHitHighlight(hit) {
+    // Animated star burst
+    const time = Date.now() / 200;
+    const pulseScale = 1 + Math.sin(time) * 0.2;
+
+    // Outer glow
+    const gradient = this.ctx.createRadialGradient(
+      hit.x, hit.y, 0,
+      hit.x, hit.y, 30 * pulseScale
+    );
+    gradient.addColorStop(0, 'rgba(255, 215, 0, 0.6)');
+    gradient.addColorStop(0.5, 'rgba(255, 193, 7, 0.3)');
+    gradient.addColorStop(1, 'rgba(255, 193, 7, 0)');
+    this.ctx.fillStyle = gradient;
+    this.ctx.beginPath();
+    this.ctx.arc(hit.x, hit.y, 30 * pulseScale, 0, Math.PI * 2);
+    this.ctx.fill();
+
+    // Draw star
+    this.ctx.fillStyle = '#ffd700';
+    this.ctx.font = `${24 * pulseScale}px Arial`;
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+    this.ctx.fillText('⭐', hit.x, hit.y);
+  }
+
+  /**
    * Draw target indicator for current gate
    * @param {Gate} gate
    */
@@ -517,8 +587,10 @@ export class Renderer2D extends Renderer {
   /**
    * Draw game over message (Flappy Bird style)
    * @param {object} gameState
+   * @param {Array} pitchTrace - Trace of ball positions
+   * @param {Array} gates - Array of gates
    */
-  drawGameOverMessage(gameState) {
+  drawGameOverMessage(gameState, pitchTrace, gates) {
     // Semi-transparent overlay
     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
     this.ctx.fillRect(0, 0, GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
@@ -538,8 +610,13 @@ export class Renderer2D extends Renderer {
     this.ctx.fill();
     this.ctx.stroke();
 
+    // Draw miniature pitch trace behind score panel if available
+    if (pitchTrace && pitchTrace.length > 1 && gates && gates.length > 0) {
+      this.drawMiniatureTrace(centerX, centerY, pitchTrace, gates);
+    }
+
     // Message title
-    const message = won ? 'You Win!' : 'Game Over';
+    const message = won ? 'Tada! 🎉' : 'Game Over';
     const messageColor = won ? '#5ac54f' : '#e74c3c';
 
     // Title shadow
@@ -576,6 +653,86 @@ export class Renderer2D extends Renderer {
     if (won) {
       this.drawMedal(centerX - 110, centerY - 5, '#ffd700', '#ff8c00');
     }
+  }
+
+  /**
+   * Draw miniature pitch trace visualization behind score panel
+   * @param {number} centerX - Center X of game over panel
+   * @param {number} centerY - Center Y of game over panel
+   * @param {Array} pitchTrace - Array of {x, y} positions
+   * @param {Array} gates - Array of gates for bounds calculation
+   */
+  drawMiniatureTrace(centerX, centerY, pitchTrace, gates) {
+    if (pitchTrace.length < 2 || gates.length === 0) return;
+
+    // Calculate bounds of the trace
+    const minX = Math.min(...pitchTrace.map(p => p.x));
+    const maxX = Math.max(...pitchTrace.map(p => p.x));
+    const minY = Math.min(...pitchTrace.map(p => p.y));
+    const maxY = Math.max(...pitchTrace.map(p => p.y));
+
+    // Miniature dimensions (fit behind score panel)
+    const miniWidth = 200;
+    const miniHeight = 80;
+    const miniX = centerX - miniWidth / 2;
+    const miniY = centerY + 60; // Position below score
+
+    // Draw background for miniature
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    this.ctx.strokeStyle = '#8B7355';
+    this.ctx.lineWidth = 2;
+    this.ctx.beginPath();
+    this.ctx.roundRect(miniX, miniY, miniWidth, miniHeight, 5);
+    this.ctx.fill();
+    this.ctx.stroke();
+
+    // Scale trace to fit in miniature
+    const scaleX = miniWidth / (maxX - minX || 1);
+    const scaleY = miniHeight / (maxY - minY || 1);
+    const scale = Math.min(scaleX, scaleY) * 0.8; // 0.8 for padding
+
+    // Draw miniature trace
+    this.ctx.save();
+    this.ctx.strokeStyle = 'rgba(255, 193, 7, 0.8)';
+    this.ctx.lineWidth = 2;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+
+    this.ctx.beginPath();
+    const firstPoint = this.scaleMiniaturePoint(pitchTrace[0], minX, minY, scale, miniX, miniY, miniWidth, miniHeight);
+    this.ctx.moveTo(firstPoint.x, firstPoint.y);
+
+    for (let i = 1; i < pitchTrace.length; i++) {
+      const point = this.scaleMiniaturePoint(pitchTrace[i], minX, minY, scale, miniX, miniY, miniWidth, miniHeight);
+      this.ctx.lineTo(point.x, point.y);
+    }
+
+    this.ctx.stroke();
+    this.ctx.restore();
+
+    // Label
+    this.ctx.fillStyle = '#666';
+    this.ctx.font = 'bold 12px Arial';
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'top';
+    this.ctx.fillText('Your pitch trace', centerX, miniY + miniHeight + 5);
+  }
+
+  /**
+   * Scale a point to miniature coordinates
+   */
+  scaleMiniaturePoint(point, minX, minY, scale, miniX, miniY, miniWidth, miniHeight) {
+    const scaledX = (point.x - minX) * scale;
+    const scaledY = (point.y - minY) * scale;
+
+    // Center in miniature
+    const paddingX = (miniWidth - (point.x - minX) * scale) / 2;
+    const paddingY = (miniHeight - (point.y - minY) * scale) / 2;
+
+    return {
+      x: miniX + scaledX + miniWidth * 0.1,
+      y: miniY + scaledY + miniHeight * 0.1
+    };
   }
 
   /**

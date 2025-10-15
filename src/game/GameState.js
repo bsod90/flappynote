@@ -27,6 +27,10 @@ export class GameState {
     this.totalAccuracy = 0;
     this.accuracyCount = 0;
 
+    // Pitch trace for visualizing accuracy
+    this.pitchTrace = [];
+    this.perfectHits = []; // Store positions where perfect pitch was hit
+
     this.initializeGates();
   }
 
@@ -92,6 +96,8 @@ export class GameState {
     this.elapsedTime = 0;
     this.totalAccuracy = 0;
     this.accuracyCount = 0;
+    this.pitchTrace = [];
+    this.perfectHits = [];
     this.ball.reset();
     this.gates.forEach(gate => {
       gate.passed = false;
@@ -120,6 +126,8 @@ export class GameState {
     this.elapsedTime = 0;
     this.totalAccuracy = 0;
     this.accuracyCount = 0;
+    this.pitchTrace = [];
+    this.perfectHits = [];
     this.ball.reset();
     this.initializeGates();
   }
@@ -156,6 +164,10 @@ export class GameState {
     }
 
     this.ball.update();
+
+    // Record pitch trace for visualization
+    const ballPos = this.ball.getPosition();
+    this.pitchTrace.push({ x: ballPos.x, y: ballPos.y });
 
     // Check collisions with gates
     this.checkGateCollisions();
@@ -242,6 +254,8 @@ export class GameState {
       this.score += GAME_CONFIG.POINTS_PER_GATE;
       if (isPerfect) {
         this.score += GAME_CONFIG.PERFECT_PITCH_BONUS;
+        // Record perfect hit position
+        this.perfectHits.push({ x: ballPos.x, y: ballPos.y });
       }
 
       this.currentGateIndex++;
@@ -389,6 +403,8 @@ export class GameState {
       currentGateIndex: this.currentGateIndex,
       targetGate: this.getCurrentTargetGate(),
       scaleInfo: this.scaleManager.getScaleInfo(),
+      pitchTrace: this.pitchTrace,
+      perfectHits: this.perfectHits,
     };
   }
 }

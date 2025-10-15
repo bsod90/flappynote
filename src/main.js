@@ -62,10 +62,16 @@ class TralalaGame {
 
     // Force a resize after game state is initialized to ensure gates are positioned correctly
     // This handles the race condition where canvas dimensions aren't stable on first load
+    // Do it twice: once immediately and once after a tiny delay for stubborn browsers
     setTimeout(() => {
       this.renderer.handleResize();
       this.gameState.repositionGates();
     }, 0);
+
+    setTimeout(() => {
+      this.renderer.handleResize();
+      this.gameState.repositionGates();
+    }, 100);
 
     // Initialize pitch detector
     this.pitchDetector = new PitchDetector({
