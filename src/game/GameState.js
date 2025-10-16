@@ -77,11 +77,13 @@ export class GameState {
       // Detect Chrome mobile (different viewport behavior than Safari)
       const isChromeMobile = isMobile && /Chrome/.test(navigator.userAgent) && /Mobile/.test(navigator.userAgent);
 
-      // Mobile: Use percentage-based margins
-      // Chrome mobile needs more aggressive bottom margin due to dynamic address bar
-      const topMargin = isMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.05 : GAME_CONFIG.CANVAS_HEIGHT * 0.15;
-      const bottomMargin = isChromeMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.30 :
-                           (isMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.20 : GAME_CONFIG.CANVAS_HEIGHT * 0.20);
+      // Use percentage-based margins that scale with canvas height
+      // This ensures gates maintain relative position when canvas height changes
+      const topMarginPct = isMobile ? 0.05 : 0.15;
+      const bottomMarginPct = isChromeMobile ? 0.20 : (isMobile ? 0.14 : 0.20);
+
+      const topMargin = GAME_CONFIG.CANVAS_HEIGHT * topMarginPct;
+      const bottomMargin = GAME_CONFIG.CANVAS_HEIGHT * bottomMarginPct;
       const availableHeight = GAME_CONFIG.CANVAS_HEIGHT - topMargin - bottomMargin;
       const targetY = GAME_CONFIG.CANVAS_HEIGHT - bottomMargin - (normalizedPitch * availableHeight);
 
@@ -228,11 +230,12 @@ export class GameState {
     // Detect Chrome mobile (different viewport behavior than Safari)
     const isChromeMobile = isMobile && /Chrome/.test(navigator.userAgent) && /Mobile/.test(navigator.userAgent);
 
-    // Mobile: Use percentage-based margins
-    // Chrome mobile needs more aggressive bottom margin due to dynamic address bar
-    const topMargin = isMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.05 : GAME_CONFIG.CANVAS_HEIGHT * 0.15;
-    const bottomMargin = isChromeMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.30 :
-                         (isMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.20 : GAME_CONFIG.CANVAS_HEIGHT * 0.20);
+    // Use percentage-based margins that scale with canvas height to match gate positioning
+    const topMarginPct = isMobile ? 0.05 : 0.15;
+    const bottomMarginPct = isChromeMobile ? 0.20 : (isMobile ? 0.14 : 0.20);
+
+    const topMargin = GAME_CONFIG.CANVAS_HEIGHT * topMarginPct;
+    const bottomMargin = GAME_CONFIG.CANVAS_HEIGHT * bottomMarginPct;
     const availableHeight = GAME_CONFIG.CANVAS_HEIGHT - topMargin - bottomMargin;
     return GAME_CONFIG.CANVAS_HEIGHT - bottomMargin - (clampedNormalized * availableHeight);
   }
@@ -429,11 +432,13 @@ export class GameState {
       // Detect Chrome mobile (different viewport behavior than Safari)
       const isChromeMobile = isMobile && /Chrome/.test(navigator.userAgent) && /Mobile/.test(navigator.userAgent);
 
-      // Mobile: Use percentage-based margins
-      // Chrome mobile needs more aggressive bottom margin due to dynamic address bar
-      const topMargin = isMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.05 : GAME_CONFIG.CANVAS_HEIGHT * 0.15;
-      const bottomMargin = isChromeMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.30 :
-                           (isMobile ? GAME_CONFIG.CANVAS_HEIGHT * 0.20 : GAME_CONFIG.CANVAS_HEIGHT * 0.20);
+      // Use percentage-based margins that scale with canvas height
+      // This ensures gates maintain relative position when canvas height changes
+      const topMarginPct = isMobile ? 0.05 : 0.15;
+      const bottomMarginPct = isChromeMobile ? 0.20 : (isMobile ? 0.14 : 0.20);
+
+      const topMargin = GAME_CONFIG.CANVAS_HEIGHT * topMarginPct;
+      const bottomMargin = GAME_CONFIG.CANVAS_HEIGHT * bottomMarginPct;
       const availableHeight = GAME_CONFIG.CANVAS_HEIGHT - topMargin - bottomMargin;
       const targetY = GAME_CONFIG.CANVAS_HEIGHT - bottomMargin - (normalizedPitch * availableHeight);
 

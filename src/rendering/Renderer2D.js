@@ -9,10 +9,15 @@ export class Renderer2D extends Renderer {
   constructor(canvas) {
     super(canvas);
     this.ctx = null;
+    this.onResize = null; // Callback function called after canvas resize
+    this.initialResizeResolve = null; // Promise resolver for initial resize
+    this.resizeStabilizationTimer = null; // Timer to detect when resize has stabilized
   }
 
   /**
    * Initialize the 2D renderer
+   * Returns a Promise that resolves when the canvas has been sized for the first time
+   * @returns {Promise<void>}
    */
   initialize() {
     this.ctx = this.canvas.getContext('2d');
@@ -26,46 +31,112 @@ export class Renderer2D extends Renderer {
     // Camera offset for horizontal scrolling
     this.cameraX = 0;
 
-    // Initial resize - do it immediately
-    this.handleResize();
-
-    // Listen for window resize
-    window.addEventListener('resize', () => {
-      // Debounce resize to avoid excessive recalculations
-      clearTimeout(this.resizeTimeout);
-      this.resizeTimeout = setTimeout(() => this.handleResize(), 50);
+    // Create a promise that resolves when canvas is first sized
+    const initialResizePromise = new Promise(resolve => {
+      this.initialResizeResolve = resolve;
     });
+
+    // Use ResizeObserver for reliable canvas sizing
+    // This observes the actual rendered size and handles mobile viewport changes
+    this.resizeObserver = new ResizeObserver(entries => {
+      // Use requestAnimationFrame to avoid layout thrashing
+      if (this.resizeRAF) {
+        cancelAnimationFrame(this.resizeRAF);
+      }
+
+      this.resizeRAF = requestAnimationFrame(() => {
+        for (const entry of entries) {
+          // Use contentBoxSize for the most accurate dimensions
+          const contentBoxSize = entry.contentBoxSize?.[0];
+
+          if (contentBoxSize) {
+            // Modern browsers - use contentBoxSize for pixel-perfect sizing
+            this.handleResize(contentBoxSize.inlineSize, contentBoxSize.blockSize);
+          } else {
+            // Fallback for older browsers - use contentRect
+            this.handleResize(entry.contentRect.width, entry.contentRect.height);
+          }
+        }
+      });
+    });
+
+    // Start observing the canvas element
+    this.resizeObserver.observe(this.canvas);
+
+    // Return promise that resolves when canvas is first sized
+    return initialResizePromise;
   }
 
   /**
-   * Handle window resize - make canvas responsive
+   * Handle canvas resize - called by ResizeObserver with actual rendered dimensions
+   * @param {number} width - Actual rendered width in CSS pixels
+   * @param {number} height - Actual rendered height in CSS pixels
    */
-  handleResize() {
-    const rect = this.canvas.getBoundingClientRect();
+  handleResize(width, height) {
+    // If no dimensions provided, fall back to getBoundingClientRect (should rarely happen)
+    if (!width || !height) {
+      const rect = this.canvas.getBoundingClientRect();
+      width = rect.width;
+      height = rect.height;
+    }
+
+    // Ignore unreasonably small dimensions (race condition during initial layout)
+    if (width < 100 || height < 100) {
+      console.log(`Ignoring invalid canvas dimensions: ${width}x${height}`);
+      return;
+    }
+
     const dpr = window.devicePixelRatio || 1;
 
-    // For mobile Chrome, rect.height can change when address bar shows/hides
-    // Use the actual rect dimensions which are more stable
-    const width = rect.width;
-    const height = rect.height;
+    // Check if dimensions actually changed
+    const dimensionsChanged = this.canvas.width !== width * dpr || this.canvas.height !== height * dpr;
 
-    // Set canvas internal size (accounting for device pixel ratio)
-    this.canvas.width = width * dpr;
-    this.canvas.height = height * dpr;
+    // Only update canvas if dimensions changed (avoid unnecessary work)
+    if (dimensionsChanged) {
+      // Set canvas internal size (accounting for device pixel ratio)
+      this.canvas.width = width * dpr;
+      this.canvas.height = height * dpr;
 
-    // Set canvas display size
-    this.canvas.style.width = `${width}px`;
-    this.canvas.style.height = `${height}px`;
+      // Set canvas display size
+      this.canvas.style.width = `${width}px`;
+      this.canvas.style.height = `${height}px`;
 
-    // Store device pixel ratio for use in render loop
-    this.dpr = dpr;
+      // Store device pixel ratio for use in render loop
+      this.dpr = dpr;
 
-    // Update game config canvas dimensions for responsive layout
-    // IMPORTANT: Use actual rendered dimensions, not viewport height
+      console.log(`Canvas resized: ${width}x${height}, DPR: ${dpr}`);
+    }
+
+    // Always update game config and call callbacks, even if canvas dimensions didn't change
+    // This is important because gates might have been positioned with wrong GAME_CONFIG values
     GAME_CONFIG.CANVAS_WIDTH = width;
     GAME_CONFIG.CANVAS_HEIGHT = height;
 
-    console.log(`Canvas resized: ${width}x${height}, DPR: ${dpr}`);
+    // Resolve initial resize promise after dimensions stabilize
+    // Wait for 300ms of no resize activity before resolving (mobile needs more time)
+    if (this.initialResizeResolve) {
+      if (this.resizeStabilizationTimer) {
+        clearTimeout(this.resizeStabilizationTimer);
+      }
+
+      this.resizeStabilizationTimer = setTimeout(() => {
+        if (this.initialResizeResolve) {
+          console.log(`Canvas dimensions stabilized at: ${width}x${height}`);
+          const resolve = this.initialResizeResolve;
+          this.initialResizeResolve = null; // Only resolve once
+          this.resizeStabilizationTimer = null;
+          resolve();
+        }
+      }, 300);
+    }
+
+    // Always call resize callback if provided (e.g., to reposition gates)
+    // Use requestAnimationFrame to ensure GAME_CONFIG updates are fully applied
+    if (this.onResize) {
+      requestAnimationFrame(() => {
+        this.onResize(width, height);
+      });
+    }
   }
 
   /**
@@ -894,6 +965,18 @@ export class Renderer2D extends Renderer {
    * Clean up resources
    */
   dispose() {
+    // Disconnect ResizeObserver
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
+
+    // Cancel pending resize animation frame
+    if (this.resizeRAF) {
+      cancelAnimationFrame(this.resizeRAF);
+      this.resizeRAF = null;
+    }
+
     this.ctx = null;
   }
 }

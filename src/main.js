@@ -58,36 +58,30 @@ class TralalaGame {
   /**
    * Initialize the game
    */
-  initialize() {
+  async initialize() {
     // Check if we're in an embedded browser and show warning
     this.checkEmbeddedBrowser();
 
     // Load settings from localStorage
     this.loadSettings();
 
-    // Initialize renderer
-    this.renderer.initialize();
+    // Initialize renderer and wait for canvas to be sized
+    await this.renderer.initialize();
 
-    // Initialize game state
+    // Set up resize callback to reposition gates when canvas size changes
+    this.renderer.onResize = () => {
+      if (this.gameState) {
+        this.gameState.repositionGates();
+      }
+    };
+
+    // Initialize game state (now that canvas is properly sized)
     // Convert simple note name (C, D, etc.) to note with octave (C3, D3, etc.)
     const rootNoteName = this.rootNoteSelect.value;
     const rootNote = rootNoteName.length === 1 ? `${rootNoteName}3` : rootNoteName;
     const scaleType = this.scaleTypeSelect.value;
     const direction = this.directionSelect.value;
     this.gameState = new GameState(rootNote, scaleType, direction);
-
-    // Force a resize after game state is initialized to ensure gates are positioned correctly
-    // This handles the race condition where canvas dimensions aren't stable on first load
-    // Do it twice: once immediately and once after a tiny delay for stubborn browsers
-    setTimeout(() => {
-      this.renderer.handleResize();
-      this.gameState.repositionGates();
-    }, 0);
-
-    setTimeout(() => {
-      this.renderer.handleResize();
-      this.gameState.repositionGates();
-    }, 100);
 
     // Initialize pitch detector
     this.pitchDetector = new PitchDetector({
@@ -279,6 +273,7 @@ class TralalaGame {
       const rootNoteName = e.target.value;
       const rootNote = rootNoteName.length === 1 ? `${rootNoteName}3` : rootNoteName;
       this.gameState.setRootNote(rootNote);
+      this.gameState.repositionGates(); // Ensure gates are positioned correctly
       this.updateStatus('Root note changed. Click Start to begin.');
 
       // Update drone frequency if it's playing
@@ -297,12 +292,14 @@ class TralalaGame {
 
     this.scaleTypeSelect.addEventListener('change', (e) => {
       this.gameState.setScaleType(e.target.value);
+      this.gameState.repositionGates(); // Ensure gates are positioned correctly
       this.updateStatus('Mode changed. Click Start to begin.');
       this.saveSettings();
     });
 
     this.directionSelect.addEventListener('change', (e) => {
       this.gameState.setDirection(e.target.value);
+      this.gameState.repositionGates(); // Ensure gates are positioned correctly
       this.updateStatus('Direction changed. Click Start to begin.');
       this.saveSettings();
     });
@@ -335,12 +332,32 @@ class TralalaGame {
     // Settings toggle (mobile)
     this.settingsToggle.addEventListener('click', () => {
       this.settingsPanel.classList.toggle('expanded');
+
       // Update button text
       if (this.settingsPanel.classList.contains('expanded')) {
         this.settingsToggle.textContent = 'Hide Settings ▲';
       } else {
         this.settingsToggle.textContent = 'Settings ⚙️';
       }
+
+      // WORKAROUND: Reinitialize gates after settings panel toggle
+      //
+      // When the settings panel expands/collapses, it causes the canvas to resize due to flexbox layout.
+      // The canvas height changes significantly (e.g., 717px collapsed -> 454px expanded on iPhone 12 Pro).
+      //
+      // While ResizeObserver detects this and calls repositionGates(), there's a timing/calculation issue
+      // where gates end up positioned incorrectly relative to where the ball moves when singing.
+      // The exact root cause is unclear despite extensive debugging of margins, GAME_CONFIG updates, etc.
+      //
+      // However, calling initializeGates() (which recreates gates from scratch) fixes the positioning.
+      // This is the same approach used by the Reset button, which always works correctly.
+      //
+      // The 100ms delay ensures the CSS transition and flexbox layout have settled before recreating gates.
+      setTimeout(() => {
+        if (this.gameState) {
+          this.gameState.initializeGates();
+        }
+      }, 100);
     });
 
     // Debug toggle
@@ -364,13 +381,8 @@ class TralalaGame {
       }
     });
 
-    // Handle window resize
-    window.addEventListener('resize', () => {
-      this.renderer.handleResize();
-      if (this.gameState) {
-        this.gameState.repositionGates();
-      }
-    });
+    // Note: Window resize handling is now done via ResizeObserver in Renderer2D
+    // The renderer's onResize callback handles gate repositioning automatically
   }
 
   /**
