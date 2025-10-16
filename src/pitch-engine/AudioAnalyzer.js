@@ -1,9 +1,10 @@
 /**
  * AudioAnalyzer - Handles audio input and frequency analysis
- * Uses YIN algorithm via pitchfinder library for robust pitch detection
+ * Uses Pitchy (MPM algorithm) for improved pitch detection with harmonics-rich voices
  */
 
 import Pitchfinder from 'pitchfinder';
+import {PitchDetector as PitchyDetector} from 'pitchy';
 
 export class AudioAnalyzer {
   constructor(options = {}) {
@@ -13,11 +14,11 @@ export class AudioAnalyzer {
     this.threshold = options.threshold || 0.005; // RMS threshold (very sensitive)
 
     // AGC (Automatic Gain Control) settings
-    this.targetRMS = options.targetRMS || 0.12; // Target RMS level for normalization (increased from 0.08)
+    this.targetRMS = options.targetRMS || 0.12; // Target RMS level for normalization
     this.minGain = options.minGain || 1.0; // Minimum gain (no reduction)
-    this.maxGain = options.maxGain || 12.0; // Maximum gain (12x amplification, up from 8x)
+    this.maxGain = options.maxGain || 12.0; // Maximum gain (12x amplification)
     this.agcSpeed = options.agcSpeed || 0.15; // How fast AGC adapts (0-1, higher = faster)
-    this.currentGain = 3.5; // Starting gain (increased from 2.5)
+    this.currentGain = 3.5; // Starting gain
 
     // Temporal smoothing (median filter)
     this.pitchHistorySize = options.pitchHistorySize || 5; // Number of recent pitches to track
@@ -38,17 +39,12 @@ export class AudioAnalyzer {
 
     // Debug info
     this.lastRMS = 0;
-    this.lastCorrelation = 0;
     this.rawFrequency = null; // Store raw frequency before smoothing
+    this.lastClarity = 0; // Pitchy clarity score (0-1, higher is better)
 
-    // YIN threshold settings (adaptive based on frequency)
-    this.baseYinThreshold = 0.15; // Default threshold for lower voices
-    this.highVoiceThreshold = 0.12; // Lower threshold for higher voices (more sensitive)
-    this.highVoiceFreqBoundary = 250; // Hz - frequencies above this use high voice threshold
-
-    // Initialize YIN pitch detectors for different voice ranges
-    this.detectPitchYIN_Low = null; // For lower voices (threshold 0.15)
-    this.detectPitchYIN_High = null; // For higher voices (threshold 0.12)
+    // Pitch detectors - use both YIN (fallback) and Pitchy (MPM - primary)
+    this.detectPitchYIN = null; // YIN as fallback
+    this.detectPitchMPM = null; // Pitchy MPM detector
   }
 
   /**
@@ -87,16 +83,18 @@ export class AudioAnalyzer {
       this.highPassFilter.connect(this.gainNode);
       this.gainNode.connect(this.analyser);
 
-      // Initialize YIN pitch detectors for different voice ranges
-      this.detectPitchYIN_Low = Pitchfinder.YIN({
+      // Initialize pitch detectors
+      // Pitchy (MPM) - primary detector, better at handling harmonics
+      // Use Float32Array factory method with buffer size
+      this.detectPitchMPM = PitchyDetector.forFloat32Array(this.bufferSize);
+
+      // YIN - fallback detector for when MPM is uncertain
+      this.detectPitchYIN = Pitchfinder.YIN({
         sampleRate: this.audioContext.sampleRate,
-        threshold: this.baseYinThreshold, // 0.15 - for lower voices
+        threshold: 0.15, // Standard threshold
       });
 
-      this.detectPitchYIN_High = Pitchfinder.YIN({
-        sampleRate: this.audioContext.sampleRate,
-        threshold: this.highVoiceThreshold, // 0.12 - for higher voices (more sensitive)
-      });
+      console.log('Pitch detectors initialized: MPM (primary) + YIN (fallback)');
 
       this.isActive = true;
     } catch (error) {
@@ -144,7 +142,7 @@ export class AudioAnalyzer {
   }
 
   /**
-   * Detect pitch using YIN algorithm with temporal smoothing
+   * Detect pitch using hybrid MPM + YIN approach with clarity-based selection
    * @param {Float32Array} buffer - Audio buffer
    * @returns {number|null} Detected frequency in Hz, or null if no pitch detected
    */
@@ -162,35 +160,42 @@ export class AudioAnalyzer {
       // Clear history when no signal detected
       this.pitchHistory = [];
       this.rawFrequency = null;
+      this.lastClarity = 0;
       return null;
     }
 
-    // Use adaptive YIN algorithm for pitch detection
-    // Try both detectors and pick the best result
-    const freqLow = this.detectPitchYIN_Low ? this.detectPitchYIN_Low(buffer) : null;
-    const freqHigh = this.detectPitchYIN_High ? this.detectPitchYIN_High(buffer) : null;
-
-    // Choose which detector result to use based on frequency range
+    // Try MPM (Pitchy) first - better at handling harmonics
     let rawFrequency = null;
+    let clarity = 0;
 
-    if (freqLow && freqHigh) {
-      // Both detected - use high voice detector if frequency is above boundary
-      if (freqLow > this.highVoiceFreqBoundary || freqHigh > this.highVoiceFreqBoundary) {
-        rawFrequency = freqHigh; // Use more sensitive detector for high voices
-      } else {
-        rawFrequency = freqLow; // Use standard detector for low voices
+    if (this.detectPitchMPM) {
+      // Pitchy returns [pitch, clarity] where clarity is 0-1 (1 is best)
+      // findPitch(input, sampleRate) - pass the sample rate as second param
+      const [pitch, pitchClarity] = this.detectPitchMPM.findPitch(buffer, this.audioContext.sampleRate);
+
+      // Only use MPM result if clarity is good and pitch is valid
+      const MIN_CLARITY = 0.85; // High clarity threshold for MPM
+
+      if (pitch && pitchClarity >= MIN_CLARITY) {
+        rawFrequency = pitch;
+        clarity = pitchClarity;
       }
-    } else if (freqLow) {
-      rawFrequency = freqLow;
-    } else if (freqHigh) {
-      rawFrequency = freqHigh;
     }
 
-    // YIN returns null if no pitch detected
+    // If MPM failed or low clarity, fall back to YIN
+    if (!rawFrequency && this.detectPitchYIN) {
+      const yinFreq = this.detectPitchYIN(buffer);
+      if (yinFreq) {
+        rawFrequency = yinFreq;
+        clarity = 0.7; // Estimate YIN clarity as moderate
+      }
+    }
+
+    // No valid pitch detected by either algorithm
     if (!rawFrequency) {
-      // Clear history when detection fails
       this.pitchHistory = [];
       this.rawFrequency = null;
+      this.lastClarity = 0;
       return null;
     }
 
@@ -198,11 +203,13 @@ export class AudioAnalyzer {
     if (rawFrequency < this.minFrequency || rawFrequency > this.maxFrequency) {
       this.pitchHistory = [];
       this.rawFrequency = null;
+      this.lastClarity = 0;
       return null;
     }
 
-    // Store raw frequency for debug
+    // Store raw frequency and clarity for debug
     this.rawFrequency = rawFrequency;
+    this.lastClarity = clarity;
 
     // Apply temporal smoothing (median filter)
     return this._applyTemporalSmoothing(rawFrequency);
@@ -211,27 +218,21 @@ export class AudioAnalyzer {
   /**
    * Apply temporal smoothing using median filter
    * Reduces pitch jumping by taking median of recent detections
-   * Uses adaptive smoothing: less smoothing for higher voices (faster response)
    * @private
    * @param {number} frequency - Raw detected frequency
    * @returns {number} Smoothed frequency
    */
   _applyTemporalSmoothing(frequency) {
-    // Adaptive smoothing: higher voices get less smoothing for faster response
-    const isHighVoice = frequency > this.highVoiceFreqBoundary;
-    const minHistorySize = isHighVoice ? 2 : 3; // Higher voices need less smoothing
-    const effectiveHistorySize = isHighVoice ? Math.min(3, this.pitchHistorySize) : this.pitchHistorySize;
-
     // Add new frequency to history
     this.pitchHistory.push(frequency);
 
-    // Keep history at effective size (smaller for high voices)
-    while (this.pitchHistory.length > effectiveHistorySize) {
+    // Keep history at configured size
+    while (this.pitchHistory.length > this.pitchHistorySize) {
       this.pitchHistory.shift(); // Remove oldest
     }
 
     // If we don't have enough history yet, return raw frequency
-    if (this.pitchHistory.length < minHistorySize) {
+    if (this.pitchHistory.length < 3) {
       return frequency;
     }
 
@@ -384,6 +385,8 @@ export class AudioAnalyzer {
       pitchHistorySize: this.pitchHistory.length,
       droneCancellationActive: this.droneNotchFilters.length > 0,
       droneFrequencies: this.droneFrequencies,
+      clarity: this.lastClarity,
+      algorithm: this.lastClarity > 0.85 ? 'MPM' : (this.lastClarity > 0 ? 'YIN' : 'none'),
     };
   }
 }

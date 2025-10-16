@@ -29,10 +29,12 @@
     "@playwright/test": "^1.41.0",
     "happy-dom": "^20.0.0",
     "jsdom": "^27.0.0",
+    "patch-package": "^8.0.1",
     "vite": "^5.0.0",
     "vitest": "^1.2.0"
   },
   "dependencies": {
-    "pitchfinder": "^2.3.2"
+    "pitchfinder": "^2.3.2",
+    "pitchy": "^4.1.0"
   }
 }
