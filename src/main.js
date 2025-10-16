@@ -106,11 +106,164 @@ class TralalaGame {
     // Initial render
     this.render();
 
+    // Show onboarding popup for first-time users
+    this.showOnboarding();
+
     // Track page load
     this.trackEvent('page_load', {
       root_note: this.rootNoteSelect.value,
       scale_type: this.scaleTypeSelect.value,
       direction: this.directionSelect.value,
+    });
+  }
+
+  /**
+   * Show onboarding popup for first-time users
+   */
+  showOnboarding() {
+    // Check if user has already seen the onboarding
+    const hasSeenOnboarding = localStorage.getItem('flappynote-onboarding-seen') === 'true';
+
+    if (hasSeenOnboarding) {
+      return; // User has already seen it
+    }
+
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'onboarding-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 20px;
+    `;
+
+    // Create popup
+    const popup = document.createElement('div');
+    popup.style.cssText = `
+      background: linear-gradient(180deg, #4ec0ca 0%, #8ed6ff 100%);
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      text-align: center;
+      position: relative;
+    `;
+
+    popup.innerHTML = `
+      <h2 style="
+        color: #fff;
+        font-size: 2rem;
+        margin-bottom: 20px;
+        text-shadow: 3px 3px 0px #ff6b35, 5px 5px 10px rgba(0, 0, 0, 0.3);
+        font-weight: 900;
+      ">Welcome to Flappy Note!</h2>
+
+      <div style="
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        text-align: left;
+      ">
+        <div style="margin-bottom: 15px; display: flex; align-items: flex-start;">
+          <div style="
+            font-size: 1.5rem;
+            margin-right: 12px;
+            flex-shrink: 0;
+          ">🎤</div>
+          <div>
+            <strong style="color: #ff6b35; display: block; margin-bottom: 5px;">Microphone Required</strong>
+            <span style="color: #333; font-size: 0.95rem;">
+              You'll need to grant microphone access to play
+            </span>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 15px; display: flex; align-items: flex-start;">
+          <div style="
+            font-size: 1.5rem;
+            margin-right: 12px;
+            flex-shrink: 0;
+          ">🎯</div>
+          <div>
+            <strong style="color: #ff6b35; display: block; margin-bottom: 5px;">Stay On Target</strong>
+            <span style="color: #333; font-size: 0.95rem;">
+              The bird moves forward only when you match the target pitch
+            </span>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: flex-start;">
+          <div style="
+            font-size: 1.5rem;
+            margin-right: 12px;
+            flex-shrink: 0;
+          ">🎼</div>
+          <div>
+            <strong style="color: #ff6b35; display: block; margin-bottom: 5px;">Adjust For Your Voice</strong>
+            <span style="color: #333; font-size: 0.95rem;">
+              If the lowest pitch is uncomfortable, try selecting a higher root note
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <button id="onboarding-understood" style="
+        background: linear-gradient(180deg, #5ac54f 0%, #4a9d3f 100%);
+        color: white;
+        border: 3px solid #7ee67e;
+        border-radius: 10px;
+        padding: 15px 40px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 6px 0 #3e7e32, 0 8px 15px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+      ">
+        Understood!
+      </button>
+    `;
+
+    overlay.appendChild(popup);
+    document.body.appendChild(overlay);
+
+    // Add hover effect to button
+    const button = popup.querySelector('#onboarding-understood');
+    button.addEventListener('mouseenter', () => {
+      button.style.transform = 'translateY(2px)';
+      button.style.boxShadow = '0 4px 0 #3e7e32, 0 6px 12px rgba(0, 0, 0, 0.3)';
+    });
+    button.addEventListener('mouseleave', () => {
+      button.style.transform = '';
+      button.style.boxShadow = '0 6px 0 #3e7e32, 0 8px 15px rgba(0, 0, 0, 0.3)';
+    });
+
+    // Handle button click
+    button.addEventListener('click', () => {
+      // Mark as seen in localStorage
+      localStorage.setItem('flappynote-onboarding-seen', 'true');
+
+      // Track event
+      this.trackEvent('onboarding_completed');
+
+      // Remove overlay with animation
+      overlay.style.opacity = '1';
+      overlay.style.transition = 'opacity 0.3s ease';
+      overlay.style.opacity = '0';
+      setTimeout(() => {
+        overlay.remove();
+      }, 300);
     });
   }
 

@@ -60,11 +60,17 @@ export class GameState {
       const x = startX + (index * gateSpacing);
 
       // Calculate Y position based on pitch (higher pitch = higher position)
-      // Map frequencies to canvas height in reverse (low y = high frequency)
+      // Use logarithmic scaling for musical pitch (octaves are exponential)
       const allDegrees = this.scaleManager.getAllDegrees();
       const minFreq = this.scaleManager.getFrequency(0);
       const maxFreq = this.scaleManager.getFrequency(allDegrees.length - 1); // Last note in scale
-      const normalizedPitch = (degreeInfo.frequency - minFreq) / (maxFreq - minFreq);
+
+      // Logarithmic normalization (same as calculateYFromPitch)
+      const epsilon = 0.001;
+      const logMin = Math.log2(minFreq + epsilon);
+      const logMax = Math.log2(maxFreq + epsilon);
+      const logFreq = Math.log2(degreeInfo.frequency + epsilon);
+      const normalizedPitch = (logFreq - logMin) / (logMax - logMin);
 
       // Map to canvas with margins (adjust for mobile vs desktop)
       const isMobile = GAME_CONFIG.CANVAS_WIDTH < 769;
@@ -157,8 +163,9 @@ export class GameState {
       const scaleDegreeMatch = this.scaleManager.findScaleDegreeForFrequency(this.currentPitch.frequency);
 
       if (scaleDegreeMatch) {
-        // Use the actual detected frequency for positioning
-        const pitchY = this.calculateYFromPitch(scaleDegreeMatch.frequency);
+        // Use the GATE's reference frequency for positioning (not the sung frequency)
+        // This ensures that singing any octave of the note positions the bird at the gate height
+        const pitchY = this.calculateYFromPitch(scaleDegreeMatch.degreeFrequency);
         this.ball.floatToward(pitchY, this.isSinging);
       } else {
         // Pitch not in scale, use original frequency
@@ -196,12 +203,24 @@ export class GameState {
     const minFreq = this.scaleManager.getFrequency(0); // First note
     const maxFreq = this.scaleManager.getFrequency(degrees.length - 1); // Last note
 
-    // Allow frequencies outside the range (for octaves above/below)
-    // Don't clamp - let it extend beyond if needed
-    const normalizedPitch = (frequency - minFreq) / (maxFreq - minFreq);
+    // Use logarithmic scaling (like MIDI) for better octave handling
+    // This ensures that singing D3 (one octave below D4) or D5 (one octave above D4)
+    // will position the bird at the same height as the D4 gate
+    const freqRange = maxFreq - minFreq;
 
-    // Clamp the normalized value to prevent going off-screen
-    const clampedNormalized = Math.max(0, Math.min(1, normalizedPitch));
+    // Normalize using log2 to handle octaves correctly
+    // Add small epsilon to avoid log(0)
+    const epsilon = 0.001;
+    const logMin = Math.log2(minFreq + epsilon);
+    const logMax = Math.log2(maxFreq + epsilon);
+    const logFreq = Math.log2(frequency + epsilon);
+
+    // Calculate position in logarithmic space
+    const normalizedPitch = (logFreq - logMin) / (logMax - logMin);
+
+    // Allow some extension beyond the scale range (for visual feedback)
+    // but clamp to prevent going completely off-screen
+    const clampedNormalized = Math.max(-0.2, Math.min(1.2, normalizedPitch));
 
     // Map to canvas height (inverted - high pitch = low Y value)
     // Use SAME margins as gates (adjust for mobile vs desktop)
@@ -398,7 +417,13 @@ export class GameState {
       const allDegrees = this.scaleManager.getAllDegrees();
       const minFreq = this.scaleManager.getFrequency(0);
       const maxFreq = this.scaleManager.getFrequency(allDegrees.length - 1);
-      const normalizedPitch = (degreeInfo.frequency - minFreq) / (maxFreq - minFreq);
+
+      // Use logarithmic normalization (same as initializeGates and calculateYFromPitch)
+      const epsilon = 0.001;
+      const logMin = Math.log2(minFreq + epsilon);
+      const logMax = Math.log2(maxFreq + epsilon);
+      const logFreq = Math.log2(degreeInfo.frequency + epsilon);
+      const normalizedPitch = (logFreq - logMin) / (logMax - logMin);
 
       const isMobile = GAME_CONFIG.CANVAS_WIDTH < 769;
       // Detect Chrome mobile (different viewport behavior than Safari)
