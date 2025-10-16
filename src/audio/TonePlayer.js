@@ -5,6 +5,7 @@
 export class TonePlayer {
   constructor() {
     this.audioContext = null;
+    this.masterGain = null; // Master gain node for all sounds
     this.droneOscillators = null;
     this.droneGainNode = null;
     this.droneLFO = null;
@@ -17,6 +18,11 @@ export class TonePlayer {
   initialize() {
     if (!this.audioContext) {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+      // Create master gain node for all sounds
+      this.masterGain = this.audioContext.createGain();
+      this.masterGain.gain.value = 1.0;
+      this.masterGain.connect(this.audioContext.destination);
     }
   }
 
@@ -71,7 +77,7 @@ export class TonePlayer {
     const gainNode = this.audioContext.createGain();
 
     oscillator.connect(gainNode);
-    gainNode.connect(this.audioContext.destination);
+    gainNode.connect(this.masterGain); // Connect to master gain instead of destination
 
     oscillator.frequency.value = frequency;
     oscillator.type = 'sine';
@@ -125,7 +131,7 @@ export class TonePlayer {
     this.droneGainNode = ctx.createGain();
     this.droneGainNode.gain.setValueAtTime(0, now);
     this.droneGainNode.gain.linearRampToValueAtTime(0.22, now + 2); // Slow fade in over 2 seconds (increased from 0.15)
-    this.droneGainNode.connect(ctx.destination);
+    this.droneGainNode.connect(this.masterGain); // Connect to master gain instead of destination
 
     // Create a low-pass filter for warmth
     const filter = ctx.createBiquadFilter();
