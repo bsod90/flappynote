@@ -148,11 +148,16 @@ export class SharedSettings {
 
   /**
    * Get root note with octave for ScaleManager
-   * @returns {string} e.g., "D3"
+   * @returns {string} e.g., "D3" or "D#3"
    */
   getRootNoteWithOctave() {
     const rootNote = this.settings.rootNote;
-    return rootNote.length === 1 ? `${rootNote}3` : rootNote;
+    // Check if already has octave (ends with digit)
+    if (/\d$/.test(rootNote)) {
+      return rootNote;
+    }
+    // Add default octave 3
+    return `${rootNote}3`;
   }
 
   /**

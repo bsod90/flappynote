@@ -151,7 +151,8 @@ class ToolSelector {
     // Listen for settings changes to update shared systems
     this.settings.subscribe((key, newValue) => {
       if (key === 'rootNote') {
-        const rootWithOctave = newValue.length === 1 ? `${newValue}3` : newValue;
+        // Add octave if not present (handles both "D" and "D#")
+        const rootWithOctave = /\d$/.test(newValue) ? newValue : `${newValue}3`;
         this.scaleManager.setRootNote(rootWithOctave);
       } else if (key === 'scaleType') {
         this.scaleManager.setScaleType(newValue);
