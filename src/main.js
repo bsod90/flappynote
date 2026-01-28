@@ -7,16 +7,8 @@ import { SharedSettings, PitchContext, DroneManager, ScaleManager } from './core
 import { FlappyNoteTool } from './tools/flappy-note/index.js';
 import { VocalMonitorTool } from './tools/vocal-monitor/index.js';
 
-// Tool definitions with URL paths
+// Tool definitions with URL paths (Vocal Monitor first as primary tool)
 const TOOLS = [
-  {
-    id: 'flappy-note',
-    path: '/flappy-note',
-    name: 'Flappy Note',
-    description: 'Sing to guide the bird through pipes. Match each target note to progress through the scale.',
-    icon: '🐦',
-    ToolClass: FlappyNoteTool,
-  },
   {
     id: 'vocal-monitor',
     path: '/vocal-monitor',
@@ -24,6 +16,14 @@ const TOOLS = [
     description: 'Real-time pitch visualization on a piano roll. See your voice as a continuous line over time.',
     icon: '🎤',
     ToolClass: VocalMonitorTool,
+  },
+  {
+    id: 'flappy-note',
+    path: '/flappy-note',
+    name: 'Flappy Note',
+    description: 'Sing to guide the bird through pipes. Match each target note to progress through the scale.',
+    icon: '🐦',
+    ToolClass: FlappyNoteTool,
   },
 ];
 
@@ -71,10 +71,23 @@ class ToolSelector {
     // Route based on current URL
     this.handleRoute();
 
-    // Track page load
-    this.trackEvent('page_load', {
+    // Track page view with context
+    const initialPath = window.location.pathname;
+    this.trackEvent('page_view', {
+      page_path: initialPath,
+      page_title: document.title,
       root_note: this.settings.get('rootNote'),
       scale_type: this.settings.get('scaleType'),
+      is_pwa: window.matchMedia('(display-mode: standalone)').matches,
+    });
+
+    // Track global errors
+    window.addEventListener('error', (e) => {
+      this.trackEvent('error', {
+        error_message: e.message,
+        error_source: e.filename,
+        error_line: e.lineno,
+      });
     });
   }
 
@@ -461,6 +474,12 @@ class ToolSelector {
           : '<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>';
       }
 
+      // Track fullscreen toggle
+      this.trackEvent('fullscreen_toggle', {
+        is_fullscreen: isFullscreen,
+        tool_id: this.activeTool?.name || 'selection',
+      });
+
       // Trigger resize after a short delay to let the browser update layout
       setTimeout(() => {
         window.dispatchEvent(new Event('resize'));
@@ -517,6 +536,8 @@ class ToolSelector {
    * Show "Add to Home Screen" prompt for iOS
    */
   showAddToHomeScreenPrompt() {
+    this.trackEvent('pwa_install_prompt_shown');
+
     if (document.getElementById('add-to-home-prompt')) return;
 
     const prompt = document.createElement('div');

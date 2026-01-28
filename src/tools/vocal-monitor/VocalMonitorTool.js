@@ -35,6 +35,7 @@ export class VocalMonitorTool extends ToolBase {
 
     // State
     this.isRecording = false;
+    this.recordingStartTime = null;
 
     // Debug
     this.debugOverlay = null;
@@ -134,12 +135,24 @@ export class VocalMonitorTool extends ToolBase {
         this.droneManager.updateDroneFrequency(frequency);
         this.pitchContext.enableDroneCancellation(frequency);
       }
+
+      this.trackEvent('setting_changed', {
+        tool: 'vocal_monitor',
+        setting: 'root_note',
+        value: e.target.value,
+      });
     });
 
     // Scale type change
     this.scaleTypeSelect.addEventListener('change', (e) => {
       this.settings.set('scaleType', e.target.value);
       this.scaleManager.setScaleType(e.target.value);
+
+      this.trackEvent('setting_changed', {
+        tool: 'vocal_monitor',
+        setting: 'scale_type',
+        value: e.target.value,
+      });
     });
 
     // Drone toggle
@@ -155,6 +168,12 @@ export class VocalMonitorTool extends ToolBase {
         this.droneManager.stopDrone();
         this.pitchContext.disableDroneCancellation();
       }
+
+      this.trackEvent('setting_changed', {
+        tool: 'vocal_monitor',
+        setting: 'drone_enabled',
+        value: e.target.checked,
+      });
     });
 
     // Settings toggle (mobile)
@@ -571,6 +590,7 @@ export class VocalMonitorTool extends ToolBase {
       this.monitorState.start();
 
       this.isRecording = true;
+      this.recordingStartTime = Date.now();
 
       // Update UI
       this.startButton.textContent = 'Stop';
@@ -580,9 +600,20 @@ export class VocalMonitorTool extends ToolBase {
       this.scaleTypeSelect.disabled = true;
 
       // Track event
-      this.trackEvent('vocal_monitor_start');
+      this.trackEvent('vocal_monitor_start', {
+        root_note: this.rootNoteSelect.value,
+        scale_type: this.scaleTypeSelect.value,
+        drone_enabled: this.droneToggle.checked,
+      });
     } catch (error) {
       console.error('Failed to start recording:', error);
+
+      // Track the error
+      this.trackEvent('mic_error', {
+        tool: 'vocal_monitor',
+        error_type: error.name || 'unknown',
+        error_message: error.message,
+      });
 
       // Check if this is a permission denied error
       if (error.message.includes('not allowed') || error.name === 'NotAllowedError') {
@@ -608,15 +639,25 @@ export class VocalMonitorTool extends ToolBase {
     // Stop state recording
     this.monitorState.stop();
 
+    // Calculate session duration
+    const sessionDuration = this.recordingStartTime
+      ? Math.round((Date.now() - this.recordingStartTime) / 1000)
+      : 0;
+
     this.isRecording = false;
+    this.recordingStartTime = null;
 
     // Update UI
     this.startButton.textContent = 'Start';
     this.rootNoteSelect.disabled = false;
     this.scaleTypeSelect.disabled = false;
 
-    // Track event
-    this.trackEvent('vocal_monitor_stop');
+    // Track event with duration
+    this.trackEvent('vocal_monitor_stop', {
+      session_duration_seconds: sessionDuration,
+      root_note: this.rootNoteSelect.value,
+      scale_type: this.scaleTypeSelect.value,
+    });
   }
 
   /**

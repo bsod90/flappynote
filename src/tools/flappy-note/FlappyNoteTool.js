@@ -163,6 +163,12 @@ export class FlappyNoteTool extends ToolBase {
           this.pitchContext.enableDroneCancellation(frequency);
         }
       }
+
+      this.trackEvent('setting_changed', {
+        tool: 'flappy_note',
+        setting: 'root_note',
+        value: e.target.value,
+      });
     });
 
     // Scale type change
@@ -172,6 +178,12 @@ export class FlappyNoteTool extends ToolBase {
       this.scaleManager.setScaleType(e.target.value);
       this.gameState.repositionGates();
       this.updateStatus('Mode changed. Click Start to begin.');
+
+      this.trackEvent('setting_changed', {
+        tool: 'flappy_note',
+        setting: 'scale_type',
+        value: e.target.value,
+      });
     });
 
     // Direction change
@@ -180,6 +192,12 @@ export class FlappyNoteTool extends ToolBase {
       this.gameState.setDirection(e.target.value);
       this.gameState.repositionGates();
       this.updateStatus('Direction changed. Click Start to begin.');
+
+      this.trackEvent('setting_changed', {
+        tool: 'flappy_note',
+        setting: 'direction',
+        value: e.target.value,
+      });
     });
 
     // Drone toggle
@@ -195,6 +213,12 @@ export class FlappyNoteTool extends ToolBase {
         this.droneManager.stopDrone();
         this.pitchContext.disableDroneCancellation();
       }
+
+      this.trackEvent('setting_changed', {
+        tool: 'flappy_note',
+        setting: 'drone_enabled',
+        value: e.target.checked,
+      });
     });
 
     // Settings toggle (mobile)
@@ -379,6 +403,13 @@ export class FlappyNoteTool extends ToolBase {
       this.updateStatus('Game started! Sing to control the ball.');
     } catch (error) {
       console.error('Failed to start game:', error);
+
+      // Track the error
+      this.trackEvent('mic_error', {
+        tool: 'flappy_note',
+        error_type: error.name || 'unknown',
+        error_message: error.message,
+      });
 
       // Check if this is a permission denied error
       if (error.message.includes('not allowed') || error.name === 'NotAllowedError') {
