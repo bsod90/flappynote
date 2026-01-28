@@ -1,55 +1,65 @@
-# 🎵 Flappy Note
+# Vocal Trainer
 
-A browser-based pitch-matching game that helps you learn musical intervals and scales through singing! Control a flying musical note by singing different pitches and navigate through gates representing scale degrees.
+A suite of browser-based vocal training tools for singers. Practice pitch accuracy, train your ear, and visualize your voice in real-time.
 
-**Play now at: [flappynote.com](https://flappynote.com)**
+**Try it now at: [flappynote.com](https://flappynote.com)**
 
-![Flappy Note Game](https://img.shields.io/badge/Built%20with-AI-blueviolet?style=for-the-badge)
+![Built with AI](https://img.shields.io/badge/Built%20with-AI-blueviolet?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
 
-## 🎮 How to Play
+## Tools
 
-1. **Select your settings**: Choose a root note, musical mode, and direction (ascending/descending)
-2. **Click "Start Game"**: Grant microphone access when prompted
-3. **Sing to fly**: Your voice controls the musical note's vertical position
-4. **Match the pitch**: Sing the correct note to pass through each gate
-5. **Complete the scale**: Navigate through all gates to win!
+### Vocal Monitor
+Real-time pitch visualization on a piano roll. See your voice as a continuous line over time.
 
-## 🎼 Features
+- **Piano roll display** - Watch your pitch traced across time
+- **Interactive keyboard** - Click and drag to play reference notes with portamento
+- **Scale highlighting** - Visual guides show scale degrees with solfege labels
+- **Pitch history** - Scroll back to review your performance
 
-### Musical Modes
-- **Scales**: Major, Natural Minor, Harmonic Minor, Melodic Minor, Pentatonic, Blues, Chromatic
-- **Modes**: Dorian, Mixolydian
-- **Chords**: Major Triad, Minor Triad (arpeggios)
-- **Advanced**: Whole Tone, Diminished
+### Flappy Note
+A singing game where you control a bird by matching pitches. Navigate through gates by singing target notes.
 
-### Game Features
-- **Real-time pitch detection** using the YIN algorithm
-- **Automatic Gain Control (AGC)** - works at any distance from your mic
-- **Direction control** - practice ascending or descending scales
-- **Visual feedback** - gates light up when you sing correctly
-- **Solfège notation** - learn with Do-Re-Mi syllables
-- **Multiple octave support** - sing any octave of the target note
+- **Pitch-controlled gameplay** - Your voice controls the bird's height
+- **Scale progression** - Gates represent scale degrees (Do, Re, Mi...)
+- **Multiple modes** - Practice scales, modes, and chord arpeggios
+- **Scoring system** - Track your accuracy and completion
 
-## 🛠️ Built With
+## Features
 
-This entire project was **created using AI** (Claude by Anthropic) - from initial concept to final implementation, including:
-- Game logic and physics
-- Pitch detection engine
-- Visual design and animations
-- Musical theory implementation
-- Test suite
+### Pitch Detection
+- **CREPE-based detection** - ML-inspired spectral analysis using TensorFlow.js
+- **Automatic gain control** - Works at any distance from your mic
+- **Octave-jump correction** - Filters out harmonic detection errors
+- **Drone noise cancellation** - Reference drone doesn't interfere with detection
 
-### Technologies
-- **Vite** - Build tool and dev server
-- **Vanilla JavaScript** - No frameworks, just pure JS
-- **Web Audio API** - Microphone input and audio processing
-- **Canvas API** - 2D rendering
-- **Pitchfinder** - YIN algorithm for pitch detection
-- **Vitest** - Unit testing
-- **Playwright** - End-to-end testing
+### Musical Options
+- **12 root notes** - All chromatic notes supported
+- **Scales** - Major, Minor, Harmonic Minor, Melodic Minor, Pentatonic, Blues, Chromatic
+- **Modes** - Dorian, Mixolydian
+- **7th Chords** - Major 7, Dominant 7, Minor 7, Half-Diminished, Diminished
+- **Advanced** - Whole Tone, Diminished scales
 
-## 🚀 Development
+### Progressive Web App
+- **Installable** - Add to home screen for fullscreen experience on mobile
+- **Fullscreen mode** - Desktop browsers can go fullscreen via footer toggle
+- **URL routing** - Direct links to each tool (`/vocal-monitor`, `/flappy-note`)
+
+## Getting Started
+
+### Requirements
+- Modern browser (Chrome, Safari, Firefox, Edge)
+- Microphone access
+- Headphones recommended (to avoid drone feedback)
+
+### Usage
+1. Visit [flappynote.com](https://flappynote.com)
+2. Choose a tool (Vocal Monitor or Flappy Note)
+3. Select your root note and scale
+4. Click Start and allow microphone access
+5. Sing!
+
+## Development
 
 ### Prerequisites
 - Node.js 18+ and npm
@@ -65,9 +75,6 @@ npm run dev
 # Run tests
 npm test
 
-# Run browser tests
-npm run test:browser
-
 # Build for production
 npm run build
 ```
@@ -75,43 +82,86 @@ npm run build
 ### Project Structure
 ```
 src/
-├── audio/           # Tone playback for reference notes
-├── config/          # Game configuration and scale definitions
-├── game/            # Core game logic (GameState, Ball, Gate, ScaleManager)
-├── pitch-engine/    # Pitch detection (AudioAnalyzer, PitchDetector, FrequencyConverter)
-├── rendering/       # Canvas rendering
-└── ui/              # UI styles and debug overlay
+├── core/                  # Shared systems
+│   ├── PitchContext.js       - Shared pitch detection
+│   ├── ScaleManager.js       - Musical scale management
+│   ├── DroneManager.js       - Reference tone playback
+│   ├── SharedSettings.js     - Cross-tool settings
+│   └── ToolBase.js           - Abstract tool interface
+│
+├── tools/                 # Individual tools
+│   ├── vocal-monitor/        - Piano roll visualization
+│   │   ├── VocalMonitorTool.js
+│   │   ├── VocalMonitorState.js
+│   │   ├── VocalMonitorRenderer.js
+│   │   └── PianoRoll.js
+│   │
+│   └── flappy-note/          - Pitch-matching game
+│       ├── FlappyNoteTool.js
+│       ├── FlappyGameState.js
+│       └── FlappyRenderer.js
+│
+├── pitch-engine/          # Pitch detection
+│   ├── PitchDetector.js      - Main detection API
+│   ├── AudioAnalyzer.js      - Mic input & processing
+│   ├── FrequencyConverter.js - Musical utilities
+│   └── detectors/
+│       ├── TFCREPEDetector.js  - CREPE-style detection
+│       └── HybridPitchDetector.js - MPM+YIN fallback
+│
+├── audio/                 # Audio playback
+│   └── TonePlayer.js         - Reference tone generation
+│
+├── config/                # Configuration
+│   ├── scales.js             - Scale definitions
+│   └── gameConfig.js         - Game parameters
+│
+├── ui/                    # Styling
+│   ├── styles.css
+│   └── DebugOverlay.js
+│
+└── main.js                # App entry & tool selector
 ```
 
-## 🎯 Educational Value
+## Technical Details
 
-Flappy Note helps you develop:
-- **Pitch recognition** - Train your ear to identify musical intervals
-- **Vocal control** - Practice singing accurate pitches
-- **Music theory** - Learn scales, modes, and their relationships
-- **Intonation** - Improve your singing accuracy
+### Pitch Detection Pipeline
+1. Microphone input via Web Audio API
+2. High-pass filter (180Hz) to reduce rumble
+3. Automatic gain control for consistent levels
+4. Resampling to 16kHz for CREPE compatibility
+5. Autocorrelation-based pitch detection
+6. Temporal smoothing with median filter
+7. Octave-jump correction
 
-## 📝 License
+### Technologies
+- **Vite** - Build tool and dev server
+- **TensorFlow.js** - ML runtime for pitch detection
+- **Web Audio API** - Microphone and audio processing
+- **Canvas API** - 2D rendering
+- **Pitchy** - MPM algorithm (fallback)
+- **Vitest** - Unit testing
+
+## License
 
 MIT License - feel free to use this project for learning or create your own variations!
 
-## 🤖 About This Project
+## About
 
-This game is a testament to what's possible with AI-assisted development. Every line of code, every design decision, and every feature was created through conversation with Claude (Anthropic's AI assistant).
-
-The project demonstrates:
+This project was created with AI assistance (Claude by Anthropic). It demonstrates:
 - Real-time audio processing in the browser
-- Advanced pitch detection algorithms
-- Game physics and collision detection
-- Responsive canvas-based graphics
-- Comprehensive test coverage
-- Musical theory implementation
+- ML-based pitch detection
+- Interactive music visualization
+- Progressive Web App capabilities
+- Comprehensive analytics integration
 
-## 🔗 Links
+## Links
 
-- **Play the game**: [flappynote.com](https://flappynote.com)
-- **GitHub repository**: [github.com/bsod90/flappynote](https://github.com/bsod90/flappynote)
+- **Website**: [flappynote.com](https://flappynote.com)
+- **Vocal Monitor**: [flappynote.com/vocal-monitor](https://flappynote.com/vocal-monitor)
+- **Flappy Note**: [flappynote.com/flappy-note](https://flappynote.com/flappy-note)
+- **GitHub**: [github.com/bsod90/flappynote](https://github.com/bsod90/flappynote)
 
 ---
 
-Made with ❤️ and AI
+Made with AI

@@ -1,8 +1,10 @@
 # Development Guide
 
-## Project Setup
+## Project Overview
 
-This project uses Vite for development and building, Vitest for unit testing, and Playwright for browser testing.
+Vocal Trainer is a suite of browser-based vocal training tools:
+- **Vocal Monitor** - Real-time pitch visualization on a piano roll
+- **Flappy Note** - Pitch-matching singing game
 
 ## Getting Started
 
@@ -40,244 +42,238 @@ npm run test:browser
 
 ```
 src/
-├── pitch-engine/          # Standalone pitch detection module
-│   ├── AudioAnalyzer.js      - Microphone input & autocorrelation
-│   ├── FrequencyConverter.js - Musical frequency utilities
-│   ├── PitchDetector.js      - Main pitch detection API
-│   └── __tests__/            - Unit tests (44 tests)
+├── core/                      # Shared systems (used by all tools)
+│   ├── ToolBase.js               - Abstract base class for tools
+│   ├── PitchContext.js           - Shared pitch detection with subscriptions
+│   ├── ScaleManager.js           - Musical scale management
+│   ├── DroneManager.js           - Reference tone playback
+│   ├── SharedSettings.js         - Cross-tool settings (localStorage)
+│   └── index.js                  - Core exports
 │
-├── game/                  # Game logic (framework-agnostic)
-│   ├── Ball.js               - Ball entity with physics
-│   ├── Gate.js               - Gate obstacles
-│   ├── ScaleManager.js       - Musical scale management
-│   └── GameState.js          - Main game controller
+├── tools/                     # Individual tools
+│   ├── vocal-monitor/            - Piano roll visualization tool
+│   │   ├── VocalMonitorTool.js      - Main tool class
+│   │   ├── VocalMonitorState.js     - Pitch history & state
+│   │   ├── VocalMonitorRenderer.js  - Canvas rendering
+│   │   └── PianoRoll.js             - Piano keyboard component
+│   │
+│   └── flappy-note/              - Pitch-matching game
+│       ├── FlappyNoteTool.js        - Main tool class
+│       ├── FlappyGameState.js       - Game logic & state
+│       ├── FlappyRenderer.js        - Canvas rendering
+│       ├── Ball.js                  - Player entity
+│       └── Gate.js                  - Target obstacles
 │
-├── rendering/             # Rendering abstraction
-│   ├── Renderer.js           - Abstract base class
-│   ├── Renderer2D.js         - Canvas 2D implementation
-│   └── Renderer3D.js         - (Future) Three.js
+├── pitch-engine/              # Pitch detection module
+│   ├── PitchDetector.js          - Main detection API
+│   ├── AudioAnalyzer.js          - Mic input, AGC, filtering
+│   ├── FrequencyConverter.js     - Musical frequency utilities
+│   ├── detectors/
+│   │   ├── BasePitchDetector.js    - Detector interface
+│   │   ├── TFCREPEDetector.js      - CREPE-style (TensorFlow.js)
+│   │   └── HybridPitchDetector.js  - MPM+YIN fallback
+│   └── __tests__/                - Unit tests
 │
-├── config/                # Configuration
-│   ├── scales.js             - Musical scale definitions
-│   └── gameConfig.js         - Game tuning parameters
+├── audio/                     # Audio playback
+│   └── TonePlayer.js             - Reference tone generation
 │
-├── ui/
-│   └── styles.css            - UI styling
+├── config/                    # Configuration
+│   ├── scales.js                 - Musical scale definitions
+│   └── gameConfig.js             - Game physics parameters
 │
-└── main.js                # Application entry point
+├── ui/                        # UI components
+│   ├── styles.css                - All CSS styles
+│   └── DebugOverlay.js           - Debug info display
+│
+└── main.js                    # App entry & ToolSelector class
 ```
 
-## Key Design Patterns
+## Architecture
 
-### 1. Module Isolation
-The pitch engine is completely independent and can be extracted:
+### Tool System
+
+All tools extend `ToolBase` and share core systems:
 
 ```javascript
-import { PitchDetector } from './pitch-engine/index.js';
+class MyTool extends ToolBase {
+  async initialize() {
+    // Set up UI, event listeners
+  }
+
+  async start() {
+    // Called when tool becomes active
+  }
+
+  stop() {
+    // Called when leaving tool
+  }
+
+  onPitchDetected(pitchData) {
+    // Receives pitch updates from shared PitchContext
+  }
+}
+```
+
+### Shared Systems
+
+Tools receive shared instances via `connect*` methods:
+
+```javascript
+tool.connectPitchContext(pitchContext);   // Pitch detection
+tool.connectScaleManager(scaleManager);   // Musical scales
+tool.connectDroneManager(droneManager);   // Reference tones
+tool.connectSettings(settings);           // User preferences
+```
+
+### URL Routing
+
+The app uses History API for clean URLs:
+- `/` - Tool selection screen
+- `/vocal-monitor` - Vocal Monitor tool
+- `/flappy-note` - Flappy Note game
+
+## Key Components
+
+### PitchDetector
+
+Supports multiple detection algorithms:
+
+```javascript
+import { PitchDetector, DetectorType } from './pitch-engine/index.js';
 
 const detector = new PitchDetector({
-  onPitchDetected: (pitch) => console.log(pitch)
+  detector: DetectorType.CREPE,  // or DetectorType.HYBRID
+  onPitchDetected: (pitch) => console.log(pitch),
+  onModelLoading: () => console.log('Loading...'),
+  onModelReady: () => console.log('Ready!'),
 });
 
 await detector.start();
 ```
 
-### 2. Strategy Pattern (Rendering)
-Easy swap between 2D and future 3D rendering:
+### ScaleManager
+
+Handles all musical scale logic:
 
 ```javascript
-// Use 2D
-const renderer = new Renderer2D(canvas);
+const scaleManager = new ScaleManager('D3', 'major');
+scaleManager.setRootNote('E3');
+scaleManager.setScaleType('minor');
 
-// Future: Use 3D
-const renderer = new Renderer3D(canvas);
-
-// Same interface
-renderer.render(gameState);
+const scaleInfo = scaleManager.getScaleInfo();
+// { degrees: [...], rootFrequency: 146.83 }
 ```
 
-### 3. Configuration-Driven Scales
-Add new musical modes easily:
+### TonePlayer
+
+Audio playback for reference tones:
 
 ```javascript
-// src/config/scales.js
+const tonePlayer = new TonePlayer();
+tonePlayer.playTone(440, 0.5);  // 440Hz for 0.5 seconds
+tonePlayer.startDrone(146.83); // Sustained drone
+```
+
+## Adding a New Tool
+
+1. Create directory: `src/tools/my-tool/`
+2. Create tool class extending `ToolBase`
+3. Create state management class
+4. Create renderer class
+5. Add HTML container to `index.html`
+6. Register in `main.js` TOOLS array
+
+```javascript
+// src/tools/my-tool/MyTool.js
+export class MyTool extends ToolBase {
+  constructor() {
+    super('My Tool', 'Description of my tool');
+  }
+
+  async initialize() {
+    this.container = document.getElementById('my-tool-container');
+    // ... setup
+  }
+}
+```
+
+## Adding a New Scale
+
+Edit `src/config/scales.js`:
+
+```javascript
 export const SCALES = {
-  newMode: {
-    name: 'My New Mode',
-    intervals: [0, 2, 3, 5, 7, 8, 10, 12],
-    degrees: ['Do', 'Re', 'Me', 'Fa', 'Sol', 'Le', 'Te', 'Do'],
+  myNewScale: {
+    name: 'My New Scale',
+    intervals: [0, 2, 4, 5, 7, 9, 11, 12],
+    degrees: ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Ti', 'Do'],
   }
 };
 ```
 
-## Common Development Tasks
+Then add option to HTML select elements.
 
-### Tuning Game Physics
+## Debugging
 
-Edit `src/config/gameConfig.js`:
+### Debug Overlay
 
-```javascript
-export const GAME_CONFIG = {
-  GRAVITY: 0.5,              // Increase for harder
-  LIFT_FORCE: -1.2,          // Increase for easier
-  PITCH_TOLERANCE_CENTS: 50, // Decrease for harder
-};
-```
+Press `Ctrl/Cmd + Shift + D` to toggle debug overlay showing:
+- Detected frequency and note
+- RMS level and threshold
+- Pitch detector algorithm in use
+- Confidence scores
 
-### Adding a New Scale
+### Console Logging
 
-1. Edit `src/config/scales.js`
-2. Add your scale definition
-3. Update HTML `<select>` in `public/index.html`
-4. Test with different root notes
-
-### Improving Pitch Detection
-
-The autocorrelation algorithm is in `src/pitch-engine/AudioAnalyzer.js`:
+Key areas to enable logging:
 
 ```javascript
-detectPitch(buffer) {
-  // Your algorithm here
-  // Current: Autocorrelation
-  // Alternatives: YIN, CREPE, etc.
-}
+// AudioAnalyzer.js - pitch detection
+console.log('Detected:', frequency, 'Hz, clarity:', clarity);
+
+// PitchDetector.js - detector switching
+console.log('Using detector:', this.activeDetector?.name);
+
+// TFCREPEDetector.js - CREPE status
+console.log('CREPE state:', this.state);
 ```
 
-### Extending to 3D
+## Performance
 
-1. Create `src/rendering/Renderer3D.js`
-2. Implement the `Renderer` interface
-3. Use Three.js for rendering
-4. Swap in `main.js`:
+### Pitch Detection
+- Detection runs every 30ms (configurable)
+- Buffer size: 8192 samples
+- Target latency: <50ms
 
-```javascript
-import { Renderer3D } from './rendering/Renderer3D.js';
-const renderer = new Renderer3D(canvas);
-```
+### Rendering
+- Both tools use requestAnimationFrame
+- ResizeObserver handles responsive canvas
+- DPR-aware rendering for retina displays
 
-## Debugging Tips
+## Deployment
 
-### Pitch Detection Issues
-
-Enable console logging in `AudioAnalyzer.js`:
-
-```javascript
-detectPitch(buffer) {
-  const frequency = this.analyzer.detectPitch(buffer);
-  console.log('Detected frequency:', frequency);
-  return frequency;
-}
-```
-
-### Physics Tuning
-
-Add visual debug info in `Renderer2D.js`:
-
-```javascript
-// Draw velocity vectors
-this.ctx.strokeStyle = 'yellow';
-this.ctx.beginPath();
-this.ctx.moveTo(ball.x, ball.y);
-this.ctx.lineTo(ball.x + ball.velocityX * 10, ball.y + ball.velocityY * 10);
-this.ctx.stroke();
-```
-
-### Gate Positioning
-
-Log gate positions in console:
-
-```javascript
-// src/game/GameState.js
-initializeGates() {
-  // ...
-  console.table(this.gates.map(g => ({
-    degree: g.degreeLabel,
-    frequency: g.targetFrequency,
-    y: g.targetY
-  })));
-}
-```
-
-## Performance Profiling
-
-### Pitch Detection Performance
-
-```javascript
-// src/pitch-engine/PitchDetector.js
-_detectAndNotify() {
-  const start = performance.now();
-  const buffer = this.analyzer.getAudioBuffer();
-  const frequency = this.analyzer.detectPitch(buffer);
-  console.log('Pitch detection took:', performance.now() - start, 'ms');
-}
-```
-
-### Render Performance
-
-Use browser DevTools:
-- Chrome: Performance tab
-- Enable "Paint flashing" to see repaints
-- Monitor FPS in rendering tab
-
-## Code Style
-
-- Use ES6 modules
-- Document public APIs with JSDoc
-- Keep functions small and focused
-- Prefer composition over inheritance
-- Write tests for new algorithms
-
-## Git Workflow
+### Build
 
 ```bash
-# Create feature branch
-git checkout -b feature/my-feature
-
-# Make changes and test
-npm test
-
-# Commit with descriptive message
-git commit -m "Add chromatic scale support"
-
-# Push and create PR
-git push origin feature/my-feature
+npm run build
 ```
 
-## Troubleshooting
+Output in `dist/` directory.
 
-### Microphone not working
-- Check browser permissions
-- Must use HTTPS in production
-- Some browsers block audio in iframes
+### Hosting Requirements
 
-### Tests failing
-```bash
-# Clear cache and reinstall
-rm -rf node_modules package-lock.json
-npm install
-npm test
-```
+- HTTPS required (for microphone access)
+- SPA routing support (redirects to index.html)
+- Included: `_redirects` (Netlify), `vercel.json`, `404.html` (GitHub Pages)
 
-### Build errors
-```bash
-# Check Vite config
-# Ensure public/index.html exists
-# Verify all imports use .js extension
-```
+### Environment Variables
+
+- `VITE_GA_MEASUREMENT_ID` - Google Analytics ID
 
 ## Resources
 
-- [Web Audio API Docs](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
-- [Autocorrelation for Pitch Detection](https://en.wikipedia.org/wiki/Autocorrelation)
-- [Music Theory: Scales and Modes](https://en.wikipedia.org/wiki/Mode_(music))
+- [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
+- [TensorFlow.js](https://www.tensorflow.org/js)
+- [CREPE Paper](https://arxiv.org/abs/1802.06182)
 - [Vite Documentation](https://vitejs.dev/)
 - [Vitest Documentation](https://vitest.dev/)
-- [Playwright Documentation](https://playwright.dev/)
-
-## Next Steps
-
-See [CLAUDE.md](./CLAUDE.md) for:
-- Architectural details
-- Extension ideas
-- 3D migration path
-- Advanced pitch detection algorithms
