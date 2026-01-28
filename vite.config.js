@@ -7,6 +7,7 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: 'jsdom',
       globals: true,
+      exclude: ['**/node_modules/**', '**/tests/browser/**'],
     },
     server: {
       port: 3000,

@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pitch Detector Evaluation Dashboard</title>
+  <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
+  <style>
+    :root {
+      --bg-color: #1a1a2e;
+      --card-bg: #16213e;
+      --text-color: #eaeaea;
+      --text-muted: #888;
+      --accent-color: #4ec0ca;
+      --success-color: #4ade80;
+      --error-color: #f87171;
+      --warning-color: #fbbf24;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    h1, h2, h3 {
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      color: var(--accent-color);
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card h2 {
+      color: var(--accent-color);
+      font-size: 1.2rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 10px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 20px;
+    }
+
+    button {
+      background: var(--accent-color);
+      color: var(--bg-color);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button.secondary {
+      background: transparent;
+      border: 1px solid var(--accent-color);
+      color: var(--accent-color);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 15px;
+    }
+
+    select, input {
+      background: var(--bg-color);
+      color: var(--text-color);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status.ready { background: var(--success-color); color: #000; }
+    .status.loading { background: var(--warning-color); color: #000; }
+    .status.error { background: var(--error-color); color: #fff; }
+    .status.idle { background: var(--text-muted); color: #fff; }
+
+    .results {
+      background: var(--bg-color);
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      font-family: monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .metric-label {
+      color: var(--text-muted);
+    }
+
+    .metric-value {
+      font-weight: 600;
+    }
+
+    .metric-value.good { color: var(--success-color); }
+    .metric-value.warning { color: var(--warning-color); }
+    .metric-value.bad { color: var(--error-color); }
+
+    .progress-bar {
+      height: 8px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .progress-bar .fill {
+      height: 100%;
+      background: var(--accent-color);
+      transition: width 0.3s;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .comparison-table th {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .comparison-table .winner {
+      color: var(--success-color);
+      font-weight: 600;
+    }
+
+    .recording-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .recording-indicator .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--error-color);
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    footer a {
+      color: var(--accent-color);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Pitch Detector Evaluation Dashboard</h1>
+
+    <div class="grid">
+      <!-- Detector Status -->
+      <div class="card">
+        <h2>Detector Status</h2>
+        <div id="detector-status">
+          <div class="metric">
+            <span class="metric-label">Hybrid (MPM+YIN)</span>
+            <span class="status idle" id="hybrid-status">Not Loaded</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">CREPE (ML)</span>
+            <span class="status idle" id="crepe-status">Not Loaded</span>
+          </div>
+        </div>
+        <div class="button-group">
+          <button id="btn-init-hybrid">Initialize Hybrid</button>
+          <button id="btn-init-crepe">Initialize CREPE</button>
+        </div>
+      </div>
+
+      <!-- Synthetic Tests -->
+      <div class="card">
+        <h2>Synthetic Test Suite</h2>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 15px;">
+          Test detectors on generated signals with known ground truth.
+        </p>
+        <div class="form-group">
+          <label for="test-detector">Detector</label>
+          <select id="test-detector">
+            <option value="hybrid">Hybrid (MPM+YIN)</option>
+            <option value="crepe">CREPE (ML)</option>
+          </select>
+        </div>
+        <div class="button-group">
+          <button id="btn-run-synthetic">Run Test Suite</button>
+          <button id="btn-run-ab" class="secondary">Run A/B Comparison</button>
+        </div>
+        <div class="progress-bar hidden" id="test-progress">
+          <div class="fill" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- User Recording -->
+      <div class="card">
+        <h2>User Recording Test</h2>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 15px;">
+          Record a scale and test auto-segmentation + pitch detection.
+        </p>
+        <div class="form-group">
+          <label for="expected-notes">Expected Notes</label>
+          <input type="number" id="expected-notes" value="8" min="1" max="24">
+        </div>
+        <div class="button-group">
+          <button id="btn-start-recording">Start Recording</button>
+          <button id="btn-stop-recording" disabled>Stop Recording</button>
+        </div>
+        <div id="recording-status" class="hidden">
+          <div class="recording-indicator">
+            <div class="dot"></div>
+            <span>Recording...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="card" style="grid-column: 1 / -1;">
+        <h2>Results</h2>
+        <div id="results-container">
+          <div id="results-summary"></div>
+          <div class="results" id="results-output">
+Run a test to see results here.
+          </div>
+        </div>
+        <div class="button-group">
+          <button id="btn-export" class="secondary">Export JSON</button>
+          <button id="btn-clear" class="secondary">Clear Results</button>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>
+        <a href="/">Back to Game</a> |
+        Part of the Flappy Note pitch detection evaluation framework
+      </p>
+    </footer>
+  </div>
+
+  <script type="module">
+    import {
+      HybridPitchDetector,
+      CREPEPitchDetector,
+      TestSignalGenerator,
+      PitchEvaluator,
+      OnsetDetector,
+      EvaluationRunner,
+    } from '/src/pitch-engine/index.js';
+
+    // State
+    let hybridDetector = null;
+    let crepeDetector = null;
+    let evaluationRunner = null;
+    let lastResults = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+
+    const sampleRate = 44100;
+
+    // DOM Elements
+    const hybridStatus = document.getElementById('hybrid-status');
+    const crepeStatus = document.getElementById('crepe-status');
+    const testDetectorSelect = document.getElementById('test-detector');
+    const expectedNotesInput = document.getElementById('expected-notes');
+    const resultsOutput = document.getElementById('results-output');
+    const resultsSummary = document.getElementById('results-summary');
+    const testProgress = document.getElementById('test-progress');
+    const recordingStatus = document.getElementById('recording-status');
+
+    // Initialize Hybrid Detector
+    document.getElementById('btn-init-hybrid').addEventListener('click', async () => {
+      hybridStatus.className = 'status loading';
+      hybridStatus.textContent = 'Loading...';
+
+      try {
+        hybridDetector = new HybridPitchDetector({ sampleRate });
+        await hybridDetector.initialize();
+
+        hybridStatus.className = 'status ready';
+        hybridStatus.textContent = 'Ready';
+
+        if (!evaluationRunner) {
+          evaluationRunner = new EvaluationRunner({ sampleRate });
+        }
+        evaluationRunner.registerDetector('hybrid', hybridDetector);
+
+        log('Hybrid detector initialized successfully');
+      } catch (error) {
+        hybridStatus.className = 'status error';
+        hybridStatus.textContent = 'Error';
+        log(`Error: ${error.message}`);
+      }
+    });
+
+    // Initialize CREPE Detector
+    document.getElementById('btn-init-crepe').addEventListener('click', async () => {
+      crepeStatus.className = 'status loading';
+      crepeStatus.textContent = 'Loading model...';
+
+      try {
+        crepeDetector = new CREPEPitchDetector({
+          sampleRate,
+          onModelLoading: () => {
+            crepeStatus.textContent = 'Downloading...';
+          },
+          onModelReady: () => {
+            crepeStatus.className = 'status ready';
+            crepeStatus.textContent = 'Ready';
+          },
+          onModelError: (err) => {
+            crepeStatus.className = 'status error';
+            crepeStatus.textContent = 'Error';
+          },
+        });
+
+        await crepeDetector.initialize();
+
+        if (!evaluationRunner) {
+          evaluationRunner = new EvaluationRunner({ sampleRate });
+        }
+        evaluationRunner.registerDetector('crepe', crepeDetector);
+
+        log('CREPE detector initialized successfully');
+      } catch (error) {
+        crepeStatus.className = 'status error';
+        crepeStatus.textContent = 'Error';
+        log(`CREPE Error: ${error.message}`);
+        log('Note: CREPE requires ml5.js and may not work in all browsers.');
+      }
+    });
+
+    // Run Synthetic Tests
+    document.getElementById('btn-run-synthetic').addEventListener('click', async () => {
+      const detectorName = testDetectorSelect.value;
+
+      if (!evaluationRunner || !evaluationRunner.detectors.has(detectorName)) {
+        log(`Please initialize the ${detectorName} detector first.`);
+        return;
+      }
+
+      testProgress.classList.remove('hidden');
+      log(`Running synthetic test suite on ${detectorName}...`);
+
+      try {
+        const results = evaluationRunner.runSyntheticTests(detectorName);
+        lastResults = results;
+
+        displaySyntheticResults(results);
+        testProgress.classList.add('hidden');
+      } catch (error) {
+        log(`Error: ${error.message}`);
+        testProgress.classList.add('hidden');
+      }
+    });
+
+    // Run A/B Comparison
+    document.getElementById('btn-run-ab').addEventListener('click', async () => {
+      if (!hybridDetector || !crepeDetector) {
+        log('Please initialize both detectors for A/B comparison.');
+        return;
+      }
+
+      testProgress.classList.remove('hidden');
+      log('Running A/B comparison (Hybrid vs CREPE)...');
+
+      try {
+        const comparison = evaluationRunner.runABComparison('hybrid', 'crepe');
+        lastResults = comparison;
+
+        displayComparisonResults(comparison);
+        testProgress.classList.add('hidden');
+      } catch (error) {
+        log(`Error: ${error.message}`);
+        testProgress.classList.add('hidden');
+      }
+    });
+
+    // Recording
+    document.getElementById('btn-start-recording').addEventListener('click', async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        recordedChunks = [];
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            recordedChunks.push(e.data);
+          }
+        };
+
+        mediaRecorder.onstop = async () => {
+          recordingStatus.classList.add('hidden');
+          const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+          await processRecording(blob);
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        recordingStatus.classList.remove('hidden');
+        document.getElementById('btn-start-recording').disabled = true;
+        document.getElementById('btn-stop-recording').disabled = false;
+
+        log('Recording started. Sing a scale!');
+      } catch (error) {
+        log(`Recording error: ${error.message}`);
+      }
+    });
+
+    document.getElementById('btn-stop-recording').addEventListener('click', () => {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        document.getElementById('btn-start-recording').disabled = false;
+        document.getElementById('btn-stop-recording').disabled = true;
+        log('Recording stopped. Processing...');
+      }
+    });
+
+    // Export
+    document.getElementById('btn-export').addEventListener('click', () => {
+      if (!lastResults) {
+        log('No results to export.');
+        return;
+      }
+
+      const json = JSON.stringify(lastResults, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pitch-evaluation-${Date.now()}.json`;
+      a.click();
+
+      URL.revokeObjectURL(url);
+      log('Results exported to JSON.');
+    });
+
+    // Clear
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      resultsOutput.textContent = 'Run a test to see results here.';
+      resultsSummary.innerHTML = '';
+      lastResults = null;
+    });
+
+    // Helper functions
+    function log(message) {
+      const timestamp = new Date().toLocaleTimeString();
+      resultsOutput.textContent = `[${timestamp}] ${message}\n` + resultsOutput.textContent;
+    }
+
+    function displaySyntheticResults(results) {
+      const summary = results.summary;
+
+      resultsSummary.innerHTML = `
+        <div class="metric">
+          <span class="metric-label">Overall RPA</span>
+          <span class="metric-value ${summary.overallRPA > 0.8 ? 'good' : summary.overallRPA > 0.5 ? 'warning' : 'bad'}">
+            ${(summary.overallRPA * 100).toFixed(1)}%
+          </span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Overall GPE</span>
+          <span class="metric-value ${summary.overallGPE < 0.1 ? 'good' : summary.overallGPE < 0.3 ? 'warning' : 'bad'}">
+            ${(summary.overallGPE * 100).toFixed(1)}%
+          </span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Tests Run</span>
+          <span class="metric-value">${summary.totalTests}</span>
+        </div>
+      `;
+
+      let details = `\n=== ${results.detectorName} Synthetic Test Results ===\n\n`;
+      details += `Overall RPA: ${(summary.overallRPA * 100).toFixed(1)}%\n`;
+      details += `Overall GPE: ${(summary.overallGPE * 100).toFixed(1)}%\n\n`;
+
+      details += 'By Test Type:\n';
+      for (const [type, data] of Object.entries(summary.byType)) {
+        details += `  ${type}: RPA ${(data.meanRPA * 100).toFixed(1)}%, GPE ${(data.meanGPE * 100).toFixed(1)}%\n`;
+      }
+
+      details += '\nIndividual Tests:\n';
+      for (const test of results.tests) {
+        const rpa = (test.metrics.rpa * 100).toFixed(1);
+        const gpe = (test.metrics.gpe * 100).toFixed(1);
+        details += `  ${test.name}: RPA ${rpa}%, GPE ${gpe}%\n`;
+      }
+
+      log(details);
+    }
+
+    function displayComparisonResults(comparison) {
+      const summary = comparison.summary;
+
+      resultsSummary.innerHTML = `
+        <table class="comparison-table">
+          <tr>
+            <th>Metric</th>
+            <th>${comparison.detector1}</th>
+            <th>${comparison.detector2}</th>
+            <th>Winner</th>
+          </tr>
+          <tr>
+            <td>RPA Wins</td>
+            <td>${summary.byMetric.rpa.detector1Wins}</td>
+            <td>${summary.byMetric.rpa.detector2Wins}</td>
+            <td class="${summary.byMetric.rpa.detector1Wins > summary.byMetric.rpa.detector2Wins ? 'winner' : ''}">${summary.byMetric.rpa.detector1Wins > summary.byMetric.rpa.detector2Wins ? comparison.detector1 : comparison.detector2}</td>
+          </tr>
+          <tr>
+            <td>GPE Wins</td>
+            <td>${summary.byMetric.gpe.detector1Wins}</td>
+            <td>${summary.byMetric.gpe.detector2Wins}</td>
+            <td class="${summary.byMetric.gpe.detector1Wins > summary.byMetric.gpe.detector2Wins ? 'winner' : ''}">${summary.byMetric.gpe.detector1Wins > summary.byMetric.gpe.detector2Wins ? comparison.detector1 : comparison.detector2}</td>
+          </tr>
+        </table>
+        <div class="metric" style="margin-top: 15px;">
+          <span class="metric-label">Overall Winner</span>
+          <span class="metric-value good">${summary.overallWinner}</span>
+        </div>
+      `;
+
+      log(`A/B Comparison complete. Winner: ${summary.overallWinner}`);
+    }
+
+    async function processRecording(blob) {
+      const detectorName = testDetectorSelect.value;
+
+      if (!evaluationRunner || !evaluationRunner.detectors.has(detectorName)) {
+        log(`Please initialize the ${detectorName} detector first.`);
+        return;
+      }
+
+      log('Decoding audio...');
+
+      try {
+        const arrayBuffer = await blob.arrayBuffer();
+        const audioContext = new AudioContext({ sampleRate });
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        const buffer = audioBuffer.getChannelData(0);
+
+        log(`Decoded ${buffer.length} samples (${(buffer.length / sampleRate).toFixed(2)}s)`);
+
+        const expectedNotes = parseInt(expectedNotesInput.value, 10);
+        const results = evaluationRunner.evaluateUserRecording(detectorName, buffer, expectedNotes);
+        lastResults = results;
+
+        displayRecordingResults(results, expectedNotes);
+      } catch (error) {
+        log(`Processing error: ${error.message}`);
+      }
+    }
+
+    function displayRecordingResults(results, expected) {
+      const seg = results.segmentation;
+
+      resultsSummary.innerHTML = `
+        <div class="metric">
+          <span class="metric-label">Notes Detected</span>
+          <span class="metric-value ${seg.isCorrect ? 'good' : 'warning'}">
+            ${seg.detectedCount} / ${expected}
+          </span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Mean Stability</span>
+          <span class="metric-value ${results.overallStability?.meanCentsStd < 20 ? 'good' : 'warning'}">
+            ±${results.overallStability?.meanCentsStd?.toFixed(1) ?? 'N/A'} cents
+          </span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Detection Rate</span>
+          <span class="metric-value">
+            ${((results.overallStability?.meanDetectionRate ?? 0) * 100).toFixed(1)}%
+          </span>
+        </div>
+      `;
+
+      let details = `\n=== Recording Analysis (${results.detectorName}) ===\n\n`;
+      details += `Notes detected: ${seg.detectedCount} (expected ${expected})\n`;
+      details += `Segmentation: ${seg.isCorrect ? 'CORRECT' : `OFF BY ${seg.difference}`}\n\n`;
+
+      if (results.notes.length > 0) {
+        details += 'Detected Notes:\n';
+        results.notes.forEach((note, i) => {
+          details += `  ${i + 1}. ${note.meanFrequency.toFixed(1)} Hz, `;
+          details += `stability ±${note.stdDevCents.toFixed(1)} cents, `;
+          details += `${(note.duration * 1000).toFixed(0)}ms\n`;
+        });
+      }
+
+      log(details);
+    }
+
+    // Initial log
+    log('Evaluation dashboard ready. Initialize a detector to begin.');
+  </script>
+</body>
+</html>
