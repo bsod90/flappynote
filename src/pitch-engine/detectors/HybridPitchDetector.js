@@ -15,8 +15,8 @@ export class HybridPitchDetector extends BasePitchDetector {
    * @param {number} options.minFrequency - Minimum frequency to detect (default: 60)
    * @param {number} options.maxFrequency - Maximum frequency to detect (default: 1200)
    * @param {number} options.threshold - RMS threshold for silence detection (default: 0.005)
-   * @param {number} options.clarityThreshold - Minimum clarity for MPM (default: 0.85)
-   * @param {number} options.pitchHistorySize - Size of median filter window (default: 5)
+   * @param {number} options.clarityThreshold - Minimum clarity for MPM (default: 0.75)
+   * @param {number} options.pitchHistorySize - Size of median filter window (default: 7)
    */
   constructor(options = {}) {
     super(options);
@@ -24,8 +24,13 @@ export class HybridPitchDetector extends BasePitchDetector {
     this._name = 'hybrid';
     this.bufferSize = options.bufferSize || 2048;
     this.threshold = options.threshold || 0.005;
-    this.clarityThreshold = options.clarityThreshold || 0.85;
-    this.pitchHistorySize = options.pitchHistorySize || 5;
+    this.clarityThreshold = options.clarityThreshold || 0.75; // Lowered for better voice onset
+    this.pitchHistorySize = options.pitchHistorySize || 7; // Increased for stability
+
+    // Octave jump prevention
+    this.stablePitch = null;
+    this.stablePitchFrames = 0;
+    this.minStableFrames = 3;
 
     // Pitch detectors
     this.detectPitchMPM = null;
@@ -116,6 +121,9 @@ export class HybridPitchDetector extends BasePitchDetector {
       return { frequency: null, confidence: 0, timestamp };
     }
 
+    // Apply octave correction
+    rawFrequency = this._correctOctaveJump(rawFrequency);
+
     this.lastClarity = clarity;
 
     // Apply temporal smoothing
@@ -131,7 +139,7 @@ export class HybridPitchDetector extends BasePitchDetector {
   }
 
   /**
-   * Apply temporal smoothing using median filter
+   * Apply temporal smoothing using octave-aware median filter
    * @private
    */
   _applyTemporalSmoothing(frequency) {
@@ -145,8 +153,11 @@ export class HybridPitchDetector extends BasePitchDetector {
       return frequency;
     }
 
+    // Filter octave outliers before computing median
+    const filtered = this._filterOctaveOutliers(this.pitchHistory);
+
     // Calculate median
-    const sorted = [...this.pitchHistory].sort((a, b) => a - b);
+    const sorted = [...filtered].sort((a, b) => a - b);
     const mid = Math.floor(sorted.length / 2);
 
     if (sorted.length % 2 === 0) {
@@ -156,12 +167,86 @@ export class HybridPitchDetector extends BasePitchDetector {
   }
 
   /**
+   * Filter out octave outliers from pitch history
+   * @private
+   */
+  _filterOctaveOutliers(pitches) {
+    if (pitches.length < 4) return pitches;
+
+    const sorted = [...pitches].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    const prelimMedian = sorted.length % 2 === 0
+      ? (sorted[mid - 1] + sorted[mid]) / 2
+      : sorted[mid];
+
+    const filtered = pitches.filter(freq => {
+      const ratio = freq / prelimMedian;
+      return ratio > 0.7 && ratio < 1.4;
+    });
+
+    return filtered.length < 3 ? pitches : filtered;
+  }
+
+  /**
    * Reset the detector state (clear history)
    */
   reset() {
     this.pitchHistory = [];
     this.lastClarity = 0;
     this.lastAlgorithm = null;
+    this.stablePitch = null;
+    this.stablePitchFrames = 0;
+  }
+
+  /**
+   * Correct octave jumps by comparing to stable pitch
+   * @private
+   * @param {number} frequency - Raw detected frequency
+   * @returns {number} Corrected frequency
+   */
+  _correctOctaveJump(frequency) {
+    if (this.stablePitch === null) {
+      this.stablePitch = frequency;
+      this.stablePitchFrames = 1;
+      return frequency;
+    }
+
+    const ratio = frequency / this.stablePitch;
+
+    // Check for octave jumps
+    const isOctaveUp = ratio > 1.8 && ratio < 2.2;
+    const isOctaveDown = ratio > 0.45 && ratio < 0.55;
+    const isDoubleOctaveUp = ratio > 3.6 && ratio < 4.4;
+    const isStable = ratio > 0.97 && ratio < 1.03;
+
+    if (isStable) {
+      this.stablePitchFrames++;
+      this.stablePitch = this.stablePitch * 0.9 + frequency * 0.1;
+      return frequency;
+    }
+
+    // Correct octave errors if we have stable pitch
+    if (this.stablePitchFrames >= this.minStableFrames) {
+      if (isOctaveUp) {
+        const corrected = frequency / 2;
+        if (corrected >= this.minFrequency) return corrected;
+      } else if (isOctaveDown) {
+        const corrected = frequency * 2;
+        if (corrected <= this.maxFrequency) return corrected;
+      } else if (isDoubleOctaveUp) {
+        const corrected = frequency / 4;
+        if (corrected >= this.minFrequency) return corrected;
+      }
+    }
+
+    // Genuine pitch change - reset tracking
+    const semitoneRatio = Math.abs(12 * Math.log2(ratio));
+    if (semitoneRatio > 2) {
+      this.stablePitch = frequency;
+      this.stablePitchFrames = 1;
+    }
+
+    return frequency;
   }
 
   /**

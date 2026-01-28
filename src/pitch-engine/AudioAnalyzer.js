@@ -21,8 +21,14 @@ export class AudioAnalyzer {
     this.currentGain = 3.5; // Starting gain
 
     // Temporal smoothing (median filter)
-    this.pitchHistorySize = options.pitchHistorySize || 5; // Number of recent pitches to track
+    this.pitchHistorySize = options.pitchHistorySize || 7; // Number of recent pitches to track (increased for stability)
     this.pitchHistory = []; // Rolling window of recent pitch detections
+
+    // Octave jump prevention
+    this.stablePitch = null; // Last stable pitch (used to detect octave jumps)
+    this.stablePitchFrames = 0; // Number of frames at stable pitch
+    this.minStableFrames = 3; // Frames needed to establish stable pitch
+    this.octaveJumpThreshold = 0.4; // If new pitch is within this ratio of octave, it's suspicious
 
     // Drone noise cancellation
     this.droneFrequencies = null; // Array of drone frequencies to filter out
@@ -124,9 +130,11 @@ export class AudioAnalyzer {
     }
     this.isActive = false;
 
-    // Clear pitch history
+    // Clear pitch history and stable pitch tracking
     this.pitchHistory = [];
     this.rawFrequency = null;
+    this.stablePitch = null;
+    this.stablePitchFrames = 0;
   }
 
   /**
@@ -174,7 +182,8 @@ export class AudioAnalyzer {
       const [pitch, pitchClarity] = this.detectPitchMPM.findPitch(buffer, this.audioContext.sampleRate);
 
       // Only use MPM result if clarity is good and pitch is valid
-      const MIN_CLARITY = 0.85; // High clarity threshold for MPM
+      // Lowered from 0.85 to 0.75 to better handle voice onset
+      const MIN_CLARITY = 0.75;
 
       if (pitch && pitchClarity >= MIN_CLARITY) {
         rawFrequency = pitch;
@@ -207,6 +216,9 @@ export class AudioAnalyzer {
       return null;
     }
 
+    // Apply octave correction to prevent octave jumps
+    rawFrequency = this._correctOctaveJump(rawFrequency);
+
     // Store raw frequency and clarity for debug
     this.rawFrequency = rawFrequency;
     this.lastClarity = clarity;
@@ -216,8 +228,80 @@ export class AudioAnalyzer {
   }
 
   /**
-   * Apply temporal smoothing using median filter
+   * Correct octave jumps by comparing to stable pitch
+   * If new pitch is exactly an octave away from stable pitch, correct it
+   * @private
+   * @param {number} frequency - Raw detected frequency
+   * @returns {number} Corrected frequency
+   */
+  _correctOctaveJump(frequency) {
+    // If no stable pitch established yet, start tracking
+    if (this.stablePitch === null) {
+      this.stablePitch = frequency;
+      this.stablePitchFrames = 1;
+      return frequency;
+    }
+
+    // Calculate ratio between new frequency and stable pitch
+    const ratio = frequency / this.stablePitch;
+
+    // Check if this is a potential octave jump (ratio close to 2 or 0.5)
+    const isOctaveUp = ratio > 1.8 && ratio < 2.2;      // ~octave up
+    const isOctaveDown = ratio > 0.45 && ratio < 0.55;  // ~octave down
+    const isDoubleOctaveUp = ratio > 3.6 && ratio < 4.4; // ~2 octaves up
+
+    // Check if frequency is close to stable pitch (within ~50 cents)
+    const isStable = ratio > 0.97 && ratio < 1.03;
+
+    if (isStable) {
+      // Pitch is stable, increase confidence
+      this.stablePitchFrames++;
+      // Slowly adapt stable pitch to current (handles gradual drift)
+      this.stablePitch = this.stablePitch * 0.9 + frequency * 0.1;
+      return frequency;
+    }
+
+    // If we have established a stable pitch (enough frames), correct octave errors
+    if (this.stablePitchFrames >= this.minStableFrames) {
+      if (isOctaveUp) {
+        // Detected an octave up - correct down
+        const corrected = frequency / 2;
+        // Verify corrected frequency is still in valid range
+        if (corrected >= this.minFrequency) {
+          return corrected;
+        }
+      } else if (isOctaveDown) {
+        // Detected an octave down - correct up
+        const corrected = frequency * 2;
+        // Verify corrected frequency is still in valid range
+        if (corrected <= this.maxFrequency) {
+          return corrected;
+        }
+      } else if (isDoubleOctaveUp) {
+        // Detected two octaves up - correct down
+        const corrected = frequency / 4;
+        if (corrected >= this.minFrequency) {
+          return corrected;
+        }
+      }
+    }
+
+    // This is a genuine pitch change (not an octave error)
+    // Check if it's a significant enough change to update stable pitch
+    const semitoneRatio = Math.abs(12 * Math.log2(ratio));
+    if (semitoneRatio > 2) { // More than 2 semitones change
+      // Reset stable pitch tracking for new note
+      this.stablePitch = frequency;
+      this.stablePitchFrames = 1;
+    }
+
+    return frequency;
+  }
+
+  /**
+   * Apply temporal smoothing using octave-aware median filter
    * Reduces pitch jumping by taking median of recent detections
+   * Also filters out octave outliers before computing median
    * @private
    * @param {number} frequency - Raw detected frequency
    * @returns {number} Smoothed frequency
@@ -236,8 +320,12 @@ export class AudioAnalyzer {
       return frequency;
     }
 
-    // Calculate median of pitch history
-    const sorted = [...this.pitchHistory].sort((a, b) => a - b);
+    // Filter out octave outliers before computing median
+    // An outlier is a frequency that's ~2x or ~0.5x the median of the rest
+    const filtered = this._filterOctaveOutliers(this.pitchHistory);
+
+    // Calculate median of filtered pitch history
+    const sorted = [...filtered].sort((a, b) => a - b);
     const mid = Math.floor(sorted.length / 2);
 
     // Return median value
@@ -248,6 +336,38 @@ export class AudioAnalyzer {
       // Odd number: middle value
       return sorted[mid];
     }
+  }
+
+  /**
+   * Filter out octave outliers from pitch history
+   * @private
+   * @param {number[]} pitches - Array of pitch values
+   * @returns {number[]} Filtered array with octave outliers removed
+   */
+  _filterOctaveOutliers(pitches) {
+    if (pitches.length < 4) return pitches;
+
+    // Calculate preliminary median
+    const sorted = [...pitches].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    const prelimMedian = sorted.length % 2 === 0
+      ? (sorted[mid - 1] + sorted[mid]) / 2
+      : sorted[mid];
+
+    // Filter out values that are approximately octave multiples of median
+    const filtered = pitches.filter(freq => {
+      const ratio = freq / prelimMedian;
+      // Keep if within reasonable range (not an octave jump)
+      // Allow ~30% deviation from expected pitch
+      return ratio > 0.7 && ratio < 1.4;
+    });
+
+    // If too many were filtered, return original (avoid empty result)
+    if (filtered.length < 3) {
+      return pitches;
+    }
+
+    return filtered;
   }
 
   /**
@@ -386,7 +506,9 @@ export class AudioAnalyzer {
       droneCancellationActive: this.droneNotchFilters.length > 0,
       droneFrequencies: this.droneFrequencies,
       clarity: this.lastClarity,
-      algorithm: this.lastClarity > 0.85 ? 'MPM' : (this.lastClarity > 0 ? 'YIN' : 'none'),
+      algorithm: this.lastClarity > 0.75 ? 'MPM' : (this.lastClarity > 0 ? 'YIN' : 'none'),
+      stablePitch: this.stablePitch,
+      stablePitchFrames: this.stablePitchFrames,
     };
   }
 }
