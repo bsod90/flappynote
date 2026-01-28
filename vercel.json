@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/flappy-note",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/vocal-monitor",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/((?!assets|favicon|og-image|help\\.html|.*\\..*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

@@ -1,686 +1,329 @@
 /**
- * Main application entry point
+ * Main application entry point - Tool Selector
+ * Manages tool selection, shared systems, navigation, and URL routing
  */
 
-import { PitchDetector } from './pitch-engine/index.js';
-import { GameState } from './game/GameState.js';
-import { Renderer2D } from './rendering/Renderer2D.js';
-import { DebugOverlay } from './ui/DebugOverlay.js';
-import { TonePlayer } from './audio/TonePlayer.js';
+import { SharedSettings, PitchContext, DroneManager, ScaleManager } from './core/index.js';
+import { FlappyNoteTool } from './tools/flappy-note/index.js';
+import { VocalMonitorTool } from './tools/vocal-monitor/index.js';
 
-class TralalaGame {
+// Tool definitions with URL paths
+const TOOLS = [
+  {
+    id: 'flappy-note',
+    path: '/flappy-note',
+    name: 'Flappy Note',
+    description: 'Sing to guide the bird through pipes. Match each target note to progress through the scale.',
+    icon: '🐦',
+    ToolClass: FlappyNoteTool,
+  },
+  {
+    id: 'vocal-monitor',
+    path: '/vocal-monitor',
+    name: 'Vocal Monitor',
+    description: 'Real-time pitch visualization on a piano roll. See your voice as a continuous line over time.',
+    icon: '🎤',
+    ToolClass: VocalMonitorTool,
+  },
+];
+
+class ToolSelector {
   constructor() {
-    this.canvas = document.getElementById('game-canvas');
-    this.renderer = new Renderer2D(this.canvas);
-    this.gameState = null;
-    this.pitchDetector = null;
-    this.debugOverlay = new DebugOverlay();
-    this.tonePlayer = new TonePlayer();
+    // Shared systems
+    this.settings = new SharedSettings();
+    this.scaleManager = null;
+    this.pitchContext = null;
+    this.droneManager = null;
+
+    // Tool instances
+    this.tools = new Map();
+    this.activeTool = null;
 
     // UI elements
-    this.startButton = document.getElementById('start-button');
-    this.resetButton = document.getElementById('reset-button');
-    this.rootNoteSelect = document.getElementById('root-note');
-    this.scaleTypeSelect = document.getElementById('scale-type');
-    this.directionSelect = document.getElementById('direction');
-    this.pitchDisplay = document.getElementById('pitch-display');
-    this.scoreDisplay = document.getElementById('score-display');
-    this.statusDisplay = document.getElementById('status-display');
-    this.debugToggle = document.getElementById('debug-toggle');
-    this.settingsToggle = document.getElementById('settings-toggle');
-    this.settingsPanel = document.getElementById('settings-panel');
-    this.droneToggle = document.getElementById('drone-toggle');
-
-    this.lastFrameTime = 0;
-    this.animationId = null;
-
-    // Check for debug mode (enabled by default in development)
-    this.debugEnabled = import.meta.env.DEV || localStorage.getItem('tralala-debug') === 'true';
-
-    // Track gate completions for funnel
-    this.lastGateIndex = -1;
+    this.toolSelectionScreen = null;
+    this.appContainer = null;
 
     this.initialize();
   }
 
   /**
-   * Track Google Analytics event
-   * @param {string} eventName - Event name
-   * @param {object} params - Event parameters
-   */
-  trackEvent(eventName, params = {}) {
-    if (typeof window.gtag === 'function') {
-      window.gtag('event', eventName, params);
-      console.log('GA Event:', eventName, params);
-    }
-  }
-
-  /**
-   * Initialize the game
+   * Initialize the application
    */
   async initialize() {
-    // Check if we're in an embedded browser and show warning
+    // Check for embedded browser
     this.checkEmbeddedBrowser();
 
-    // Load settings from localStorage
-    this.loadSettings();
+    // Initialize shared systems
+    this.initializeSharedSystems();
 
-    // Initialize renderer and wait for canvas to be sized
-    await this.renderer.initialize();
+    // Create UI
+    this.createToolSelectionUI();
 
-    // Set up resize callback to reposition gates when canvas size changes
-    this.renderer.onResize = () => {
-      if (this.gameState) {
-        this.gameState.repositionGates();
-      }
-    };
+    // Initialize tools
+    await this.initializeTools();
 
-    // Initialize game state (now that canvas is properly sized)
-    // Convert simple note name (C, D, etc.) to note with octave (C3, D3, etc.)
-    const rootNoteName = this.rootNoteSelect.value;
-    const rootNote = rootNoteName.length === 1 ? `${rootNoteName}3` : rootNoteName;
-    const scaleType = this.scaleTypeSelect.value;
-    const direction = this.directionSelect.value;
-    this.gameState = new GameState(rootNote, scaleType, direction);
+    // Set up URL routing
+    this.setupRouting();
 
-    // Initialize pitch detector
-    this.pitchDetector = new PitchDetector({
-      updateInterval: 30, // Faster updates for better mobile response
-      threshold: 0.0001, // Ultra-low threshold for maximum sensitivity (especially for low notes on iPhone)
-      bufferSize: 8192, // Extra large buffer for better low-frequency detection on mobile
-      onPitchDetected: (pitchData) => this.handlePitchDetected(pitchData),
-    });
+    // Set up fullscreen toggle
+    this.setupFullscreenToggle();
 
-    // Set up event listeners
-    this.setupEventListeners();
-
-    // Start render loop
-    this.startRenderLoop();
-
-    // Initial render
-    this.render();
-
-    // Show onboarding popup for first-time users
-    this.showOnboarding();
+    // Route based on current URL
+    this.handleRoute();
 
     // Track page load
     this.trackEvent('page_load', {
-      root_note: this.rootNoteSelect.value,
-      scale_type: this.scaleTypeSelect.value,
-      direction: this.directionSelect.value,
+      root_note: this.settings.get('rootNote'),
+      scale_type: this.settings.get('scaleType'),
     });
   }
 
   /**
-   * Show onboarding popup for first-time users
+   * Set up URL routing with History API
    */
-  showOnboarding() {
-    // Check if user has already seen the onboarding
-    const hasSeenOnboarding = localStorage.getItem('flappynote-onboarding-seen') === 'true';
+  setupRouting() {
+    // Handle browser back/forward buttons
+    window.addEventListener('popstate', () => {
+      this.handleRoute();
+    });
+  }
 
-    if (hasSeenOnboarding) {
-      return; // User has already seen it
+  /**
+   * Handle the current URL route
+   */
+  handleRoute() {
+    const path = window.location.pathname;
+
+    // Find tool matching the current path
+    const toolDef = TOOLS.find(t => t.path === path);
+
+    if (toolDef) {
+      // URL matches a tool - select it without updating URL (already correct)
+      this.selectToolInternal(toolDef.id);
+    } else if (path === '/' || path === '/index.html') {
+      // Root path - show tool selection
+      this.showToolSelection();
+    } else {
+      // Unknown path - redirect to root
+      this.navigateToSelection();
     }
+  }
 
-    // Create overlay
-    const overlay = document.createElement('div');
-    overlay.id = 'onboarding-overlay';
-    overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10000;
-      padding: 20px;
-    `;
+  /**
+   * Get tool definition by ID
+   */
+  getToolDef(toolId) {
+    return TOOLS.find(t => t.id === toolId);
+  }
 
-    // Create popup
-    const popup = document.createElement('div');
-    popup.style.cssText = `
-      background: linear-gradient(180deg, #4ec0ca 0%, #8ed6ff 100%);
-      border-radius: 20px;
-      padding: 30px;
-      max-width: 500px;
-      width: 100%;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-      text-align: center;
-      position: relative;
-    `;
+  /**
+   * Initialize shared systems
+   */
+  initializeSharedSystems() {
+    // Create scale manager with current settings
+    const rootNote = this.settings.getRootNoteWithOctave();
+    const scaleType = this.settings.get('scaleType');
+    this.scaleManager = new ScaleManager(rootNote, scaleType);
 
-    popup.innerHTML = `
-      <h2 style="
-        color: #fff;
-        font-size: 2rem;
-        margin-bottom: 20px;
-        text-shadow: 3px 3px 0px #ff6b35, 5px 5px 10px rgba(0, 0, 0, 0.3);
-        font-weight: 900;
-      ">Welcome to Flappy Note!</h2>
+    // Create pitch context
+    this.pitchContext = new PitchContext({
+      updateInterval: 30,
+      threshold: 0.0001,
+      bufferSize: 8192,
+    });
 
-      <div style="
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 15px;
-        padding: 25px;
-        margin-bottom: 20px;
-        text-align: left;
-      ">
-        <div style="margin-bottom: 15px; display: flex; align-items: flex-start;">
-          <div style="
-            font-size: 1.5rem;
-            margin-right: 12px;
-            flex-shrink: 0;
-          ">🎤</div>
-          <div>
-            <strong style="color: #ff6b35; display: block; margin-bottom: 5px;">Microphone Required</strong>
-            <span style="color: #333; font-size: 0.95rem;">
-              You'll need to grant microphone access to play
-            </span>
-          </div>
-        </div>
+    // Create drone manager
+    this.droneManager = new DroneManager();
 
-        <div style="margin-bottom: 15px; display: flex; align-items: flex-start;">
-          <div style="
-            font-size: 1.5rem;
-            margin-right: 12px;
-            flex-shrink: 0;
-          ">🎯</div>
-          <div>
-            <strong style="color: #ff6b35; display: block; margin-bottom: 5px;">Stay On Target</strong>
-            <span style="color: #333; font-size: 0.95rem;">
-              The bird moves forward only when you match the target pitch
-            </span>
-          </div>
-        </div>
+    // Listen for settings changes to update shared systems
+    this.settings.subscribe((key, newValue) => {
+      if (key === 'rootNote') {
+        const rootWithOctave = newValue.length === 1 ? `${newValue}3` : newValue;
+        this.scaleManager.setRootNote(rootWithOctave);
+      } else if (key === 'scaleType') {
+        this.scaleManager.setScaleType(newValue);
+      }
+    });
+  }
 
-        <div style="display: flex; align-items: flex-start;">
-          <div style="
-            font-size: 1.5rem;
-            margin-right: 12px;
-            flex-shrink: 0;
-          ">🎼</div>
-          <div>
-            <strong style="color: #ff6b35; display: block; margin-bottom: 5px;">Adjust For Your Voice</strong>
-            <span style="color: #333; font-size: 0.95rem;">
-              If the lowest pitch is uncomfortable, try selecting a higher root note
-            </span>
-          </div>
+  /**
+   * Create the tool selection UI
+   */
+  createToolSelectionUI() {
+    // Get or create app container
+    this.appContainer = document.getElementById('app');
+
+    // Create tool selection screen
+    this.toolSelectionScreen = document.createElement('div');
+    this.toolSelectionScreen.id = 'tool-selection-screen';
+    this.toolSelectionScreen.innerHTML = `
+      <div class="tool-selection-content">
+        <h1 class="tool-selection-title">Vocal Trainer</h1>
+        <p class="tool-selection-subtitle">Choose a training tool to get started</p>
+        <div class="tool-cards" id="tool-cards">
+          ${TOOLS.map(tool => `
+            <button class="tool-card" data-tool-id="${tool.id}">
+              <span class="tool-icon">${tool.icon}</span>
+              <h2 class="tool-name">${tool.name}</h2>
+              <p class="tool-description">${tool.description}</p>
+            </button>
+          `).join('')}
         </div>
       </div>
-
-      <button id="onboarding-understood" style="
-        background: linear-gradient(180deg, #5ac54f 0%, #4a9d3f 100%);
-        color: white;
-        border: 3px solid #7ee67e;
-        border-radius: 10px;
-        padding: 15px 40px;
-        font-size: 1.1rem;
-        font-weight: 700;
-        cursor: pointer;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        box-shadow: 0 6px 0 #3e7e32, 0 8px 15px rgba(0, 0, 0, 0.3);
-        transition: all 0.3s ease;
-      ">
-        Understood!
-      </button>
     `;
 
-    overlay.appendChild(popup);
-    document.body.appendChild(overlay);
+    // Insert at beginning of app container
+    this.appContainer.insertBefore(this.toolSelectionScreen, this.appContainer.firstChild);
 
-    // Add hover effect to button
-    const button = popup.querySelector('#onboarding-understood');
-    button.addEventListener('mouseenter', () => {
-      button.style.transform = 'translateY(2px)';
-      button.style.boxShadow = '0 4px 0 #3e7e32, 0 6px 12px rgba(0, 0, 0, 0.3)';
-    });
-    button.addEventListener('mouseleave', () => {
-      button.style.transform = '';
-      button.style.boxShadow = '0 6px 0 #3e7e32, 0 8px 15px rgba(0, 0, 0, 0.3)';
-    });
-
-    // Handle button click
-    button.addEventListener('click', () => {
-      // Mark as seen in localStorage
-      localStorage.setItem('flappynote-onboarding-seen', 'true');
-
-      // Track event
-      this.trackEvent('onboarding_completed');
-
-      // Remove overlay with animation
-      overlay.style.opacity = '1';
-      overlay.style.transition = 'opacity 0.3s ease';
-      overlay.style.opacity = '0';
-      setTimeout(() => {
-        overlay.remove();
-      }, 300);
-    });
-  }
-
-  /**
-   * Set up event listeners
-   */
-  setupEventListeners() {
-    this.startButton.addEventListener('click', () => this.handleStart());
-    this.resetButton.addEventListener('click', () => this.handleReset());
-
-    this.rootNoteSelect.addEventListener('change', (e) => {
-      // Convert simple note name to note with octave
-      const rootNoteName = e.target.value;
-      const rootNote = rootNoteName.length === 1 ? `${rootNoteName}3` : rootNoteName;
-      this.gameState.setRootNote(rootNote);
-      this.gameState.repositionGates(); // Ensure gates are positioned correctly
-      this.updateStatus('Root note changed. Click Start to begin.');
-
-      // Update drone frequency if it's playing
-      if (this.droneToggle.checked) {
-        const frequency = this.gameState.scaleManager.getFrequency(0);
-        this.tonePlayer.updateDroneFrequency(frequency);
-
-        // Update drone cancellation frequency if pitch detector is active
-        if (this.pitchDetector && this.gameState.isPlaying) {
-          this.pitchDetector.enableDroneCancellation(frequency);
-        }
-      }
-
-      this.saveSettings();
-    });
-
-    this.scaleTypeSelect.addEventListener('change', (e) => {
-      this.gameState.setScaleType(e.target.value);
-      this.gameState.repositionGates(); // Ensure gates are positioned correctly
-      this.updateStatus('Mode changed. Click Start to begin.');
-      this.saveSettings();
-    });
-
-    this.directionSelect.addEventListener('change', (e) => {
-      this.gameState.setDirection(e.target.value);
-      this.gameState.repositionGates(); // Ensure gates are positioned correctly
-      this.updateStatus('Direction changed. Click Start to begin.');
-      this.saveSettings();
-    });
-
-    // Drone toggle
-    this.droneToggle.addEventListener('change', (e) => {
-      if (e.target.checked) {
-        // Start drone on current root note
-        const rootNoteName = this.rootNoteSelect.value;
-        const rootNote = rootNoteName.length === 1 ? `${rootNoteName}3` : rootNoteName;
-        const frequency = this.gameState.scaleManager.getFrequency(0);
-        this.tonePlayer.startDrone(frequency);
-
-        // Enable drone noise cancellation if pitch detector is running
-        if (this.pitchDetector && this.gameState.isPlaying) {
-          this.pitchDetector.enableDroneCancellation(frequency);
-        }
-      } else {
-        // Stop drone
-        this.tonePlayer.stopDrone();
-
-        // Disable drone noise cancellation
-        if (this.pitchDetector) {
-          this.pitchDetector.disableDroneCancellation();
-        }
-      }
-      this.saveSettings();
-    });
-
-    // Settings toggle (mobile)
-    this.settingsToggle.addEventListener('click', () => {
-      this.settingsPanel.classList.toggle('expanded');
-
-      // Update button text
-      if (this.settingsPanel.classList.contains('expanded')) {
-        this.settingsToggle.textContent = 'Hide Settings ▲';
-      } else {
-        this.settingsToggle.textContent = 'Settings ⚙️';
-      }
-
-      // WORKAROUND: Reinitialize gates after settings panel toggle
-      //
-      // When the settings panel expands/collapses, it causes the canvas to resize due to flexbox layout.
-      // The canvas height changes significantly (e.g., 717px collapsed -> 454px expanded on iPhone 12 Pro).
-      //
-      // While ResizeObserver detects this and calls repositionGates(), there's a timing/calculation issue
-      // where gates end up positioned incorrectly relative to where the ball moves when singing.
-      // The exact root cause is unclear despite extensive debugging of margins, GAME_CONFIG updates, etc.
-      //
-      // However, calling initializeGates() (which recreates gates from scratch) fixes the positioning.
-      // This is the same approach used by the Reset button, which always works correctly.
-      //
-      // The 100ms delay ensures the CSS transition and flexbox layout have settled before recreating gates.
-      setTimeout(() => {
-        if (this.gameState) {
-          this.gameState.initializeGates();
-        }
-      }, 100);
-    });
-
-    // Debug toggle
-    this.debugToggle.addEventListener('click', () => {
-      this.debugOverlay.toggle();
-      localStorage.setItem('tralala-debug', this.debugOverlay.enabled ? 'true' : 'false');
-    });
-
-    // Show debug toggle only in dev mode or if previously enabled
-    if (this.debugEnabled) {
-      this.debugToggle.style.display = 'flex';
-    } else {
-      this.debugToggle.style.display = 'none';
-    }
-
-    // Keyboard shortcut for debug (Ctrl+D or Cmd+D)
-    document.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
-        e.preventDefault();
-        this.debugOverlay.toggle();
-      }
-    });
-
-    // Note: Window resize handling is now done via ResizeObserver in Renderer2D
-    // The renderer's onResize callback handles gate repositioning automatically
-  }
-
-  /**
-   * Handle start button click
-   */
-  async handleStart() {
-    try {
-      // Check microphone support before attempting to start
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        this.showMicrophoneWarning();
-        this.updateStatus('Microphone not supported in this browser');
-        return;
-      }
-
-      this.startButton.disabled = true;
-      this.updateStatus('Requesting microphone access...');
-
-      // Start pitch detection
-      await this.pitchDetector.start();
-
-      // Play reference tones (dynamically show correct pattern)
-      const scaleInfo = this.gameState.scaleManager.getScaleInfo();
-      const isChord = scaleInfo.degrees.length <= 5;
-      this.updateStatus(isChord ? 'Playing reference: 1-3-5...' : 'Playing reference: 1-5-8...');
-      await this.playReferenceTones();
-
-      // Start drone if it's enabled
-      if (this.droneToggle.checked) {
-        const frequency = this.gameState.scaleManager.getFrequency(0);
-        this.tonePlayer.startDrone(frequency);
-
-        // Enable drone noise cancellation
-        this.pitchDetector.enableDroneCancellation(frequency);
-      }
-
-      // Start game
-      this.gameState.start();
-
-      // Track game start (reuse scaleInfo from above)
-      this.trackEvent('game_start', {
-        root_note: this.rootNoteSelect.value,
-        scale_type: this.scaleTypeSelect.value,
-        direction: this.directionSelect.value,
-        num_gates: scaleInfo.degrees.length,
-        drone_enabled: this.droneToggle.checked,
+    // Add click handlers
+    const cards = this.toolSelectionScreen.querySelectorAll('.tool-card');
+    cards.forEach(card => {
+      card.addEventListener('click', () => {
+        const toolId = card.dataset.toolId;
+        this.selectTool(toolId);
       });
+    });
+  }
 
-      // Reset gate tracking
-      this.lastGateIndex = -1;
+  /**
+   * Initialize all tools
+   */
+  async initializeTools() {
+    for (const toolDef of TOOLS) {
+      const tool = new toolDef.ToolClass();
 
-      this.startButton.style.display = 'none';
-      this.resetButton.disabled = false;
-      this.rootNoteSelect.disabled = true;
-      this.scaleTypeSelect.disabled = true;
+      // Connect shared systems
+      tool.connectPitchContext(this.pitchContext);
+      tool.connectScaleManager(this.scaleManager);
+      tool.connectDroneManager(this.droneManager);
+      tool.connectSettings(this.settings);
 
-      this.updateStatus('Game started! Sing to control the ball.');
-    } catch (error) {
-      console.error('Failed to start game:', error);
-      this.updateStatus(`Error: ${error.message}`);
-      this.startButton.disabled = false;
+      // Set up navigation callback
+      tool.onNavigateBack = () => this.navigateToSelection();
+
+      this.tools.set(toolDef.id, tool);
     }
   }
 
   /**
-   * Play reference tones (1-3-5 for chords, 1-5-8 for scales)
+   * Show tool selection screen
    */
-  async playReferenceTones() {
-    const scaleInfo = this.gameState.scaleManager.getScaleInfo();
-    const degrees = scaleInfo.degrees;
+  showToolSelection() {
+    this.toolSelectionScreen.style.display = 'flex';
 
-    // For chords (5 notes or fewer), play 1-3-5 (Do-Mi-Sol)
-    // For scales (more than 5 notes), play 1-5-8 (Do-Sol-Do)
-    let sequence;
-    if (degrees.length <= 5) {
-      // Chord: Play 1st, 2nd, 3rd notes (Do-Mi-Sol)
-      sequence = [
-        { frequency: degrees[0].frequency, duration: 0.5 }, // 1st note (Do)
-        { frequency: degrees[1].frequency, duration: 0.5 }, // 2nd note (Mi)
-        { frequency: degrees[2].frequency, duration: 0.7 }, // 3rd note (Sol)
-      ];
-    } else {
-      // Scale: Play 1st, 5th, 8th notes (Do-Sol-Do octave)
-      sequence = [
-        { frequency: degrees[0].frequency, duration: 0.5 }, // Do
-        { frequency: degrees[4].frequency, duration: 0.5 }, // Sol
-        { frequency: degrees[0].frequency * 2, duration: 0.7 }, // Do (octave higher)
-      ];
+    // Hide all tool containers
+    const flappyContainer = document.getElementById('flappy-note-container');
+    const vocalContainer = document.getElementById('vocal-monitor-container');
+    if (flappyContainer) flappyContainer.style.display = 'none';
+    if (vocalContainer) vocalContainer.style.display = 'none';
+
+    // Reset page title
+    document.title = 'Vocal Trainer - Free Pitch Training Tools for Singers';
+  }
+
+  /**
+   * Hide tool selection screen
+   */
+  hideToolSelection() {
+    this.toolSelectionScreen.style.display = 'none';
+  }
+
+  /**
+   * Select and activate a tool (with URL update)
+   * @param {string} toolId
+   */
+  async selectTool(toolId) {
+    const toolDef = this.getToolDef(toolId);
+    if (!toolDef) {
+      console.error(`Tool ${toolId} not found`);
+      return;
     }
 
-    await this.tonePlayer.playSequence(sequence);
+    // Update URL
+    window.history.pushState({ toolId }, toolDef.name, toolDef.path);
+
+    // Update page title
+    document.title = `${toolDef.name} - Vocal Trainer`;
+
+    // Select the tool internally
+    await this.selectToolInternal(toolId);
+
+    // Track tool selection
+    this.trackEvent('tool_selected', { tool_id: toolId });
   }
 
   /**
-   * Handle reset button click
+   * Select and activate a tool (without URL update - for routing)
+   * @param {string} toolId
    */
-  handleReset() {
-    // Stop pitch detection
-    if (this.pitchDetector) {
-      this.pitchDetector.stop();
-      // Disable drone cancellation
-      this.pitchDetector.disableDroneCancellation();
+  async selectToolInternal(toolId) {
+    const tool = this.tools.get(toolId);
+    const toolDef = this.getToolDef(toolId);
+    if (!tool || !toolDef) {
+      console.error(`Tool ${toolId} not found`);
+      return;
     }
 
-    // Stop drone if it's playing (but keep the checkbox checked)
-    this.tonePlayer.stopDrone();
-
-    // Reset game state
-    this.gameState.reset();
-
-    // Reset tracking flags
-    this.gameCompletionTracked = false;
-    this.lastGateIndex = -1;
-
-    // Reset UI
-    this.startButton.style.display = 'inline-block';
-    this.startButton.disabled = false;
-    this.resetButton.disabled = true;
-    this.resetButton.textContent = 'Reset'; // Reset button text
-    this.resetButton.style.background = ''; // Reset button style
-    this.resetButton.style.borderColor = '';
-    this.resetButton.style.boxShadow = '';
-    this.rootNoteSelect.disabled = false;
-    this.scaleTypeSelect.disabled = false;
-
-    this.updatePitchDisplay(null);
-    this.updateScoreDisplay(0);
-    this.updateStatus('Click Start to begin');
-  }
-
-  /**
-   * Handle pitch detected
-   * @param {object|null} pitchData
-   */
-  handlePitchDetected(pitchData) {
-    this.gameState.onPitchDetected(pitchData);
-    this.updatePitchDisplay(pitchData);
-  }
-
-  /**
-   * Start the render loop
-   */
-  startRenderLoop() {
-    const loop = (timestamp) => {
-      const deltaTime = timestamp - this.lastFrameTime;
-      this.lastFrameTime = timestamp;
-
-      this.update(deltaTime);
-      this.render();
-
-      this.animationId = requestAnimationFrame(loop);
-    };
-
-    this.animationId = requestAnimationFrame(loop);
-  }
-
-  /**
-   * Update game state
-   * @param {number} deltaTime
-   */
-  update(deltaTime) {
-    this.gameState.update(deltaTime);
-
-    // Update UI
-    const state = this.gameState.getState();
-    this.updateScoreDisplay(state.score);
-
-    if (state.isPlaying) {
-      if (state.targetGate) {
-        const targetNote = state.targetGate.degreeLabel;
-        this.updateStatus(`Sing: ${targetNote}`);
-      }
-
-      // Track gate completions for funnel
-      if (state.currentGateIndex > this.lastGateIndex) {
-        this.lastGateIndex = state.currentGateIndex;
-        const gateNumber = state.currentGateIndex; // 1-indexed in display, 0-indexed here
-        const totalGates = state.gates.length;
-
-        this.trackEvent('gate_completed', {
-          gate_number: gateNumber,
-          total_gates: totalGates,
-          progress_percent: Math.round((gateNumber / totalGates) * 100),
-          root_note: this.rootNoteSelect.value,
-          scale_type: this.scaleTypeSelect.value,
-        });
-      }
+    // Stop current tool if active
+    if (this.activeTool) {
+      this.activeTool.stop();
     }
 
-    if (state.isGameOver) {
-      const won = state.currentGateIndex >= state.gates.length;
-      this.updateStatus(won ? 'You win! Great job!' : 'Game over. Try again!');
+    // Hide selection screen
+    this.hideToolSelection();
 
-      // Track game completion (only once)
-      if (!this.gameCompletionTracked) {
-        this.gameCompletionTracked = true;
+    // Save last tool
+    this.settings.set('lastTool', toolId);
 
-        if (won) {
-          this.trackEvent('game_completed', {
-            root_note: this.rootNoteSelect.value,
-            scale_type: this.scaleTypeSelect.value,
-            direction: this.directionSelect.value,
-            score: state.score,
-            accuracy: state.accuracy,
-            elapsed_time: Math.round(state.elapsedTime),
-            total_gates: state.gates.length,
-            perfect_hits: state.perfectHits.length,
-          });
-        } else {
-          this.trackEvent('game_failed', {
-            root_note: this.rootNoteSelect.value,
-            scale_type: this.scaleTypeSelect.value,
-            direction: this.directionSelect.value,
-            gates_completed: state.currentGateIndex,
-            total_gates: state.gates.length,
-          });
-        }
-      }
+    // Update page title
+    document.title = `${toolDef.name} - Vocal Trainer`;
 
-      // Change reset button text and style to "Play Again" when won
-      if (won) {
-        this.resetButton.textContent = 'Play Again';
-        this.resetButton.style.background = 'linear-gradient(180deg, #5ac54f 0%, #4a9d3f 100%)';
-        this.resetButton.style.borderColor = '#7ee67e';
-        this.resetButton.style.boxShadow = '0 6px 0 #3e7e32, 0 8px 15px rgba(0, 0, 0, 0.3)';
-      } else {
-        this.resetButton.textContent = 'Reset';
-        this.resetButton.style.background = '';
-        this.resetButton.style.borderColor = '';
-        this.resetButton.style.boxShadow = '';
-      }
+    // Start new tool
+    this.activeTool = tool;
+    await tool.start();
+  }
+
+  /**
+   * Navigate back to tool selection
+   */
+  navigateToSelection() {
+    // Stop current tool
+    if (this.activeTool) {
+      this.activeTool.stop();
+      this.activeTool = null;
     }
 
-    // Update debug overlay
-    if (this.debugOverlay.enabled && this.pitchDetector) {
-      const debugInfo = this.pitchDetector.getDebugInfo();
-      this.debugOverlay.update(
-        state.currentPitch,
-        debugInfo,
-        state.targetGate,
-        state.isSinging
-      );
-    }
+    // Stop pitch detection and drone
+    this.pitchContext.stop();
+    this.droneManager.stopDrone();
+
+    // Update URL to root
+    window.history.pushState({}, 'Vocal Trainer', '/');
+
+    // Update page title
+    document.title = 'Vocal Trainer - Free Pitch Training Tools for Singers';
+
+    // Show selection screen
+    this.showToolSelection();
+
+    // Track navigation
+    this.trackEvent('navigate_to_selection');
   }
 
   /**
-   * Render the game
-   */
-  render() {
-    const state = this.gameState.getState();
-    this.renderer.render(state);
-  }
-
-  /**
-   * Update pitch display
-   * @param {object|null} pitchData
-   */
-  updatePitchDisplay(pitchData) {
-    if (pitchData) {
-      const centsStr = pitchData.centsOff >= 0 ? `+${pitchData.centsOff.toFixed(0)}` : pitchData.centsOff.toFixed(0);
-      this.pitchDisplay.textContent = `Pitch: ${pitchData.noteName} (${centsStr}¢)`;
-      this.pitchDisplay.classList.add('singing');
-    } else {
-      this.pitchDisplay.textContent = 'Pitch: --';
-      this.pitchDisplay.classList.remove('singing');
-    }
-  }
-
-  /**
-   * Update score display
-   * @param {number} score - Calculated score
-   */
-  updateScoreDisplay(score) {
-    this.scoreDisplay.textContent = `Score: ${score}`;
-  }
-
-  /**
-   * Update status display
-   * @param {string} message
-   */
-  updateStatus(message) {
-    this.statusDisplay.textContent = message;
-  }
-
-  /**
-   * Check if we're in an embedded browser (LinkedIn, Instagram, Facebook, etc.)
+   * Check for embedded browser
    */
   checkEmbeddedBrowser() {
     const ua = navigator.userAgent || '';
 
-    // Detect common embedded browsers
     const isEmbedded =
-      ua.includes('FBAN') ||       // Facebook App
-      ua.includes('FBAV') ||       // Facebook App
-      ua.includes('Instagram') ||  // Instagram
-      ua.includes('LinkedIn') ||   // LinkedIn
-      ua.includes('Twitter') ||    // Twitter
-      ua.includes('Line/') ||      // Line
-      ua.includes('MicroMessenger'); // WeChat
+      ua.includes('FBAN') ||
+      ua.includes('FBAV') ||
+      ua.includes('Instagram') ||
+      ua.includes('LinkedIn') ||
+      ua.includes('Twitter') ||
+      ua.includes('Line/') ||
+      ua.includes('MicroMessenger');
 
     if (isEmbedded) {
       this.showEmbeddedBrowserWarning();
@@ -688,16 +331,14 @@ class TralalaGame {
   }
 
   /**
-   * Show embedded browser warning banner
+   * Show embedded browser warning
    */
   showEmbeddedBrowserWarning() {
-    // Check if warning already exists or was dismissed
     if (document.getElementById('embedded-warning') ||
         localStorage.getItem('flappynote-embedded-warning-dismissed') === 'true') {
       return;
     }
 
-    // Show warning banner
     const warning = document.createElement('div');
     warning.id = 'embedded-warning';
     warning.style.cssText = `
@@ -713,11 +354,8 @@ class TralalaGame {
       z-index: 9999;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     `;
-    warning.innerHTML = `
-      ⚠️ This game needs microphone access. Please open this link in Safari or Chrome.
-    `;
+    warning.innerHTML = '⚠️ Microphone access is required. Tap the menu (⋮ or ⋯) and select "Open in Safari" or "Open in Chrome" for full functionality.';
 
-    // Add close button
     const closeBtn = document.createElement('button');
     closeBtn.innerHTML = '×';
     closeBtn.style.cssText = `
@@ -747,135 +385,221 @@ class TralalaGame {
   }
 
   /**
-   * Show microphone warning banner (when user clicks start)
+   * Track analytics event
    */
-  showMicrophoneWarning() {
-    // Check if warning already exists
-    if (document.getElementById('mic-warning')) return;
+  trackEvent(eventName, params = {}) {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', eventName, params);
+    }
+  }
 
-    // Show warning banner
-    const warning = document.createElement('div');
-    warning.id = 'mic-warning';
-    warning.style.cssText = `
+  /**
+   * Set up fullscreen toggle functionality
+   */
+  setupFullscreenToggle() {
+    const toggle = document.getElementById('fullscreen-toggle');
+    const text = document.getElementById('fullscreen-text');
+    const icon = document.getElementById('fullscreen-icon');
+
+    if (!toggle) return;
+
+    // Check if Fullscreen API is supported
+    const fullscreenEnabled = document.fullscreenEnabled ||
+      document.webkitFullscreenEnabled ||
+      document.mozFullScreenEnabled ||
+      document.msFullscreenEnabled;
+
+    // Check if running as PWA (standalone mode)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+
+    // Check if iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+    if (isStandalone) {
+      // Already in fullscreen-like mode (PWA)
+      toggle.style.display = 'none';
+      return;
+    }
+
+    if (!fullscreenEnabled && isIOS) {
+      // iOS doesn't support Fullscreen API - show "Add to Home Screen" prompt
+      toggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.showAddToHomeScreenPrompt();
+      });
+      if (text) text.textContent = 'Install App';
+      return;
+    }
+
+    if (!fullscreenEnabled) {
+      // Fullscreen not supported and not iOS
+      toggle.style.display = 'none';
+      return;
+    }
+
+    // Fullscreen API supported - set up toggle
+    toggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.toggleFullscreen();
+    });
+
+    // Update button state on fullscreen change and trigger resize
+    const handleFullscreenChange = () => {
+      const isFullscreen = document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement;
+
+      if (text) {
+        text.textContent = isFullscreen ? 'Exit Fullscreen' : 'Fullscreen';
+      }
+      if (icon) {
+        // Switch between expand and compress icons
+        icon.innerHTML = isFullscreen
+          ? '<path d="M5.5 0a.5.5 0 0 1 .5.5v4A1.5 1.5 0 0 1 4.5 6h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 10 4.5v-4a.5.5 0 0 1 .5-.5zM0 10.5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 6 11.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zm10 0a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4z"/>'
+          : '<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>';
+      }
+
+      // Trigger resize after a short delay to let the browser update layout
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 100);
+
+      // Second resize trigger for browsers that need more time
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 300);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+  }
+
+  /**
+   * Toggle fullscreen mode
+   */
+  toggleFullscreen() {
+    const elem = document.documentElement;
+    const isFullscreen = document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement;
+
+    if (isFullscreen) {
+      // Exit fullscreen
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+    } else {
+      // Enter fullscreen
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      } else if (elem.mozRequestFullScreen) {
+        elem.mozRequestFullScreen();
+      } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+      }
+    }
+  }
+
+  /**
+   * Show "Add to Home Screen" prompt for iOS
+   */
+  showAddToHomeScreenPrompt() {
+    if (document.getElementById('add-to-home-prompt')) return;
+
+    const prompt = document.createElement('div');
+    prompt.id = 'add-to-home-prompt';
+    prompt.style.cssText = `
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: #ff6b35;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2a2a4a;
       color: white;
-      padding: 12px 40px 12px 20px;
-      text-align: center;
-      font-weight: 600;
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
       z-index: 9999;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    `;
-    warning.innerHTML = `
-      ⚠️ Microphone not supported. Please open in Safari or Chrome.
-    `;
-
-    // Add close button
-    const closeBtn = document.createElement('button');
-    closeBtn.innerHTML = '×';
-    closeBtn.style.cssText = `
-      position: absolute;
-      top: 50%;
-      right: 10px;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: white;
-      font-size: 28px;
-      font-weight: bold;
-      cursor: pointer;
-      padding: 0;
-      width: 30px;
-      height: 30px;
-      line-height: 30px;
+      max-width: 320px;
       text-align: center;
+      font-size: 14px;
+      line-height: 1.5;
     `;
-    closeBtn.onclick = () => warning.remove();
+    prompt.innerHTML = `
+      <strong>Install for fullscreen experience</strong><br><br>
+      Tap the Share button <span style="font-size: 18px;">⎙</span> then select<br>
+      <strong>"Add to Home Screen"</strong>
+      <button id="add-to-home-dismiss" style="
+        display: block;
+        margin: 12px auto 0;
+        padding: 8px 16px;
+        background: #4ec0ca;
+        border: none;
+        border-radius: 6px;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+      ">Got it</button>
+    `;
 
-    warning.appendChild(closeBtn);
-    document.body.prepend(warning);
-  }
+    document.body.appendChild(prompt);
 
-  /**
-   * Load settings from localStorage
-   */
-  loadSettings() {
-    try {
-      const settings = JSON.parse(localStorage.getItem('flappynote-settings') || '{}');
+    document.getElementById('add-to-home-dismiss').addEventListener('click', () => {
+      prompt.remove();
+    });
 
-      if (settings.rootNote) {
-        this.rootNoteSelect.value = settings.rootNote;
+    // Auto-dismiss after 10 seconds
+    setTimeout(() => {
+      if (prompt.parentNode) {
+        prompt.remove();
       }
-
-      if (settings.scaleType) {
-        this.scaleTypeSelect.value = settings.scaleType;
-      }
-
-      if (settings.direction) {
-        this.directionSelect.value = settings.direction;
-      }
-
-      if (settings.droneEnabled) {
-        this.droneToggle.checked = settings.droneEnabled;
-      }
-    } catch (error) {
-      console.warn('Failed to load settings:', error);
-    }
-  }
-
-  /**
-   * Save settings to localStorage
-   */
-  saveSettings() {
-    try {
-      const settings = {
-        rootNote: this.rootNoteSelect.value,
-        scaleType: this.scaleTypeSelect.value,
-        direction: this.directionSelect.value,
-        droneEnabled: this.droneToggle.checked,
-      };
-
-      localStorage.setItem('flappynote-settings', JSON.stringify(settings));
-    } catch (error) {
-      console.warn('Failed to save settings:', error);
-    }
+    }, 10000);
   }
 
   /**
    * Clean up resources
    */
   dispose() {
-    if (this.animationId) {
-      cancelAnimationFrame(this.animationId);
+    // Stop active tool
+    if (this.activeTool) {
+      this.activeTool.stop();
     }
 
-    if (this.pitchDetector) {
-      this.pitchDetector.stop();
+    // Dispose all tools
+    for (const tool of this.tools.values()) {
+      tool.dispose();
     }
 
-    if (this.tonePlayer) {
-      this.tonePlayer.stop();
-    }
-
-    this.renderer.dispose();
+    // Dispose shared systems
+    this.pitchContext.dispose();
+    this.droneManager.dispose();
   }
 }
 
-// Initialize game when DOM is ready
+// Initialize when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    window.game = new TralalaGame();
+    window.toolSelector = new ToolSelector();
   });
 } else {
-  window.game = new TralalaGame();
+  window.toolSelector = new ToolSelector();
 }
 
 // Clean up on page unload
 window.addEventListener('beforeunload', () => {
-  if (window.game) {
-    window.game.dispose();
+  if (window.toolSelector) {
+    window.toolSelector.dispose();
   }
 });

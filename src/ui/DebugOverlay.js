@@ -25,6 +25,17 @@ export class DebugOverlay {
         <button id="close-debug">×</button>
       </div>
       <div class="debug-section">
+        <h4>Detector</h4>
+        <div class="debug-row">
+          <span>Algorithm:</span>
+          <span id="detector-type">--</span>
+        </div>
+        <div class="debug-row">
+          <span>Status:</span>
+          <span id="detector-status">--</span>
+        </div>
+      </div>
+      <div class="debug-section">
         <h4>Audio Input</h4>
         <div class="debug-row">
           <span>RMS Level:</span>
@@ -130,6 +141,28 @@ export class DebugOverlay {
    */
   update(pitchData, debugInfo, targetGate, isSinging) {
     if (!this.enabled || !this.container) return;
+
+    // Update detector info
+    if (debugInfo.detector) {
+      const detectorInfo = debugInfo.detector;
+      const detectorTypeEl = document.getElementById('detector-type');
+      const detectorStatusEl = document.getElementById('detector-status');
+
+      if (detectorTypeEl) {
+        const typeNames = {
+          'hybrid': 'Hybrid (MPM+YIN)',
+          'crepe': 'CREPE (TensorFlow.js)',
+          'crepe-tf': 'CREPE (TensorFlow.js)',
+        };
+        const activeName = detectorInfo.active || detectorInfo.type;
+        detectorTypeEl.textContent = typeNames[activeName] || activeName;
+      }
+
+      if (detectorStatusEl) {
+        detectorStatusEl.textContent = detectorInfo.ready ? '✓ Ready' : '⏳ Loading...';
+        detectorStatusEl.style.color = detectorInfo.ready ? '#2ecc71' : '#f39c12';
+      }
+    }
 
     // Update audio input stats
     const rmsValue = debugInfo.rms || 0;

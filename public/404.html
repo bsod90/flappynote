@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting... - Vocal Trainer</title>
+  <script>
+    // GitHub Pages SPA redirect hack
+    // Redirects 404s to index.html with the path preserved in sessionStorage
+    sessionStorage.redirect = location.href;
+    location.replace(location.origin);
+  </script>
+</head>
+<body>
+  <p>Redirecting...</p>
+</body>
+</html>

@@ -1,0 +1,8 @@
+# Netlify redirects for SPA routing
+# Serve index.html for all routes except static files
+
+/flappy-note    /index.html   200
+/vocal-monitor  /index.html   200
+
+# Fallback for any other routes
+/*    /index.html   200

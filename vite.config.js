@@ -12,6 +12,10 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3000,
     },
+    preview: {
+      port: 3000,
+    },
+    appType: 'spa', // Enable SPA fallback for dev server
     plugins: [
       {
         name: 'html-transform',

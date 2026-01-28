@@ -12,6 +12,7 @@ export { AudioAnalyzer } from './AudioAnalyzer.js';
 export { BasePitchDetector } from './detectors/BasePitchDetector.js';
 export { HybridPitchDetector } from './detectors/HybridPitchDetector.js';
 export { CREPEPitchDetector, CREPEState } from './detectors/CREPEPitchDetector.js';
+export { TFCREPEDetector, TFCREPEState } from './detectors/TFCREPEDetector.js';
 
 // Evaluation framework
 export { TestSignalGenerator } from './evaluation/TestSignalGenerator.js';

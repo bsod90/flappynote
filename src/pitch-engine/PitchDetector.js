@@ -7,7 +7,7 @@
 import { AudioAnalyzer } from './AudioAnalyzer.js';
 import { FrequencyConverter } from './FrequencyConverter.js';
 import { HybridPitchDetector } from './detectors/HybridPitchDetector.js';
-import { CREPEPitchDetector, CREPEState } from './detectors/CREPEPitchDetector.js';
+import { TFCREPEDetector, TFCREPEState } from './detectors/TFCREPEDetector.js';
 
 /**
  * Available detector types
@@ -83,7 +83,7 @@ export class PitchDetector {
           this.onModelLoading();
         }
 
-        this.crepeDetector = new CREPEPitchDetector({
+        this.crepeDetector = new TFCREPEDetector({
           sampleRate,
           minFrequency: this.minFrequency,
           maxFrequency: this.maxFrequency,
@@ -94,6 +94,8 @@ export class PitchDetector {
 
         await this.crepeDetector.initialize();
         this.activeDetector = this.crepeDetector;
+
+        console.log('CREPE detector initialized (TensorFlow.js)');
 
         if (this.onModelReady) {
           this.onModelReady();
@@ -252,7 +254,7 @@ export class PitchDetector {
       ready: this.detectorReady,
       hybridReady: this.hybridDetector?.isReady ?? false,
       crepeReady: this.crepeDetector?.isReady ?? false,
-      crepeState: this.crepeDetector?.loadingState ?? CREPEState.UNLOADED,
+      crepeState: this.crepeDetector?.loadingState ?? TFCREPEState.UNLOADED,
     };
   }
 

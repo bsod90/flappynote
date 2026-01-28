@@ -1,0 +1,19 @@
+{
+  "name": "Vocal Trainer",
+  "short_name": "Vocal Trainer",
+  "description": "Free vocal training tools for singers. Practice pitch accuracy with interactive exercises.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1a1a2e",
+  "theme_color": "#4ec0ca",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "music", "games"]
+}

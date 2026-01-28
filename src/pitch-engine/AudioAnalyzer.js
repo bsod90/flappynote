@@ -68,6 +68,13 @@ export class AudioAnalyzer {
       });
 
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+      // iOS Safari and Chrome require explicit resume after user interaction
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+        console.log('AudioContext resumed from suspended state');
+      }
+
       this.analyser = this.audioContext.createAnalyser();
       this.analyser.fftSize = this.bufferSize * 2;
 
@@ -465,6 +472,9 @@ export class AudioAnalyzer {
   disableDroneCancellation() {
     if (this.droneNotchFilters.length === 0) return;
 
+    // Check if audioContext is still usable
+    const contextClosed = !this.audioContext || this.audioContext.state === 'closed';
+
     // Disconnect all notch filters
     this.droneNotchFilters.forEach(filter => {
       try {
@@ -474,8 +484,8 @@ export class AudioAnalyzer {
       }
     });
 
-    // Reconnect high-pass filter directly to gain node
-    if (this.highPassFilter && this.gainNode) {
+    // Reconnect high-pass filter directly to gain node (only if context is still open)
+    if (!contextClosed && this.highPassFilter && this.gainNode) {
       try {
         this.highPassFilter.disconnect();
         this.highPassFilter.connect(this.gainNode);

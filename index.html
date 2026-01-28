@@ -5,52 +5,57 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Primary Meta Tags -->
-  <title>Flappy Note - Free Pitch Training Game for Singers | Learn Scales & Vocal Control</title>
-  <meta name="title" content="Flappy Note - Free Pitch Training Game for Singers | Learn Scales & Vocal Control">
-  <meta name="description" content="Master pitch matching with Flappy Note, a free Flappy Bird-style singing game. Control a bird by matching musical notes using your voice. Practice major scales, minor scales, modes, and 7th chords. Perfect for vocal training, ear training, and learning to sing scales. Works with microphone in your browser - no download needed.">
-  <meta name="keywords" content="pitch training, vocal training, singing game, ear training, learn to sing, pitch matching, music training game, singing scales, vocal exercises, singing practice, flappy bird music, pitch detection game, voice training app, learn scales, chromatic scale, major scale, minor scale, singing app, free singing lessons">
-  <meta name="author" content="Flappy Note">
+  <title>Vocal Trainer - Free Pitch Training Tools for Singers</title>
+  <meta name="title" content="Vocal Trainer - Free Pitch Training Tools for Singers">
+  <meta name="description" content="Free vocal training tools for singers. Includes Flappy Note pitch game and Vocal Monitor for real-time pitch visualization. Practice scales, improve pitch accuracy, and train your ear with interactive exercises.">
+  <meta name="keywords" content="vocal training, pitch training, singing game, ear training, learn to sing, pitch matching, music training, vocal exercises, singing practice, pitch detection, voice training, flappy note, vocal monitor">
+  <meta name="author" content="Vocal Trainer">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://flappynote.com/">
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://flappynote.com/">
-  <meta property="og:title" content="Flappy Note - Free Pitch Training Game for Singers">
-  <meta property="og:description" content="Master pitch matching with Flappy Note, a free Flappy Bird-style singing game. Control a bird by matching musical notes using your voice. Practice scales, modes, and chords while having fun.">
+  <meta property="og:title" content="Vocal Trainer - Free Pitch Training Tools for Singers">
+  <meta property="og:description" content="Free vocal training tools including Flappy Note game and Vocal Monitor. Practice pitch accuracy with interactive exercises.">
   <meta property="og:image" content="https://flappynote.com/og-image.png">
   <meta property="og:image:width" content="1400">
   <meta property="og:image:height" content="867">
-  <meta property="og:site_name" content="Flappy Note">
+  <meta property="og:site_name" content="Vocal Trainer">
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://flappynote.com/">
-  <meta name="twitter:title" content="Flappy Note - Free Pitch Training Game for Singers">
-  <meta name="twitter:description" content="Master pitch matching with Flappy Note, a free Flappy Bird-style singing game. Control a bird by matching musical notes using your voice. Practice scales, modes, and chords while having fun.">
+  <meta name="twitter:title" content="Vocal Trainer - Free Pitch Training Tools for Singers">
+  <meta name="twitter:description" content="Free vocal training tools including Flappy Note game and Vocal Monitor. Practice pitch accuracy with interactive exercises.">
   <meta name="twitter:image" content="https://flappynote.com/og-image.png">
 
   <!-- Additional SEO -->
-  <meta name="application-name" content="Flappy Note">
+  <meta name="application-name" content="Vocal Trainer">
   <meta name="theme-color" content="#4ec0ca">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Flappy Note">
+  <meta name="apple-mobile-web-app-title" content="Vocal Trainer">
 
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/favicon.svg">
   <link rel="stylesheet" href="/src/ui/styles.css">
+
+  <!-- TensorFlow.js for CREPE pitch detection -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
 
   <!-- Structured Data (JSON-LD) for Rich Results -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "Flappy Note",
+    "name": "Vocal Trainer",
     "url": "https://flappynote.com",
-    "description": "A free Flappy Bird-style pitch training game for singers. Control a bird by matching musical notes with your voice. Practice scales, modes, and chords through interactive gameplay using real-time pitch detection.",
+    "description": "A suite of free vocal training tools for singers. Includes Flappy Note pitch game and Vocal Monitor for real-time pitch visualization.",
     "applicationCategory": "GameApplication",
-    "genre": ["Music", "Educational", "Arcade"],
+    "genre": ["Music", "Educational"],
     "operatingSystem": "Web Browser",
     "offers": {
       "@type": "Offer",
@@ -60,40 +65,24 @@
     "browserRequirements": "Requires microphone access",
     "featureList": [
       "Real-time pitch detection",
-      "Multiple scales: Major, Natural Minor, Harmonic Minor, Melodic Minor, Pentatonic, Blues, Chromatic",
-      "Church modes: Dorian, Mixolydian",
-      "7th chords: Major 7th, Dominant 7th, Minor 7th, Half Diminished, Diminished",
-      "Adjustable root note (all 12 chromatic notes)",
-      "Ascending, descending, and random note patterns",
-      "Optional root drone for pitch reference",
-      "Visual pitch guidance with directional arrows",
-      "Adaptive pitch detection for all voice ranges"
+      "Flappy Note singing game",
+      "Vocal Monitor pitch visualization",
+      "Multiple scales and modes",
+      "Root drone for pitch reference"
     ],
-    "screenshot": "https://flappynote.com/og-image.png",
-    "author": {
-      "@type": "Organization",
-      "name": "Flappy Note"
-    },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "5",
-      "ratingCount": "1"
-    }
+    "screenshot": "https://flappynote.com/og-image.png"
   }
   </script>
 
   <!-- Google Analytics -->
   <script>
-    // Only load Google Analytics if measurement ID is configured
     const gaMeasurementId = '%VITE_GA_MEASUREMENT_ID%';
     if (gaMeasurementId && gaMeasurementId !== '' && !gaMeasurementId.startsWith('%')) {
-      // Load gtag.js
       const script = document.createElement('script');
       script.async = true;
       script.src = `https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`;
       document.head.appendChild(script);
 
-      // Initialize gtag
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
@@ -103,94 +92,182 @@
 </head>
 <body>
   <div id="app">
-    <div id="ui-container">
-      <div id="controls">
-        <!-- Title -->
-        <h1>Flappy Note</h1>
+    <!-- Tool Selection Screen (created dynamically by main.js) -->
 
-        <!-- Settings group (desktop: inline, mobile: collapsible) -->
-        <div id="settings-group">
-          <button id="settings-toggle" class="settings-toggle">Settings ⚙️</button>
-          <div id="settings-panel" class="settings-panel">
-          <div class="control-group">
-            <label for="root-note">Root Note:</label>
-            <select id="root-note">
-              <option value="C">C</option>
-              <option value="C#">C# / Db</option>
-              <option value="D" selected>D</option>
-              <option value="D#">D# / Eb</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="F#">F# / Gb</option>
-              <option value="G">G</option>
-              <option value="G#">G# / Ab</option>
-              <option value="A">A</option>
-              <option value="A#">A# / Bb</option>
-              <option value="B">B</option>
-            </select>
-          </div>
-          <div class="control-group">
-            <label for="scale-type">Mode:</label>
-            <select id="scale-type">
-              <optgroup label="Scales">
-                <option value="major" selected>Major Scale</option>
-                <option value="minor">Natural Minor</option>
-                <option value="harmonicMinor">Harmonic Minor</option>
-                <option value="melodicMinor">Melodic Minor</option>
-                <option value="pentatonic">Pentatonic Major</option>
-                <option value="blues">Blues Scale</option>
-                <option value="chromatic">Chromatic</option>
-              </optgroup>
-              <optgroup label="Modes">
-                <option value="dorian">Dorian</option>
-                <option value="mixolydian">Mixolydian</option>
-              </optgroup>
-              <optgroup label="7th Chords">
-                <option value="major7">Major 7th</option>
-                <option value="dominant7">Dominant 7th</option>
-                <option value="minor7">Minor 7th</option>
-                <option value="minorMajor7">Minor Major 7th</option>
-                <option value="halfDiminished7">Half Diminished 7th</option>
-                <option value="diminished7">Diminished 7th</option>
-              </optgroup>
-              <optgroup label="Advanced">
-                <option value="wholeTone">Whole Tone</option>
-                <option value="diminished">Diminished</option>
-              </optgroup>
-            </select>
-          </div>
-          <div class="control-group">
-            <label for="direction">Direction:</label>
-            <select id="direction">
-              <option value="up" selected>Ascending ↑</option>
-              <option value="down">Descending ↓</option>
-              <option value="random">Random 🎲</option>
-            </select>
-          </div>
-          <!-- Drone toggle (inside settings panel for mobile) -->
-          <div class="control-group drone-toggle-group">
-            <label for="drone-toggle" class="drone-label">
-              <input type="checkbox" id="drone-toggle" checked>
-              Root Drone
-            </label>
+    <!-- Flappy Note Tool Container -->
+    <div id="flappy-note-container" style="display: none;">
+      <div id="ui-container">
+        <div id="controls">
+          <!-- Title -->
+          <h1>Flappy Note</h1>
+
+          <!-- Settings group -->
+          <div id="settings-group">
+            <button id="settings-toggle" class="settings-toggle">Settings ⚙️</button>
+            <div id="settings-panel" class="settings-panel">
+              <div class="control-group">
+                <label for="root-note">Root Note:</label>
+                <select id="root-note">
+                  <option value="C">C</option>
+                  <option value="C#">C# / Db</option>
+                  <option value="D" selected>D</option>
+                  <option value="D#">D# / Eb</option>
+                  <option value="E">E</option>
+                  <option value="F">F</option>
+                  <option value="F#">F# / Gb</option>
+                  <option value="G">G</option>
+                  <option value="G#">G# / Ab</option>
+                  <option value="A">A</option>
+                  <option value="A#">A# / Bb</option>
+                  <option value="B">B</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label for="scale-type">Mode:</label>
+                <select id="scale-type">
+                  <optgroup label="Scales">
+                    <option value="major" selected>Major Scale</option>
+                    <option value="minor">Natural Minor</option>
+                    <option value="harmonicMinor">Harmonic Minor</option>
+                    <option value="melodicMinor">Melodic Minor</option>
+                    <option value="pentatonic">Pentatonic Major</option>
+                    <option value="blues">Blues Scale</option>
+                    <option value="chromatic">Chromatic</option>
+                  </optgroup>
+                  <optgroup label="Modes">
+                    <option value="dorian">Dorian</option>
+                    <option value="mixolydian">Mixolydian</option>
+                  </optgroup>
+                  <optgroup label="7th Chords">
+                    <option value="major7">Major 7th</option>
+                    <option value="dominant7">Dominant 7th</option>
+                    <option value="minor7">Minor 7th</option>
+                    <option value="minorMajor7">Minor Major 7th</option>
+                    <option value="halfDiminished7">Half Diminished 7th</option>
+                    <option value="diminished7">Diminished 7th</option>
+                  </optgroup>
+                  <optgroup label="Advanced">
+                    <option value="wholeTone">Whole Tone</option>
+                    <option value="diminished">Diminished</option>
+                  </optgroup>
+                </select>
+              </div>
+              <div class="control-group">
+                <label for="direction">Direction:</label>
+                <select id="direction">
+                  <option value="up" selected>Ascending ↑</option>
+                  <option value="down">Descending ↓</option>
+                  <option value="random">Random 🎲</option>
+                </select>
+              </div>
+              <div class="control-group drone-toggle-group">
+                <label for="drone-toggle" class="drone-label">
+                  <input type="checkbox" id="drone-toggle" checked>
+                  Root Drone
+                </label>
+              </div>
+            </div>
           </div>
 
+          <!-- Button group -->
+          <div id="button-group">
+            <button id="flappy-back-button" class="back-button">← Back</button>
+            <button id="start-button">Start Game</button>
+            <button id="reset-button" disabled>Reset</button>
           </div>
         </div>
-
-        <!-- Button group -->
-        <div id="button-group">
-          <button id="start-button">Start Game</button>
-          <button id="reset-button" disabled>Reset</button>
+        <div id="game-info">
+          <div id="pitch-display">Pitch: --</div>
+          <div id="score-display">Score: 0</div>
+          <div id="status-display">Click Start to begin</div>
         </div>
       </div>
-      <div id="game-info">
-        <div id="pitch-display">Pitch: --</div>
-        <div id="score-display">Score: 0</div>
-        <div id="status-display">Click Start to begin</div>
+      <canvas id="game-canvas"></canvas>
+    </div>
+
+    <!-- Vocal Monitor Tool Container -->
+    <div id="vocal-monitor-container" style="display: none;">
+      <div id="vocal-monitor-ui">
+        <div id="vocal-monitor-controls">
+          <!-- Title -->
+          <h1>Vocal Monitor</h1>
+
+          <!-- Settings group -->
+          <div id="vocal-settings-group">
+            <button id="vocal-settings-toggle" class="settings-toggle">Settings ⚙️</button>
+            <div id="vocal-settings-panel" class="settings-panel">
+              <div class="control-group">
+                <label for="vocal-root-note">Root Note:</label>
+                <select id="vocal-root-note">
+                  <option value="C">C</option>
+                  <option value="C#">C# / Db</option>
+                  <option value="D" selected>D</option>
+                  <option value="D#">D# / Eb</option>
+                  <option value="E">E</option>
+                  <option value="F">F</option>
+                  <option value="F#">F# / Gb</option>
+                  <option value="G">G</option>
+                  <option value="G#">G# / Ab</option>
+                  <option value="A">A</option>
+                  <option value="A#">A# / Bb</option>
+                  <option value="B">B</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label for="vocal-scale-type">Scale:</label>
+                <select id="vocal-scale-type">
+                  <optgroup label="Scales">
+                    <option value="major" selected>Major Scale</option>
+                    <option value="minor">Natural Minor</option>
+                    <option value="harmonicMinor">Harmonic Minor</option>
+                    <option value="melodicMinor">Melodic Minor</option>
+                    <option value="pentatonic">Pentatonic Major</option>
+                    <option value="blues">Blues Scale</option>
+                    <option value="chromatic">Chromatic</option>
+                  </optgroup>
+                  <optgroup label="Modes">
+                    <option value="dorian">Dorian</option>
+                    <option value="mixolydian">Mixolydian</option>
+                  </optgroup>
+                  <optgroup label="7th Chords">
+                    <option value="major7">Major 7th</option>
+                    <option value="dominant7">Dominant 7th</option>
+                    <option value="minor7">Minor 7th</option>
+                    <option value="minorMajor7">Minor Major 7th</option>
+                    <option value="halfDiminished7">Half Diminished 7th</option>
+                    <option value="diminished7">Diminished 7th</option>
+                  </optgroup>
+                  <optgroup label="Advanced">
+                    <option value="wholeTone">Whole Tone</option>
+                    <option value="diminished">Diminished</option>
+                  </optgroup>
+                </select>
+              </div>
+              <div class="control-group drone-toggle-group">
+                <label for="vocal-drone-toggle" class="drone-label">
+                  <input type="checkbox" id="vocal-drone-toggle" checked>
+                  Root Drone
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Button group -->
+          <div id="vocal-button-group">
+            <button id="vocal-back-button" class="back-button">← Back</button>
+            <button id="vocal-start-button">Start</button>
+            <button id="vocal-clear-button" disabled>Clear</button>
+          </div>
+        </div>
+        <div id="vocal-info">
+          <div id="vocal-pitch-display">Pitch: --</div>
+          <div id="vocal-note-display">Note: --</div>
+        </div>
+      </div>
+      <div id="vocal-monitor-canvas-container">
+        <canvas id="vocal-monitor-canvas"></canvas>
       </div>
     </div>
-    <canvas id="game-canvas"></canvas>
   </div>
 
   <!-- Footer -->
@@ -210,12 +287,30 @@
         </svg>
         Help
       </a>
+      <span style="margin: 0 8px; color: rgba(255, 255, 255, 0.5);">•</span>
+      <a href="#" id="fullscreen-toggle">
+        <svg id="fullscreen-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 4px;">
+          <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+        </svg>
+        <span id="fullscreen-text">Fullscreen</span>
+      </a>
     </p>
   </footer>
 
-  <!-- Debug Toggle Button -->
-  <button id="debug-toggle" title="Toggle Debug Overlay">🎵</button>
+  <!-- Debug Toggle Button (hidden by default, shown only in dev or via keyboard shortcut) -->
+  <button id="debug-toggle" title="Toggle Debug Overlay" style="display: none;">🎵</button>
 
-  <script type="module" src="/src/main.js?v=34"></script>
+  <!-- GitHub Pages SPA redirect handler -->
+  <script>
+    (function() {
+      var redirect = sessionStorage.redirect;
+      delete sessionStorage.redirect;
+      if (redirect && redirect !== location.href) {
+        history.replaceState(null, null, redirect);
+      }
+    })();
+  </script>
+
+  <script type="module" src="/src/main.js?v=40"></script>
 </body>
 </html>
