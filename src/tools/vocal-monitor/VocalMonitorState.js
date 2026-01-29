@@ -34,6 +34,11 @@ export class VocalMonitorState {
     this.currentPitch = null;
     this.isSinging = false;
 
+    // Adaptive RMS tracking for volume-based line thickness
+    this.rmsMin = 0.01; // Will adapt down
+    this.rmsMax = 0.03; // Will adapt up
+    this.rmsAdaptSpeed = 0.05; // How fast to adapt (0-1)
+
     // Octave-jump filter state
     this.recentPitches = []; // Last N pitches for filtering
     this.recentPitchesMaxSize = 8; // Increased for less aggressive filtering
@@ -101,7 +106,22 @@ export class VocalMonitorState {
       // Apply octave-jump correction
       const correctedPitchData = this.correctOctaveJump(pitchData);
 
-      this.currentPitch = correctedPitchData;
+      // Extract vocal analysis data if available
+      const vocalAnalysis = correctedPitchData.vocalAnalysis || null;
+
+      // Update adaptive RMS range
+      const rms = correctedPitchData.rms || 0;
+      if (rms > 0) {
+        this.updateRMSRange(rms);
+      }
+
+      // Calculate normalized RMS (0-1) based on adaptive range
+      const normalizedRMS = this.getNormalizedRMS(rms);
+
+      this.currentPitch = {
+        ...correctedPitchData,
+        normalizedRMS: normalizedRMS,
+      };
       this.isSinging = true;
       this.lastSingingTime = now;
 
@@ -110,9 +130,15 @@ export class VocalMonitorState {
         time: elapsedTime,
         frequency: correctedPitchData.frequency,
         confidence: correctedPitchData.confidence || 0,
+        rms: rms,
+        normalizedRMS: normalizedRMS, // Adaptive normalized volume (0-1)
         noteName: correctedPitchData.noteName,
         centsOff: correctedPitchData.centsOff,
         midiNote: correctedPitchData.midiNote,
+        // Vocal analysis parameters
+        stability: vocalAnalysis?.stability ?? 1.0,
+        brightness: vocalAnalysis?.spectralCentroid ?? 0.5,
+        breathiness: 1 - (vocalAnalysis?.hnr ?? 0.5), // Invert HNR so higher = more breathy
       });
 
       // Trim old history
@@ -199,6 +225,51 @@ export class VocalMonitorState {
     }
 
     return pitchData;
+  }
+
+  /**
+   * Update adaptive RMS range based on observed values
+   * @param {number} rms - Current RMS value
+   */
+  updateRMSRange(rms) {
+    // Expand range quickly, contract slowly
+    if (rms < this.rmsMin) {
+      // New minimum - adapt quickly
+      this.rmsMin = this.rmsMin * 0.7 + rms * 0.3;
+    } else if (rms > this.rmsMax) {
+      // New maximum - adapt quickly
+      this.rmsMax = this.rmsMax * 0.7 + rms * 0.3;
+    } else {
+      // Within range - slowly contract toward observed values
+      // This helps adapt if user gets quieter/louder over time
+      const rangeMid = (this.rmsMin + this.rmsMax) / 2;
+      if (rms < rangeMid) {
+        // Slowly raise minimum
+        this.rmsMin = this.rmsMin * 0.995 + rms * 0.005;
+      } else {
+        // Slowly lower maximum
+        this.rmsMax = this.rmsMax * 0.995 + rms * 0.005;
+      }
+    }
+
+    // Ensure minimum range span to avoid division issues
+    const minSpan = 0.01;
+    if (this.rmsMax - this.rmsMin < minSpan) {
+      this.rmsMax = this.rmsMin + minSpan;
+    }
+  }
+
+  /**
+   * Get normalized RMS (0-1) based on adaptive range
+   * @param {number} rms - Current RMS value
+   * @returns {number} Normalized value 0-1
+   */
+  getNormalizedRMS(rms) {
+    if (rms <= this.rmsMin) return 0;
+    if (rms >= this.rmsMax) return 1;
+
+    // Linear interpolation within observed range
+    return (rms - this.rmsMin) / (this.rmsMax - this.rmsMin);
   }
 
   /**
@@ -300,6 +371,9 @@ export class VocalMonitorState {
       viewportWidth: this.viewportWidth,
       pitchRangeMin: this.pitchRangeMin,
       pitchRangeMax: this.pitchRangeMax,
+      // Adaptive volume tracking
+      rmsMin: this.rmsMin,
+      rmsMax: this.rmsMax,
     };
   }
 }

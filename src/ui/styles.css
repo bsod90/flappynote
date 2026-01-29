@@ -873,29 +873,6 @@ button:disabled {
   margin-right: 0; /* Gap handles spacing in button group */
 }
 
-#vocal-info {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 10px;
-  border: 3px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-#vocal-info > div {
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 10px;
-  text-align: center;
-  border: 2px solid rgba(255, 107, 53, 0.3);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  font-family: 'Courier New', monospace;
-  font-weight: bold;
-  color: #333;
-}
-
 #vocal-monitor-canvas-container {
   flex: 1;
   min-height: 0;
@@ -976,17 +953,6 @@ button:disabled {
 
   #vocal-button-group .back-button {
     margin-bottom: 0; /* Override .back-button mobile style */
-  }
-
-  #vocal-info {
-    padding: 3px;
-    gap: 3px;
-    margin-bottom: 3px;
-  }
-
-  #vocal-info > div {
-    padding: 6px 3px;
-    font-size: 0.85rem;
   }
 
   #vocal-monitor-canvas-container {

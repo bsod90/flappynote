@@ -7,6 +7,7 @@
 export { PitchDetector, DetectorType } from './PitchDetector.js';
 export { FrequencyConverter } from './FrequencyConverter.js';
 export { AudioAnalyzer } from './AudioAnalyzer.js';
+export { VocalAnalyzer } from './VocalAnalyzer.js';
 
 // Detector implementations
 export { BasePitchDetector } from './detectors/BasePitchDetector.js';

@@ -24,8 +24,6 @@ export class VocalMonitorTool extends ToolBase {
     this.rootNoteSelect = null;
     this.scaleTypeSelect = null;
     this.droneToggle = null;
-    this.pitchDisplay = null;
-    this.noteDisplay = null;
     this.settingsToggle = null;
     this.settingsPanel = null;
 
@@ -63,8 +61,6 @@ export class VocalMonitorTool extends ToolBase {
     this.rootNoteSelect = document.getElementById('vocal-root-note');
     this.scaleTypeSelect = document.getElementById('vocal-scale-type');
     this.droneToggle = document.getElementById('vocal-drone-toggle');
-    this.pitchDisplay = document.getElementById('vocal-pitch-display');
-    this.noteDisplay = document.getElementById('vocal-note-display');
     this.settingsToggle = document.getElementById('vocal-settings-toggle');
     this.settingsPanel = document.getElementById('vocal-settings-panel');
 
@@ -515,9 +511,6 @@ export class VocalMonitorTool extends ToolBase {
     this.rootNoteSelect.disabled = false;
     this.scaleTypeSelect.disabled = false;
 
-    this.updatePitchDisplay(null);
-    this.updateNoteDisplay(null);
-
     // Start render loop
     this.startRenderLoop();
 
@@ -665,8 +658,6 @@ export class VocalMonitorTool extends ToolBase {
    */
   handleClear() {
     this.monitorState.clear();
-    this.updatePitchDisplay(null);
-    this.updateNoteDisplay(null);
   }
 
   /**
@@ -676,8 +667,6 @@ export class VocalMonitorTool extends ToolBase {
     if (this.monitorState) {
       this.monitorState.onPitchDetected(pitchData);
     }
-    this.updatePitchDisplay(pitchData);
-    this.updateNoteDisplay(pitchData);
   }
 
   /**
@@ -725,37 +714,8 @@ export class VocalMonitorTool extends ToolBase {
     // Update debug overlay if enabled
     if (this.debugOverlay && this.debugOverlay.enabled && this.pitchContext) {
       const debugInfo = this.pitchContext.getDebugInfo();
-      this.debugOverlay.update(state.currentPitch, debugInfo, null, state.isSinging);
-    }
-  }
-
-  /**
-   * Update pitch display
-   */
-  updatePitchDisplay(pitchData) {
-    if (!this.pitchDisplay) return;
-
-    if (pitchData && pitchData.frequency) {
-      const freq = pitchData.frequency.toFixed(1);
-      this.pitchDisplay.textContent = `Pitch: ${freq} Hz`;
-      this.pitchDisplay.classList.add('singing');
-    } else {
-      this.pitchDisplay.textContent = 'Pitch: --';
-      this.pitchDisplay.classList.remove('singing');
-    }
-  }
-
-  /**
-   * Update note display
-   */
-  updateNoteDisplay(pitchData) {
-    if (!this.noteDisplay) return;
-
-    if (pitchData && pitchData.noteName) {
-      const centsStr = pitchData.centsOff >= 0 ? `+${pitchData.centsOff.toFixed(0)}` : pitchData.centsOff.toFixed(0);
-      this.noteDisplay.textContent = `Note: ${pitchData.noteName} (${centsStr}¢)`;
-    } else {
-      this.noteDisplay.textContent = 'Note: --';
+      const volumeInfo = { rmsMin: state.rmsMin, rmsMax: state.rmsMax };
+      this.debugOverlay.update(state.currentPitch, debugInfo, null, state.isSinging, volumeInfo);
     }
   }
 

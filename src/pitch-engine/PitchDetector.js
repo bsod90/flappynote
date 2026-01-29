@@ -8,6 +8,7 @@ import { AudioAnalyzer } from './AudioAnalyzer.js';
 import { FrequencyConverter } from './FrequencyConverter.js';
 import { HybridPitchDetector } from './detectors/HybridPitchDetector.js';
 import { TFCREPEDetector, TFCREPEState } from './detectors/TFCREPEDetector.js';
+import { VocalAnalyzer } from './VocalAnalyzer.js';
 
 /**
  * Available detector types
@@ -68,6 +69,10 @@ export class PitchDetector {
     this.intervalId = null;
     this.currentPitch = null;
     this.detectorReady = false;
+
+    // Vocal analysis (vibrato, stability, brightness, breathiness)
+    this.vocalAnalyzer = new VocalAnalyzer();
+    this.enableVocalAnalysis = options.enableVocalAnalysis !== false; // Enabled by default
   }
 
   /**
@@ -199,19 +204,36 @@ export class PitchDetector {
 
     if (frequency) {
       const noteInfo = FrequencyConverter.frequencyToNote(frequency);
+      // Calculate RMS from buffer (needed when using CREPE which doesn't call analyzer.detectPitch)
+      const rms = this.analyzer.calculateRMS(buffer);
       this.currentPitch = {
         frequency,
         confidence,
+        rms, // Volume level for visualization
         ...noteInfo,
         timestamp: Date.now(),
         detector: this.activeDetector?.name || 'analyzer',
       };
+
+      // Run vocal analysis if enabled
+      if (this.enableVocalAnalysis) {
+        const analyserNode = this.analyzer.getAnalyserNode();
+        const sampleRate = this.analyzer.getSampleRate();
+        const vocalAnalysis = this.vocalAnalyzer.analyze(buffer, frequency, sampleRate, analyserNode);
+        this.currentPitch.vocalAnalysis = vocalAnalysis;
+      }
 
       if (this.onPitchDetected) {
         this.onPitchDetected(this.currentPitch);
       }
     } else {
       this.currentPitch = null;
+
+      // Reset vocal analyzer on silence
+      if (this.enableVocalAnalysis) {
+        this.vocalAnalyzer.reset();
+      }
+
       if (this.onPitchDetected) {
         this.onPitchDetected(null);
       }

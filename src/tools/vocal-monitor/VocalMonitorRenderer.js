@@ -173,15 +173,57 @@ export class VocalMonitorRenderer {
   }
 
   /**
-   * Render the pitch trace line
+   * Get color based on brightness (spectral centroid)
+   * Cool colors (blue/purple) for dark, warm colors (orange/yellow) for bright
+   * @param {number} brightness - 0-1 normalized brightness
+   * @returns {string} CSS color string
+   */
+  getBrightnessColor(brightness) {
+    // Interpolate from cool (dark tone) to warm (bright tone)
+    // Dark: #6b7aff (cool blue-purple)
+    // Mid: #ff6b35 (orange - default)
+    // Bright: #ffd93d (warm yellow)
+
+    if (brightness < 0.5) {
+      // Dark to mid range
+      const t = brightness * 2; // 0-1 within this range
+      const r = Math.round(107 + (255 - 107) * t);
+      const g = Math.round(122 + (107 - 122) * t);
+      const b = Math.round(255 + (53 - 255) * t);
+      return `rgb(${r}, ${g}, ${b})`;
+    } else {
+      // Mid to bright range
+      const t = (brightness - 0.5) * 2; // 0-1 within this range
+      const r = Math.round(255);
+      const g = Math.round(107 + (217 - 107) * t);
+      const b = Math.round(53 + (61 - 53) * t);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+  }
+
+  /**
+   * Get line width based on normalized volume
+   * Range: baseWidth/2 to baseWidth*2
+   * @param {number} normalizedRMS - Pre-normalized RMS (0-1) from adaptive tracking
+   * @param {number} baseWidth - Base line width
+   * @returns {number} Scaled line width
+   */
+  getVolumeBasedLineWidth(normalizedRMS, baseWidth = 4) {
+    // normalizedRMS is already 0-1 from VocalMonitorState's adaptive tracking
+    const clamped = Math.min(1, Math.max(0, normalizedRMS));
+    // Scale from 0.5x to 2x base width
+    const scale = 0.5 + clamped * 1.5;
+    return baseWidth * scale;
+  }
+
+  /**
+   * Render the pitch trace line with vocal analysis visualization
    */
   renderPitchTrace(x, width, state) {
     const { pitchHistory, pitchRangeMin, pitchRangeMax, viewportStart, viewportWidth } = state;
 
     if (pitchHistory.length < 2) return;
 
-    // Draw pitch line segments
-    this.ctx.strokeStyle = '#ff6b35';
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';
 
@@ -189,27 +231,70 @@ export class VocalMonitorRenderer {
     let lastMidi = null;
     const maxTimeGap = 150; // Max gap in ms before breaking line
     const maxPitchGap = 7; // Max semitones jump before breaking line (a fifth)
+    const baseLineWidth = 4; // Base line width for volume scaling
 
+    // First pass: Draw glow effect based on brightness
+    this.ctx.globalAlpha = 0.25;
+    for (let i = 1; i < pitchHistory.length; i++) {
+      const point = pitchHistory[i];
+      const prevPoint = pitchHistory[i - 1];
+
+      const normalizedX = (point.time - viewportStart) / viewportWidth;
+      const pixelX = x + normalizedX * width;
+      const prevNormalizedX = (prevPoint.time - viewportStart) / viewportWidth;
+      const prevPixelX = x + prevNormalizedX * width;
+
+      const midiNote = FrequencyConverter.frequencyToMidi(point.frequency);
+      const prevMidiNote = FrequencyConverter.frequencyToMidi(prevPoint.frequency);
+
+      const normalizedY = (midiNote + 0.5 - pitchRangeMin) / (pitchRangeMax - pitchRangeMin);
+      const pixelY = this.height - normalizedY * this.height;
+      const prevNormalizedY = (prevMidiNote + 0.5 - pitchRangeMin) / (pitchRangeMax - pitchRangeMin);
+      const prevPixelY = this.height - prevNormalizedY * this.height;
+
+      const timeDiff = point.time - prevPoint.time;
+      const pitchDiff = Math.abs(midiNote - prevMidiNote);
+
+      if (timeDiff < maxTimeGap && pitchDiff < maxPitchGap) {
+        // Glow color based on brightness
+        const brightness = point.brightness ?? 0.5;
+        this.ctx.strokeStyle = this.getBrightnessColor(brightness);
+        // Glow width scales with volume too
+        const glowWidth = this.getVolumeBasedLineWidth(point.normalizedRMS || 0, baseLineWidth) * 3;
+        this.ctx.lineWidth = glowWidth;
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(prevPixelX, prevPixelY);
+        this.ctx.lineTo(pixelX, pixelY);
+        this.ctx.stroke();
+      }
+    }
+    this.ctx.globalAlpha = 1;
+
+    // Second pass: Draw main pitch line with color based on brightness, width based on volume
     for (let i = 0; i < pitchHistory.length; i++) {
       const point = pitchHistory[i];
       const normalizedX = (point.time - viewportStart) / viewportWidth;
       const pixelX = x + normalizedX * width;
 
       const midiNote = FrequencyConverter.frequencyToMidi(point.frequency);
-      // Add 0.5 to center the pitch line within the note's row (not at the boundary)
       const normalizedY = (midiNote + 0.5 - pitchRangeMin) / (pitchRangeMax - pitchRangeMin);
       const pixelY = this.height - normalizedY * this.height;
 
-      // Line width based on confidence
-      const lineWidth = 2 + point.confidence * 6;
+      // Line width based on volume (adaptive normalized RMS)
+      const lineWidth = this.getVolumeBasedLineWidth(point.normalizedRMS || 0, baseLineWidth);
+
+      // Color based on brightness
+      const brightness = point.brightness ?? 0.5;
+      const lineColor = this.getBrightnessColor(brightness);
 
       if (lastPoint && lastMidi !== null) {
         const timeDiff = point.time - lastPoint.time;
         const pitchDiff = Math.abs(midiNote - lastMidi);
 
-        // Only draw line if both time and pitch gaps are within limits
         if (timeDiff < maxTimeGap && pitchDiff < maxPitchGap) {
           this.ctx.beginPath();
+          this.ctx.strokeStyle = lineColor;
           this.ctx.lineWidth = lineWidth;
           this.ctx.moveTo(lastPoint.x, lastPoint.y);
           this.ctx.lineTo(pixelX, pixelY);
@@ -221,45 +306,75 @@ export class VocalMonitorRenderer {
       lastMidi = midiNote;
     }
 
-    // Draw glow effect
-    if (pitchHistory.length > 0) {
-      this.ctx.globalAlpha = 0.3;
-      this.ctx.strokeStyle = '#ffaa88';
-      this.ctx.lineWidth = 8;
+    // Draw breathiness indicators (more prominent)
+    this.renderBreathinessIndicators(x, width, state);
+  }
 
-      this.ctx.beginPath();
-      let firstPoint = true;
-      let prevMidi = null;
+  /**
+   * Render breathiness indicators as a fuzzy/airy effect around the pitch line
+   */
+  renderBreathinessIndicators(x, width, state) {
+    const { pitchHistory, pitchRangeMin, pitchRangeMax, viewportStart, viewportWidth } = state;
 
-      for (let i = 0; i < pitchHistory.length; i++) {
-        const point = pitchHistory[i];
-        const normalizedX = (point.time - viewportStart) / viewportWidth;
-        const pixelX = x + normalizedX * width;
+    if (pitchHistory.length < 1) return;
 
-        const midiNote = FrequencyConverter.frequencyToMidi(point.frequency);
-        // Add 0.5 to center within note row
-        const normalizedY = (midiNote + 0.5 - pitchRangeMin) / (pitchRangeMax - pitchRangeMin);
-        const pixelY = this.height - normalizedY * this.height;
+    // Higher threshold - only show for noticeably breathy sounds
+    const breathinessThreshold = 0.4;
 
-        if (firstPoint) {
-          this.ctx.moveTo(pixelX, pixelY);
-          firstPoint = false;
-        } else {
-          const prevPoint = pitchHistory[i - 1];
-          const timeDiff = point.time - prevPoint.time;
-          const pitchDiff = prevMidi !== null ? Math.abs(midiNote - prevMidi) : 0;
+    for (let i = 0; i < pitchHistory.length; i++) {
+      const point = pitchHistory[i];
+      const breathiness = point.breathiness ?? 0;
 
-          if (timeDiff < maxTimeGap && pitchDiff < maxPitchGap) {
-            this.ctx.lineTo(pixelX, pixelY);
-          } else {
-            this.ctx.moveTo(pixelX, pixelY);
-          }
-        }
-        prevMidi = midiNote;
+      if (breathiness < breathinessThreshold) continue;
+
+      const normalizedX = (point.time - viewportStart) / viewportWidth;
+      const pixelX = x + normalizedX * width;
+
+      const midiNote = FrequencyConverter.frequencyToMidi(point.frequency);
+      const normalizedY = (midiNote + 0.5 - pitchRangeMin) / (pitchRangeMax - pitchRangeMin);
+      const pixelY = this.height - normalizedY * this.height;
+
+      // Breathiness intensity (0-1 above threshold)
+      const intensity = (breathiness - breathinessThreshold) / (1 - breathinessThreshold);
+
+      // Draw scattered particles for airy effect (toned down)
+      const numDots = Math.floor(2 + intensity * 8); // 2-10 dots
+      const maxRadius = 6 + intensity * 8; // Smaller spread
+
+      for (let d = 0; d < numDots; d++) {
+        // Use deterministic pseudo-random based on point time and index
+        const seed = point.time * 1000 + d * 137;
+        const angle = ((seed * 0.618033988749) % 1) * Math.PI * 2;
+        const radiusFactor = ((seed * 0.314159265359) % 1);
+        const radius = 3 + radiusFactor * maxRadius;
+
+        const dotX = pixelX + Math.cos(angle) * radius;
+        const dotY = pixelY + Math.sin(angle) * radius;
+
+        // Dot size and alpha vary with distance and breathiness
+        const distanceFactor = 1 - (radius / (maxRadius + 3));
+        const dotSize = 1 + distanceFactor * 1.5 + intensity * 1;
+        const dotAlpha = (0.15 + intensity * 0.35) * (0.3 + distanceFactor * 0.5);
+
+        // Color: subtle cyan for airy feel
+        this.ctx.fillStyle = `rgba(150, 200, 230, ${dotAlpha})`;
+        this.ctx.beginPath();
+        this.ctx.arc(dotX, dotY, dotSize, 0, Math.PI * 2);
+        this.ctx.fill();
       }
 
-      this.ctx.stroke();
-      this.ctx.globalAlpha = 1;
+      // Add a subtle hazy glow only for very breathy sounds
+      if (intensity > 0.5) {
+        const glowAlpha = (intensity - 0.5) * 0.15;
+        const gradient = this.ctx.createRadialGradient(pixelX, pixelY, 0, pixelX, pixelY, maxRadius);
+        gradient.addColorStop(0, `rgba(150, 200, 230, ${glowAlpha})`);
+        gradient.addColorStop(1, 'rgba(150, 200, 230, 0)');
+
+        this.ctx.fillStyle = gradient;
+        this.ctx.beginPath();
+        this.ctx.arc(pixelX, pixelY, maxRadius, 0, Math.PI * 2);
+        this.ctx.fill();
+      }
     }
   }
 

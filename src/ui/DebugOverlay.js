@@ -89,6 +89,60 @@ export class DebugOverlay {
         </div>
       </div>
       <div class="debug-section">
+        <h4>Volume (Adaptive)</h4>
+        <div class="debug-row">
+          <span>Raw RMS:</span>
+          <span id="raw-rms-value">--</span>
+        </div>
+        <div class="debug-row">
+          <span>Normalized:</span>
+          <div class="progress-bar">
+            <div id="volume-bar" class="progress-fill"></div>
+          </div>
+          <span id="volume-value">--</span>
+        </div>
+        <div class="debug-row">
+          <span>Range:</span>
+          <span id="rms-range">--</span>
+        </div>
+      </div>
+      <div class="debug-section">
+        <h4>Vocal Analysis</h4>
+        <div class="debug-row">
+          <span>Vibrato:</span>
+          <span id="vibrato-status">--</span>
+        </div>
+        <div class="debug-row">
+          <span>Vibrato Rate:</span>
+          <span id="vibrato-rate">-- Hz</span>
+        </div>
+        <div class="debug-row">
+          <span>Vibrato Extent:</span>
+          <span id="vibrato-extent">-- cents</span>
+        </div>
+        <div class="debug-row">
+          <span>Stability:</span>
+          <div class="progress-bar">
+            <div id="stability-bar" class="progress-fill"></div>
+          </div>
+          <span id="stability-value">--</span>
+        </div>
+        <div class="debug-row">
+          <span>Brightness:</span>
+          <div class="progress-bar">
+            <div id="brightness-bar" class="progress-fill brightness"></div>
+          </div>
+          <span id="brightness-value">--</span>
+        </div>
+        <div class="debug-row">
+          <span>Breathiness:</span>
+          <div class="progress-bar">
+            <div id="breathiness-bar" class="progress-fill breathiness"></div>
+          </div>
+          <span id="breathiness-value">--</span>
+        </div>
+      </div>
+      <div class="debug-section">
         <h4>Target Info</h4>
         <div class="debug-row">
           <span>Target Note:</span>
@@ -138,9 +192,17 @@ export class DebugOverlay {
 
   /**
    * Update debug information
+   * @param {object} pitchData - Current pitch data
+   * @param {object} debugInfo - Debug info from pitch detector
+   * @param {object} targetGate - Target gate (for game)
+   * @param {boolean} isSinging - Whether currently singing
+   * @param {object} volumeInfo - Optional volume tracking info {rmsMin, rmsMax}
    */
-  update(pitchData, debugInfo, targetGate, isSinging) {
+  update(pitchData, debugInfo, targetGate, isSinging, volumeInfo = null) {
     if (!this.enabled || !this.container) return;
+
+    // Update volume info
+    this.updateVolumeDisplay(pitchData, volumeInfo);
 
     // Update detector info
     if (debugInfo.detector) {
@@ -187,6 +249,9 @@ export class DebugOverlay {
 
       // Update pitch visualizer
       this.updatePitchVisualizer(pitchData);
+
+      // Update vocal analysis info
+      this.updateVocalAnalysis(pitchData.vocalAnalysis);
     } else {
       document.getElementById('debug-freq').textContent = '-- Hz';
       document.getElementById('debug-note').textContent = '--';
@@ -196,6 +261,9 @@ export class DebugOverlay {
       // Hide pitch indicator
       const indicator = document.getElementById('pitch-indicator');
       if (indicator) indicator.style.display = 'none';
+
+      // Clear vocal analysis
+      this.updateVocalAnalysis(null);
     }
 
     // Update target info
@@ -217,6 +285,123 @@ export class DebugOverlay {
       document.getElementById('target-freq').textContent = '-- Hz';
       document.getElementById('target-cents').textContent = '--';
       document.getElementById('is-matching').textContent = '--';
+    }
+  }
+
+  /**
+   * Update volume display
+   */
+  updateVolumeDisplay(pitchData, volumeInfo) {
+    const rawRmsEl = document.getElementById('raw-rms-value');
+    const volumeBarEl = document.getElementById('volume-bar');
+    const volumeValueEl = document.getElementById('volume-value');
+    const rmsRangeEl = document.getElementById('rms-range');
+
+    // Always update range if available
+    if (rmsRangeEl && volumeInfo) {
+      rmsRangeEl.textContent = `${(volumeInfo.rmsMin * 1000).toFixed(1)} - ${(volumeInfo.rmsMax * 1000).toFixed(1)}`;
+    }
+
+    if (!pitchData || pitchData.rms === undefined || pitchData.rms === null) {
+      if (rawRmsEl) rawRmsEl.textContent = '--';
+      if (volumeBarEl) volumeBarEl.style.width = '0%';
+      if (volumeValueEl) volumeValueEl.textContent = '--';
+      return;
+    }
+
+    const rms = pitchData.rms;
+    const normalizedRMS = pitchData.normalizedRMS ?? 0;
+
+    if (rawRmsEl) {
+      rawRmsEl.textContent = (rms * 1000).toFixed(2); // Show as x1000 for readability
+    }
+
+    if (volumeBarEl) {
+      volumeBarEl.style.width = `${normalizedRMS * 100}%`;
+      // Color gradient from quiet (blue) to loud (red)
+      const r = Math.round(100 + normalizedRMS * 155);
+      const g = Math.round(180 - normalizedRMS * 80);
+      const b = Math.round(200 - normalizedRMS * 150);
+      volumeBarEl.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+    }
+
+    if (volumeValueEl) {
+      volumeValueEl.textContent = `${(normalizedRMS * 100).toFixed(0)}%`;
+    }
+  }
+
+  /**
+   * Update vocal analysis display
+   */
+  updateVocalAnalysis(vocalAnalysis) {
+    const vibratoStatusEl = document.getElementById('vibrato-status');
+    const vibratoRateEl = document.getElementById('vibrato-rate');
+    const vibratoExtentEl = document.getElementById('vibrato-extent');
+    const stabilityBarEl = document.getElementById('stability-bar');
+    const stabilityValueEl = document.getElementById('stability-value');
+    const brightnessBarEl = document.getElementById('brightness-bar');
+    const brightnessValueEl = document.getElementById('brightness-value');
+    const breathinessBarEl = document.getElementById('breathiness-bar');
+    const breathinessValueEl = document.getElementById('breathiness-value');
+
+    if (!vocalAnalysis) {
+      if (vibratoStatusEl) vibratoStatusEl.textContent = '--';
+      if (vibratoRateEl) vibratoRateEl.textContent = '-- Hz';
+      if (vibratoExtentEl) vibratoExtentEl.textContent = '-- cents';
+      if (stabilityBarEl) stabilityBarEl.style.width = '0%';
+      if (stabilityValueEl) stabilityValueEl.textContent = '--';
+      if (brightnessBarEl) brightnessBarEl.style.width = '0%';
+      if (brightnessValueEl) brightnessValueEl.textContent = '--';
+      if (breathinessBarEl) breathinessBarEl.style.width = '0%';
+      if (breathinessValueEl) breathinessValueEl.textContent = '--';
+      return;
+    }
+
+    // Vibrato
+    const vibrato = vocalAnalysis.vibrato || {};
+    if (vibratoStatusEl) {
+      vibratoStatusEl.textContent = vibrato.detected ? '✓ Detected' : '✗ None';
+      vibratoStatusEl.style.color = vibrato.detected ? '#2ecc71' : '#95a5a6';
+    }
+    if (vibratoRateEl) {
+      vibratoRateEl.textContent = vibrato.detected ? `${vibrato.rate.toFixed(1)} Hz` : '-- Hz';
+    }
+    if (vibratoExtentEl) {
+      vibratoExtentEl.textContent = vibrato.detected ? `${vibrato.extent.toFixed(0)} cents` : '-- cents';
+    }
+
+    // Stability
+    const stability = vocalAnalysis.stability ?? 0;
+    if (stabilityBarEl) {
+      stabilityBarEl.style.width = `${stability * 100}%`;
+      stabilityBarEl.style.backgroundColor = stability > 0.7 ? '#2ecc71' : stability > 0.4 ? '#f39c12' : '#e74c3c';
+    }
+    if (stabilityValueEl) {
+      stabilityValueEl.textContent = `${(stability * 100).toFixed(0)}%`;
+    }
+
+    // Brightness (spectral centroid)
+    const brightness = vocalAnalysis.spectralCentroid ?? 0.5;
+    if (brightnessBarEl) {
+      brightnessBarEl.style.width = `${brightness * 100}%`;
+      // Color gradient from cool (dark) to warm (bright)
+      const r = Math.round(107 + (255 - 107) * brightness);
+      const g = Math.round(122 + (200 - 122) * brightness);
+      const b = Math.round(255 - (255 - 53) * brightness);
+      brightnessBarEl.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+    }
+    if (brightnessValueEl) {
+      brightnessValueEl.textContent = `${(brightness * 100).toFixed(0)}%`;
+    }
+
+    // Breathiness (inverse of HNR)
+    const breathiness = 1 - (vocalAnalysis.hnr ?? 0.5);
+    if (breathinessBarEl) {
+      breathinessBarEl.style.width = `${breathiness * 100}%`;
+      breathinessBarEl.style.backgroundColor = breathiness > 0.5 ? '#9b59b6' : '#3498db';
+    }
+    if (breathinessValueEl) {
+      breathinessValueEl.textContent = `${(breathiness * 100).toFixed(0)}%`;
     }
   }
 

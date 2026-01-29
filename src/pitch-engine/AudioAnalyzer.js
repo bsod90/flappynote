@@ -420,6 +420,26 @@ export class AudioAnalyzer {
   }
 
   /**
+   * Get the Web Audio AnalyserNode for FFT analysis
+   * @returns {AnalyserNode|null}
+   */
+  getAnalyserNode() {
+    return this.analyser;
+  }
+
+  /**
+   * Calculate and return current RMS level from buffer
+   * @param {Float32Array} buffer - Audio buffer
+   * @returns {number} RMS level
+   */
+  calculateRMS(buffer) {
+    if (!buffer || buffer.length === 0) return 0;
+    const rms = this._calculateRMS(buffer);
+    this.lastRMS = rms;
+    return rms;
+  }
+
+  /**
    * Enable drone noise cancellation
    * Creates notch filters at drone frequency and harmonics
    * @param {number} rootFrequency - Root frequency of the drone
