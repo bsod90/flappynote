@@ -10,6 +10,7 @@ const DEFAULT_SETTINGS = {
   scaleType: 'major',
   direction: 'up',
   droneEnabled: true,
+  droneMode: 'root', // 'root' for single root, 'chord' for full chord (root, third, fifth)
 
   // Pitch range for vocal monitor (MIDI note numbers)
   pitchRangeMin: 36, // C2
@@ -17,6 +18,19 @@ const DEFAULT_SETTINGS = {
 
   // UI preferences
   lastTool: null,
+  sidebarOpen: false,
+
+  // Exercise settings
+  exerciseEnabled: false,
+  exerciseType: 'ascendingMajorLadder', // ascendingMajorLadder, ascendingMinorLadder, descendingMajorLadder, descendingMinorLadder
+  exerciseShowLyrics: true,             // Show solfege on targets
+
+  // Rolling key settings
+  rollingKeyEnabled: false,
+  rollingKeyLowestRoot: 'C3',   // Lowest root note for rolling
+  rollingKeyHighestRoot: 'G4',  // Highest root note for rolling
+  rollingKeyDirection: 'ascending', // ascending or descending
+  rollingKeyStepType: 'semitone',   // semitone, wholeTone, or scaleDegree
 
   // First-time user flags
   onboardingSeen: false,

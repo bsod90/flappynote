@@ -121,6 +121,32 @@ export class ScaleManager {
   }
 
   /**
+   * Get scale info for an arbitrary key without changing current state.
+   * Used for timeline-aware rendering where historical key contexts need to be retrieved.
+   * @param {string} rootNote - Root note with octave (e.g., "C3", "D4")
+   * @param {string} scaleType - Scale type key (e.g., "major", "minor")
+   * @returns {object} Scale info with degrees array
+   */
+  getScaleInfoForKey(rootNote, scaleType) {
+    const scale = SCALES[scaleType] || SCALES[DEFAULT_SCALE];
+    const rootMidi = FrequencyConverter.noteNameToMidi(rootNote);
+
+    const degrees = scale.intervals.map((interval, index) => ({
+      degree: index,
+      interval,
+      frequency: FrequencyConverter.midiToFrequency(rootMidi + interval),
+      label: scale.degrees[index],
+    }));
+
+    return {
+      rootNote,
+      scaleType,
+      scaleName: scale.name,
+      degrees,
+    };
+  }
+
+  /**
    * Find which scale degree a frequency belongs to (ignoring octave)
    * Returns the closest matching degree based on frequency
    * @param {number} frequency - Input frequency

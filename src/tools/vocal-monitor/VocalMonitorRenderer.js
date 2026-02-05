@@ -4,6 +4,7 @@
  */
 
 import { PianoRoll } from './PianoRoll.js';
+import { ExerciseRenderer } from './ExerciseRenderer.js';
 import { FrequencyConverter } from '../../pitch-engine/index.js';
 
 export class VocalMonitorRenderer {
@@ -11,6 +12,7 @@ export class VocalMonitorRenderer {
     this.canvas = canvas;
     this.ctx = null;
     this.pianoRoll = new PianoRoll();
+    this.exerciseRenderer = new ExerciseRenderer();
 
     this.dpr = 1;
     this.width = 0;
@@ -18,6 +20,8 @@ export class VocalMonitorRenderer {
 
     this.onResize = null;
     this.resizeObserver = null;
+    this.resizeDebounceTimer = null;
+    this.pendingResize = null;
   }
 
   /**
@@ -53,9 +57,27 @@ export class VocalMonitorRenderer {
   }
 
   /**
-   * Handle canvas resize
+   * Handle canvas resize (debounced to avoid clearing canvas during CSS transitions)
    */
   handleResize(width, height) {
+    this.pendingResize = { width, height };
+
+    if (this.resizeDebounceTimer) {
+      clearTimeout(this.resizeDebounceTimer);
+    }
+
+    this.resizeDebounceTimer = setTimeout(() => {
+      if (this.pendingResize) {
+        this._applyResize(this.pendingResize.width, this.pendingResize.height);
+        this.pendingResize = null;
+      }
+    }, 50);
+  }
+
+  /**
+   * Apply the actual canvas resize
+   */
+  _applyResize(width, height) {
     if (!width || !height || width < 10 || height < 10) return;
 
     this.dpr = window.devicePixelRatio || 1;
@@ -77,8 +99,11 @@ export class VocalMonitorRenderer {
    * @param {object} state - State from VocalMonitorState.getState()
    * @param {ScaleManager} scaleManager - Scale manager for highlights
    * @param {number|null} pressedKey - Currently pressed piano key (MIDI note)
+   * @param {object|null} exerciseState - From ExerciseEngine.getState()
+   * @param {boolean} showLyrics - Whether to show solfege on exercise targets
+   * @param {ScaleTimeline|null} scaleTimeline - Timeline tracking key changes for historical scale rendering
    */
-  render(state, scaleManager, pressedKey = null) {
+  render(state, scaleManager, pressedKey = null, exerciseState = null, showLyrics = true, scaleTimeline = null) {
     if (!this.ctx) return;
 
     this.ctx.save();
@@ -93,15 +118,31 @@ export class VocalMonitorRenderer {
     const mainAreaWidth = this.width - keyboardWidth;
 
     // Render scale highlights first (background)
-    this.pianoRoll.renderScaleHighlights(
-      this.ctx,
-      mainAreaX,
-      mainAreaWidth,
-      this.height,
-      state.pitchRangeMin,
-      state.pitchRangeMax,
-      scaleManager
-    );
+    // Use timeline-aware rendering when key changes exist
+    if (scaleTimeline && scaleTimeline.keyChanges.length > 0) {
+      this.pianoRoll.renderScaleHighlightsWithTimeline(
+        this.ctx,
+        mainAreaX,
+        mainAreaWidth,
+        this.height,
+        state.pitchRangeMin,
+        state.pitchRangeMax,
+        scaleTimeline,
+        state.viewportStart,
+        state.viewportWidth,
+        (rootNote, scaleType) => scaleManager.getScaleInfoForKey(rootNote, scaleType)
+      );
+    } else {
+      this.pianoRoll.renderScaleHighlights(
+        this.ctx,
+        mainAreaX,
+        mainAreaWidth,
+        this.height,
+        state.pitchRangeMin,
+        state.pitchRangeMax,
+        scaleManager
+      );
+    }
 
     // Render grid
     this.pianoRoll.renderGrid(
@@ -117,12 +158,42 @@ export class VocalMonitorRenderer {
     // Render time grid (vertical lines)
     this.renderTimeGrid(mainAreaX, mainAreaWidth, state);
 
+    // Render pending/current exercise targets (under pitch trace, as guides)
+    if (exerciseState) {
+      this.exerciseRenderer.render(
+        this.ctx, exerciseState, mainAreaX, mainAreaWidth, this.height,
+        state.pitchRangeMin, state.pitchRangeMax,
+        state.viewportStart, state.viewportWidth,
+        state.currentTime, showLyrics, 'pending'
+      );
+    }
+
     // Render pitch trace
     this.renderPitchTrace(mainAreaX, mainAreaWidth, state);
 
     // Render current pitch indicator
     if (state.currentPitch && state.isSinging) {
       this.renderCurrentPitchIndicator(mainAreaX, mainAreaWidth, state);
+    }
+
+    // Render hit targets (on top of pitch trace for review)
+    if (exerciseState) {
+      this.exerciseRenderer.render(
+        this.ctx, exerciseState, mainAreaX, mainAreaWidth, this.height,
+        state.pitchRangeMin, state.pitchRangeMax,
+        state.viewportStart, state.viewportWidth,
+        state.currentTime, showLyrics, 'hit'
+      );
+    }
+
+    // Render exercise hit effects (particles on top)
+    if (exerciseState) {
+      this.exerciseRenderer.renderHitEffects(
+        this.ctx, exerciseState, mainAreaX, mainAreaWidth, this.height,
+        state.pitchRangeMin, state.pitchRangeMax,
+        state.viewportStart, state.viewportWidth,
+        state.currentTime
+      );
     }
 
     // Render piano keyboard last (on top)
@@ -134,6 +205,13 @@ export class VocalMonitorRenderer {
       scaleManager,
       pressedKey
     );
+
+    // Render exercise progress UI (after keyboard, before playhead)
+    if (exerciseState) {
+      this.exerciseRenderer.renderProgressUI(
+        this.ctx, exerciseState, mainAreaX, mainAreaWidth
+      );
+    }
 
     // Render playhead line
     this.renderPlayhead(mainAreaX, mainAreaWidth, state);
@@ -486,6 +564,10 @@ export class VocalMonitorRenderer {
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
+    }
+    if (this.resizeDebounceTimer) {
+      clearTimeout(this.resizeDebounceTimer);
+      this.resizeDebounceTimer = null;
     }
     this.ctx = null;
   }

@@ -268,6 +268,87 @@ export class PianoRoll {
   }
 
   /**
+   * Render scale highlights with timeline awareness
+   * Renders different scale colors based on ScaleTimeline segments
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} x - Start X position (main area, after keyboard)
+   * @param {number} width - Width of area to highlight
+   * @param {number} height - Canvas height
+   * @param {number} pitchRangeMin - Minimum MIDI note
+   * @param {number} pitchRangeMax - Maximum MIDI note
+   * @param {ScaleTimeline} scaleTimeline - Timeline tracking key changes
+   * @param {number} viewportStart - Viewport start time in ms
+   * @param {number} viewportWidth - Viewport width in ms
+   * @param {function} getScaleInfo - Function that takes (rootNote, scaleType) and returns scale info
+   */
+  renderScaleHighlightsWithTimeline(ctx, x, width, height, pitchRangeMin, pitchRangeMax,
+    scaleTimeline, viewportStart, viewportWidth, getScaleInfo) {
+
+    if (!scaleTimeline) return;
+
+    // Get all segments within the viewport
+    const segments = scaleTimeline.getSegmentsInRange(viewportStart, viewportStart + viewportWidth);
+
+    if (segments.length === 0) return;
+
+    // Time to X helper
+    const timeToX = (time) => {
+      const normX = (time - viewportStart) / viewportWidth;
+      return x + normX * width;
+    };
+
+    // Create hatch pattern for out-of-scale notes
+    const hatchPattern = this.createHatchPattern(ctx);
+
+    // Render each segment with its own scale colors
+    for (const segment of segments) {
+      const segmentStartX = Math.max(x, timeToX(segment.startTime));
+      const segmentEndX = Math.min(x + width, timeToX(segment.endTime));
+      const segmentWidth = segmentEndX - segmentStartX;
+
+      if (segmentWidth <= 0) continue;
+
+      // Get scale info for this segment's key
+      const scaleInfo = getScaleInfo(segment.rootNote, segment.scaleType);
+      if (!scaleInfo) continue;
+
+      const rootMidi = FrequencyConverter.noteNameToMidi(segment.rootNote);
+      const rootPitchClass = rootMidi % 12;
+
+      // Create set of scale pitch classes
+      const scalePitchClasses = new Set();
+      scaleInfo.degrees.forEach(degree => {
+        const pitchClass = (rootPitchClass + (degree.interval % 12)) % 12;
+        scalePitchClasses.add(pitchClass);
+      });
+
+      // Highlight all notes for this segment
+      for (let midi = pitchRangeMin; midi < pitchRangeMax; midi++) {
+        const pitchClass = midi % 12;
+        const y = this.midiToY(midi, height, pitchRangeMin, pitchRangeMax);
+        const intervalFromRoot = (pitchClass - rootPitchClass + 12) % 12;
+
+        if (scalePitchClasses.has(pitchClass)) {
+          // In-scale note: use interval-based color
+          const color = this.intervalHighlightColors[intervalFromRoot];
+          ctx.fillStyle = color;
+          ctx.fillRect(segmentStartX, y - this.noteHeight, segmentWidth, this.noteHeight);
+        } else {
+          // Out-of-scale note: gray with hatching
+          ctx.fillStyle = this.outOfScaleColor;
+          ctx.fillRect(segmentStartX, y - this.noteHeight, segmentWidth, this.noteHeight);
+
+          // Add hatch pattern overlay
+          if (hatchPattern) {
+            ctx.fillStyle = hatchPattern;
+            ctx.fillRect(segmentStartX, y - this.noteHeight, segmentWidth, this.noteHeight);
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * Render horizontal grid lines for pitch rows
    * @param {CanvasRenderingContext2D} ctx
    * @param {number} x - Start X position

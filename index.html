@@ -138,14 +138,6 @@
                     <option value="dorian">Dorian</option>
                     <option value="mixolydian">Mixolydian</option>
                   </optgroup>
-                  <optgroup label="7th Chords">
-                    <option value="major7">Major 7th</option>
-                    <option value="dominant7">Dominant 7th</option>
-                    <option value="minor7">Minor 7th</option>
-                    <option value="minorMajor7">Minor Major 7th</option>
-                    <option value="halfDiminished7">Half Diminished 7th</option>
-                    <option value="diminished7">Diminished 7th</option>
-                  </optgroup>
                   <optgroup label="Advanced">
                     <option value="wholeTone">Whole Tone</option>
                     <option value="diminished">Diminished</option>
@@ -189,79 +181,235 @@
     <div id="vocal-monitor-container" style="display: none;">
       <div id="vocal-monitor-ui">
         <div id="vocal-monitor-controls">
-          <!-- Title -->
-          <h1>Vocal Monitor</h1>
-
-          <!-- Settings group -->
-          <div id="vocal-settings-group">
-            <button id="vocal-settings-toggle" class="settings-toggle">Settings ⚙️</button>
-            <div id="vocal-settings-panel" class="settings-panel">
-              <div class="control-group">
-                <label for="vocal-root-note">Root Note:</label>
-                <select id="vocal-root-note">
-                  <option value="C">C</option>
-                  <option value="C#">C# / Db</option>
-                  <option value="D" selected>D</option>
-                  <option value="D#">D# / Eb</option>
-                  <option value="E">E</option>
-                  <option value="F">F</option>
-                  <option value="F#">F# / Gb</option>
-                  <option value="G">G</option>
-                  <option value="G#">G# / Ab</option>
-                  <option value="A">A</option>
-                  <option value="A#">A# / Bb</option>
-                  <option value="B">B</option>
-                </select>
-              </div>
-              <div class="control-group">
-                <label for="vocal-scale-type">Scale:</label>
-                <select id="vocal-scale-type">
-                  <optgroup label="Scales">
-                    <option value="major" selected>Major Scale</option>
-                    <option value="minor">Natural Minor</option>
-                    <option value="harmonicMinor">Harmonic Minor</option>
-                    <option value="melodicMinor">Melodic Minor</option>
-                    <option value="pentatonic">Pentatonic Major</option>
-                    <option value="blues">Blues Scale</option>
-                    <option value="chromatic">Chromatic</option>
-                  </optgroup>
-                  <optgroup label="Modes">
-                    <option value="dorian">Dorian</option>
-                    <option value="mixolydian">Mixolydian</option>
-                  </optgroup>
-                  <optgroup label="7th Chords">
-                    <option value="major7">Major 7th</option>
-                    <option value="dominant7">Dominant 7th</option>
-                    <option value="minor7">Minor 7th</option>
-                    <option value="minorMajor7">Minor Major 7th</option>
-                    <option value="halfDiminished7">Half Diminished 7th</option>
-                    <option value="diminished7">Diminished 7th</option>
-                  </optgroup>
-                  <optgroup label="Advanced">
-                    <option value="wholeTone">Whole Tone</option>
-                    <option value="diminished">Diminished</option>
-                  </optgroup>
-                </select>
-              </div>
-              <div class="control-group drone-toggle-group">
-                <label for="vocal-drone-toggle" class="drone-label">
-                  <input type="checkbox" id="vocal-drone-toggle" checked>
-                  Root Drone
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- Button group -->
+          <!-- Simplified navbar - main buttons only -->
           <div id="vocal-button-group">
             <button id="vocal-back-button" class="back-button">← Back</button>
             <button id="vocal-start-button">Start</button>
             <button id="vocal-clear-button" disabled>Clear</button>
+            <button id="vocal-sidebar-toggle" aria-expanded="false" aria-controls="vocal-sidebar">Settings</button>
+          </div>
+
+          <!-- Hidden form elements for legacy support (not visible, just for data binding) -->
+          <div id="vocal-settings-group" style="display: none;">
+            <select id="vocal-root-note">
+              <option value="C">C</option>
+              <option value="C#">C# / Db</option>
+              <option value="D" selected>D</option>
+              <option value="D#">D# / Eb</option>
+              <option value="E">E</option>
+              <option value="F">F</option>
+              <option value="F#">F# / Gb</option>
+              <option value="G">G</option>
+              <option value="G#">G# / Ab</option>
+              <option value="A">A</option>
+              <option value="A#">A# / Bb</option>
+              <option value="B">B</option>
+            </select>
+            <select id="vocal-scale-type">
+              <option value="major" selected>Major Scale</option>
+              <option value="minor">Natural Minor</option>
+            </select>
+            <input type="checkbox" id="vocal-drone-toggle" checked>
+            <input type="checkbox" id="vocal-exercise-toggle">
+            <input type="checkbox" id="vocal-show-lyrics" checked>
           </div>
         </div>
       </div>
       <div id="vocal-monitor-canvas-container">
         <canvas id="vocal-monitor-canvas"></canvas>
+        <button id="vocal-jump-to-front" class="jump-to-front-button" style="display: none;" title="Jump to current time">
+          <span class="jump-icon">▶▶</span>
+        </button>
+      </div>
+
+      <!-- Right Sidebar -->
+      <div id="vocal-sidebar">
+        <div class="sidebar-content">
+        <!-- Scale Settings Section -->
+        <div class="sidebar-section">
+          <h3>Scale</h3>
+          <div id="scale-locked-notice" class="scale-locked-notice" style="display: none;">
+            Scale locked by exercise
+          </div>
+
+          <!-- Rolling Key toggle -->
+          <label class="sidebar-toggle">
+            <input type="checkbox" id="sidebar-rolling-key-toggle">
+            <span>Rolling Key</span>
+          </label>
+
+          <!-- Static Key Options (shown when key mode is static) -->
+          <div id="sidebar-static-key-options">
+            <div class="sidebar-control">
+              <label for="sidebar-root-note">Root Note</label>
+              <select id="sidebar-root-note">
+                <option value="C">C</option>
+                <option value="C#">C# / Db</option>
+                <option value="D" selected>D</option>
+                <option value="D#">D# / Eb</option>
+                <option value="E">E</option>
+                <option value="F">F</option>
+                <option value="F#">F# / Gb</option>
+                <option value="G">G</option>
+                <option value="G#">G# / Ab</option>
+                <option value="A">A</option>
+                <option value="A#">A# / Bb</option>
+                <option value="B">B</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Rolling Key Options (shown when key mode is rolling) -->
+          <div id="sidebar-rolling-key-options" style="display: none;">
+            <div class="sidebar-control">
+              <label for="sidebar-rolling-key-lowest">Lowest Root</label>
+              <select id="sidebar-rolling-key-lowest">
+                <!-- Chromatic order by pitch -->
+                <option value="C2">C2</option>
+                <option value="D2">D2</option>
+                <option value="E2">E2</option>
+                <option value="F2">F2</option>
+                <option value="G2">G2</option>
+                <option value="A2">A2</option>
+                <option value="B2">B2</option>
+                <option value="C3" selected>C3</option>
+                <option value="D3">D3</option>
+                <option value="E3">E3</option>
+                <option value="F3">F3</option>
+                <option value="G3">G3</option>
+                <option value="A3">A3</option>
+                <option value="B3">B3</option>
+                <option value="C4">C4</option>
+                <option value="D4">D4</option>
+                <option value="E4">E4</option>
+                <option value="F4">F4</option>
+                <option value="G4">G4</option>
+                <option value="A4">A4</option>
+                <option value="B4">B4</option>
+              </select>
+            </div>
+            <div class="sidebar-control">
+              <label for="sidebar-rolling-key-highest">Highest Root</label>
+              <select id="sidebar-rolling-key-highest">
+                <!-- Chromatic order by pitch -->
+                <option value="C3">C3</option>
+                <option value="D3">D3</option>
+                <option value="E3">E3</option>
+                <option value="F3">F3</option>
+                <option value="G3">G3</option>
+                <option value="A3">A3</option>
+                <option value="B3">B3</option>
+                <option value="C4">C4</option>
+                <option value="D4">D4</option>
+                <option value="E4">E4</option>
+                <option value="F4">F4</option>
+                <option value="G4" selected>G4</option>
+                <option value="A4">A4</option>
+                <option value="B4">B4</option>
+                <option value="C5">C5</option>
+                <option value="D5">D5</option>
+                <option value="E5">E5</option>
+                <option value="F5">F5</option>
+                <option value="G5">G5</option>
+                <option value="A5">A5</option>
+                <option value="B5">B5</option>
+              </select>
+            </div>
+            <div class="sidebar-control">
+              <label for="sidebar-rolling-key-direction">Direction</label>
+              <select id="sidebar-rolling-key-direction">
+                <option value="ascending" selected>Ascending</option>
+                <option value="descending">Descending</option>
+              </select>
+            </div>
+            <div class="sidebar-control">
+              <label for="sidebar-rolling-key-step">Step Type</label>
+              <select id="sidebar-rolling-key-step">
+                <option value="semitone" selected>Semitone</option>
+                <option value="wholeTone">Whole Tone</option>
+                <option value="scaleDegree">Scale Degree</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="sidebar-control">
+            <label for="sidebar-scale-type">Scale Type</label>
+            <select id="sidebar-scale-type">
+              <optgroup label="Scales">
+                <option value="major" selected>Major Scale</option>
+                <option value="minor">Natural Minor</option>
+                <option value="harmonicMinor">Harmonic Minor</option>
+                <option value="melodicMinor">Melodic Minor</option>
+                <option value="pentatonic">Pentatonic Major</option>
+                <option value="blues">Blues Scale</option>
+                <option value="chromatic">Chromatic</option>
+              </optgroup>
+              <optgroup label="Modes">
+                <option value="dorian">Dorian</option>
+                <option value="mixolydian">Mixolydian</option>
+              </optgroup>
+              <optgroup label="Advanced">
+                <option value="wholeTone">Whole Tone</option>
+                <option value="diminished">Diminished</option>
+              </optgroup>
+            </select>
+          </div>
+          <label class="sidebar-toggle">
+            <input type="checkbox" id="sidebar-drone-toggle" checked>
+            <span>Root Drone</span>
+          </label>
+          <label class="sidebar-toggle" id="drone-chord-option">
+            <input type="checkbox" id="sidebar-drone-chord">
+            <span>Play as Chord</span>
+          </label>
+        </div>
+
+        <!-- Exercise Section -->
+        <div class="sidebar-section">
+          <h3>Exercise</h3>
+          <label class="sidebar-toggle">
+            <input type="checkbox" id="sidebar-exercise-toggle">
+            <span>Exercise Mode</span>
+          </label>
+          <div id="sidebar-exercise-options" style="display: none;">
+            <div class="sidebar-control">
+              <label for="sidebar-exercise-type">Exercise Type</label>
+              <select id="sidebar-exercise-type">
+                <optgroup label="Ladders">
+                  <option value="ascendingMajorLadder">Ascending Major Ladder</option>
+                  <option value="ascendingMinorLadder">Ascending Minor Ladder</option>
+                  <option value="descendingMajorLadder">Descending Major Ladder</option>
+                  <option value="descendingMinorLadder">Descending Minor Ladder</option>
+                </optgroup>
+                <optgroup label="Triads & Chords">
+                  <option value="majorTriad">Major Triad (1-3-5-8)</option>
+                  <option value="minorTriad">Minor Triad (1-3-5-8)</option>
+                  <option value="majorSeventh">Major Seventh (1-3-5-7-8)</option>
+                  <option value="minorSeventh">Minor Seventh (1-3-5-7-8)</option>
+                </optgroup>
+                <optgroup label="Intervals">
+                  <option value="semitoneUp">Semitone Up</option>
+                  <option value="semitoneDown">Semitone Down</option>
+                  <option value="toneUp">Whole Tone Up</option>
+                  <option value="toneDown">Whole Tone Down</option>
+                  <option value="minorThirdUp">Minor Third Up</option>
+                  <option value="majorThirdUp">Major Third Up</option>
+                  <option value="minorThirdDown">Minor Third Down</option>
+                  <option value="majorThirdDown">Major Third Down</option>
+                  <option value="fourthUp">Perfect Fourth Up</option>
+                  <option value="fourthDown">Perfect Fourth Down</option>
+                  <option value="fifthUp">Perfect Fifth Up</option>
+                  <option value="fifthDown">Perfect Fifth Down</option>
+                </optgroup>
+              </select>
+            </div>
+            <label class="sidebar-toggle">
+              <input type="checkbox" id="sidebar-show-lyrics" checked>
+              <span>Show Lyrics</span>
+            </label>
+          </div>
+        </div>
+        </div><!-- /.sidebar-content -->
       </div>
     </div>
   </div>

@@ -230,9 +230,15 @@ export class TonePlayer {
 
   /**
    * Stop the drone
+   * @returns {Promise} Resolves when fade-out completes and oscillators are stopped
    */
   stopDrone() {
-    if (this.droneOscillators) {
+    return new Promise((resolve) => {
+      if (!this.droneOscillators) {
+        resolve();
+        return;
+      }
+
       const now = this.audioContext.currentTime;
 
       // Fade out over 1 second
@@ -274,8 +280,9 @@ export class TonePlayer {
         }
 
         this.droneGainNode = null;
+        resolve();
       }, 1100);
-    }
+    });
   }
 
   /**
@@ -296,10 +303,176 @@ export class TonePlayer {
   }
 
   /**
+   * Start playing a chord drone (root, third, fifth)
+   * @param {number} rootFrequency - Root note frequency in Hz
+   * @param {string} chordType - 'major' or 'minor'
+   */
+  startChordDrone(rootFrequency, chordType = 'major') {
+    this.stopChordDrone(); // Stop any existing chord drone
+    this.initialize();
+
+    const ctx = this.audioContext;
+    const now = ctx.currentTime;
+
+    // Calculate chord tones
+    const thirdOffset = chordType === 'minor' ? 3 : 4; // Minor third = 3, Major third = 4 semitones
+    const thirdFrequency = rootFrequency * Math.pow(2, thirdOffset / 12);
+    const fifthFrequency = rootFrequency * Math.pow(2, 7 / 12); // Perfect fifth = 7 semitones
+
+    // Create main gain node for the chord drone
+    this.chordDroneGainNode = ctx.createGain();
+    this.chordDroneGainNode.gain.setValueAtTime(0, now);
+    this.chordDroneGainNode.gain.linearRampToValueAtTime(0.18, now + 2); // Slow fade in
+    this.chordDroneGainNode.connect(this.masterGain);
+
+    // Create a low-pass filter for warmth
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 900;
+    filter.Q.value = 0.8;
+    filter.connect(this.chordDroneGainNode);
+
+    // LFO for subtle amplitude modulation
+    this.chordDroneLFO = ctx.createOscillator();
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 0.015;
+    this.chordDroneLFO.frequency.value = 0.15;
+    this.chordDroneLFO.connect(lfoGain);
+    lfoGain.connect(this.chordDroneGainNode.gain);
+    this.chordDroneLFO.start(now);
+
+    // Store oscillators and their metadata
+    this.chordDroneOscillators = [];
+    this.chordDroneOscGains = [];
+    this.chordType = chordType;
+    this.chordRootFrequency = rootFrequency;
+
+    // Create oscillators for each chord tone
+    const createChordOsc = (frequency, volume) => {
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
+      osc.frequency.value = frequency;
+      osc.type = 'sine';
+      oscGain.gain.value = volume;
+      osc.connect(oscGain);
+      oscGain.connect(filter);
+      osc.start(now);
+      this.chordDroneOscillators.push(osc);
+      this.chordDroneOscGains.push(oscGain);
+    };
+
+    // Root - fundamental and octave
+    createChordOsc(rootFrequency, 0.45);
+    createChordOsc(rootFrequency / 2, 0.3); // Sub-octave
+    createChordOsc(rootFrequency * 2, 0.15); // Octave above
+
+    // Third
+    createChordOsc(thirdFrequency, 0.35);
+    createChordOsc(thirdFrequency * 2, 0.1); // Octave above
+
+    // Fifth
+    createChordOsc(fifthFrequency, 0.38);
+    createChordOsc(fifthFrequency * 2, 0.12); // Octave above
+  }
+
+  /**
+   * Stop the chord drone
+   * @returns {Promise} Resolves when fade-out completes and oscillators are stopped
+   */
+  stopChordDrone() {
+    return new Promise((resolve) => {
+      if (!this.chordDroneOscillators) {
+        resolve();
+        return;
+      }
+
+      const now = this.audioContext.currentTime;
+
+      // Fade out over 1 second
+      if (this.chordDroneGainNode) {
+        this.chordDroneGainNode.gain.cancelScheduledValues(now);
+        this.chordDroneGainNode.gain.setValueAtTime(this.chordDroneGainNode.gain.value, now);
+        this.chordDroneGainNode.gain.linearRampToValueAtTime(0, now + 1);
+      }
+
+      // Stop oscillators after fade out
+      setTimeout(() => {
+        if (this.chordDroneOscillators) {
+          this.chordDroneOscillators.forEach(osc => {
+            try {
+              osc.stop();
+            } catch (e) {
+              // Oscillator may already be stopped
+            }
+          });
+          this.chordDroneOscillators = null;
+          this.chordDroneOscGains = null;
+        }
+
+        if (this.chordDroneLFO) {
+          try {
+            this.chordDroneLFO.stop();
+          } catch (e) {
+            // LFO may already be stopped
+          }
+          this.chordDroneLFO = null;
+        }
+
+        this.chordDroneGainNode = null;
+        resolve();
+      }, 1100);
+    });
+  }
+
+  /**
+   * Update chord drone frequency and type
+   * @param {number} rootFrequency - New root frequency
+   * @param {string} chordType - 'major' or 'minor'
+   */
+  updateChordDroneFrequency(rootFrequency, chordType = 'major') {
+    if (this.chordDroneOscillators && this.audioContext) {
+      const now = this.audioContext.currentTime;
+
+      // Calculate new chord tones
+      const thirdOffset = chordType === 'minor' ? 3 : 4;
+      const thirdFrequency = rootFrequency * Math.pow(2, thirdOffset / 12);
+      const fifthFrequency = rootFrequency * Math.pow(2, 7 / 12);
+
+      // Update oscillators (order matches creation order)
+      // Root: 0, 1, 2
+      this.chordDroneOscillators[0].frequency.linearRampToValueAtTime(rootFrequency, now + 0.5);
+      this.chordDroneOscillators[1].frequency.linearRampToValueAtTime(rootFrequency / 2, now + 0.5);
+      this.chordDroneOscillators[2].frequency.linearRampToValueAtTime(rootFrequency * 2, now + 0.5);
+
+      // Third: 3, 4
+      this.chordDroneOscillators[3].frequency.linearRampToValueAtTime(thirdFrequency, now + 0.5);
+      this.chordDroneOscillators[4].frequency.linearRampToValueAtTime(thirdFrequency * 2, now + 0.5);
+
+      // Fifth: 5, 6
+      this.chordDroneOscillators[5].frequency.linearRampToValueAtTime(fifthFrequency, now + 0.5);
+      this.chordDroneOscillators[6].frequency.linearRampToValueAtTime(fifthFrequency * 2, now + 0.5);
+
+      this.chordType = chordType;
+      this.chordRootFrequency = rootFrequency;
+    }
+  }
+
+  /**
+   * Check if chord drone is playing
+   * @returns {boolean}
+   */
+  isChordDronePlaying() {
+    return this.chordDroneOscillators != null;
+  }
+
+  /**
    * Stop all sounds
    */
-  stop() {
-    this.stopDrone();
+  async stop() {
+    await Promise.all([
+      this.stopDrone(),
+      this.stopChordDrone(),
+    ]);
     if (this.audioContext) {
       this.audioContext.close();
       this.audioContext = null;

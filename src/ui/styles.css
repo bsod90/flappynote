@@ -852,7 +852,6 @@ button:disabled {
   margin-bottom: 10px;
   flex-wrap: nowrap;
   align-items: flex-end;
-  justify-content: center;
 }
 
 #vocal-settings-group {
@@ -866,7 +865,7 @@ button:disabled {
   display: flex;
   gap: 10px;
   flex-wrap: nowrap;
-  justify-content: center;
+  flex: 1;
 }
 
 #vocal-button-group .back-button {
@@ -923,6 +922,307 @@ button:disabled {
   vertical-align: middle;
 }
 
+/* Jump to Front Button - Appears when scrolled back in history */
+.jump-to-front-button {
+  position: absolute;
+  bottom: 60px;
+  left: 100px; /* After piano keys, away from sidebar and debug button */
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ff6b35 0%, #e85a2a 100%);
+  border: 4px solid #ff8c5f;
+  box-shadow: 0 4px 0 #c7451f, 0 6px 15px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 50;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.jump-to-front-button:hover {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #c7451f, 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.jump-to-front-button:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 #c7451f, 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.jump-to-front-button .jump-icon {
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  letter-spacing: -4px;
+  margin-left: -2px;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 4px 0 #c7451f, 0 6px 15px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 0 #c7451f, 0 6px 20px rgba(255, 107, 53, 0.5);
+  }
+}
+
+/* Vocal Monitor Right Sidebar - Cartoon Style */
+#vocal-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background: linear-gradient(180deg, #fff8e7 0%, #fff0cc 100%);
+  border-left: 4px solid #ff6b35;
+  box-shadow: -4px 0 15px rgba(0, 0, 0, 0.15);
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  z-index: 100;
+  overflow-y: auto;
+  padding: 52px 0 0 0;
+  box-sizing: border-box;
+}
+
+#vocal-sidebar.open {
+  transform: translateX(0);
+}
+
+/* When sidebar is open, shrink canvas container on desktop */
+#vocal-monitor-container.sidebar-open #vocal-monitor-canvas-container {
+  margin-right: 300px;
+  transition: margin-right 0.3s ease;
+}
+
+#vocal-monitor-canvas-container {
+  transition: margin-right 0.3s ease;
+}
+
+
+.sidebar-content {
+  padding: 20px;
+}
+
+.sidebar-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  border: 3px solid rgba(78, 205, 196, 0.3);
+  box-shadow: 0 4px 0 rgba(78, 205, 196, 0.2);
+}
+
+.sidebar-section:last-child {
+  margin-bottom: 0;
+}
+
+.sidebar-section h3 {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  color: #4ECDC4;
+  margin: 0 0 12px 0;
+  letter-spacing: 1px;
+  font-weight: 800;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-control {
+  margin-bottom: 12px;
+}
+
+.sidebar-control label {
+  display: block;
+  font-size: 0.85rem;
+  color: #555;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.sidebar-control select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 3px solid #ff6b35;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #c7451f;
+  transition: all 0.2s ease;
+}
+
+.sidebar-control select:hover {
+  border-color: #ffd700;
+  transform: translateY(1px);
+  box-shadow: 0 2px 0 #c7451f;
+}
+
+.sidebar-control select:focus {
+  border-color: #ffd700;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.3);
+}
+
+.sidebar-control select:disabled {
+  background: #e8e8e8;
+  color: #999;
+  border-color: #ccc;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  border: 2px solid rgba(78, 205, 196, 0.3);
+  transition: all 0.2s ease;
+  margin-bottom: 8px;
+}
+
+.sidebar-toggle:hover {
+  background: rgba(78, 205, 196, 0.15);
+  border-color: rgba(78, 205, 196, 0.5);
+}
+
+.sidebar-toggle input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #4ECDC4;
+}
+
+.sidebar-toggle span {
+  font-size: 0.95rem;
+  color: #444;
+  font-weight: 600;
+}
+
+/* Sidebar toggle button - inline with other navbar buttons */
+#vocal-sidebar-toggle {
+  background: linear-gradient(180deg, #4ECDC4 0%, #3ba89d 100%);
+  color: white;
+  box-shadow: 0 4px 0 #2a857c, 0 6px 12px rgba(0, 0, 0, 0.3);
+  border: 3px solid #7ee6e6;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-left: auto;
+}
+
+#vocal-sidebar-toggle:hover:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #2a857c, 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+#vocal-sidebar-toggle:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 #2a857c, 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* When open on desktop: fixed sidebar header bar */
+#vocal-monitor-container.sidebar-open #vocal-sidebar-toggle {
+  position: fixed;
+  z-index: 101;
+  top: 0;
+  right: 0;
+  width: 300px;
+  border-radius: 0;
+  padding: 15px 20px;
+  font-size: 1.1rem;
+  border: none;
+  border-bottom: 3px solid #2a857c;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  margin-left: 0;
+}
+
+/* Backdrop for mobile modal */
+#sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+}
+
+/* Rolling Key Range Slider */
+.range-slider-container {
+  margin-top: 10px;
+}
+
+.range-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #555;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.range-slider {
+  position: relative;
+  height: 30px;
+  background: #e8e8e8;
+  border-radius: 8px;
+  margin: 10px 0;
+  border: 2px solid #ddd;
+}
+
+.range-slider-track {
+  position: absolute;
+  height: 100%;
+  background: linear-gradient(90deg, #4ECDC4 0%, #3ba89d 100%);
+  border-radius: 6px;
+}
+
+.range-slider-handle {
+  position: absolute;
+  width: 24px;
+  height: 100%;
+  background: #fff;
+  border: 3px solid #ff6b35;
+  border-radius: 6px;
+  cursor: ew-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #ff6b35;
+  box-shadow: 0 2px 0 #c7451f;
+}
+
+/* Scale locked indicator - Cartoon Style */
+.scale-locked-notice {
+  background: linear-gradient(180deg, #fff3cd 0%, #ffe69c 100%);
+  border: 3px solid #ffc107;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #856404;
+  margin-bottom: 12px;
+  box-shadow: 0 3px 0 #d4a106;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scale-locked-notice::before {
+  content: "🔒";
+  font-size: 1rem;
+}
+
 @media (max-width: 768px) {
   #vocal-monitor-ui {
     padding: 3px 8px;
@@ -943,6 +1243,7 @@ button:disabled {
 
   #vocal-settings-group {
     order: 2;
+    display: none; /* Hide old settings on mobile, use sidebar instead */
   }
 
   #vocal-button-group button {
@@ -965,5 +1266,45 @@ button:disabled {
 
   #vocal-clear-button {
     box-shadow: 0 3px 0 #c7451f, 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Settings button on mobile - cog icon only */
+  #vocal-button-group #vocal-sidebar-toggle {
+    flex: none;
+    width: auto;
+    font-size: 0;
+    line-height: 0;
+    letter-spacing: 0;
+    padding: 8px 12px;
+    margin-left: auto;
+  }
+  #vocal-button-group #vocal-sidebar-toggle::after {
+    content: '⚙';
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+
+  /* Full-screen modal sidebar on mobile */
+  #vocal-sidebar {
+    width: 100%;
+    max-width: 100%;
+    padding-top: 52px;
+  }
+
+  /* When open on mobile: full-width header */
+  #vocal-monitor-container.sidebar-open #vocal-sidebar-toggle {
+    width: 100%;
+    z-index: 201;
+    font-size: 0;
+    padding: 12px 20px;
+  }
+  #vocal-monitor-container.sidebar-open #vocal-sidebar-toggle::after {
+    content: '× Close';
+    font-size: 0.9rem;
+  }
+
+  /* No canvas push on mobile */
+  #vocal-monitor-container.sidebar-open #vocal-monitor-canvas-container {
+    margin-right: 0;
   }
 }

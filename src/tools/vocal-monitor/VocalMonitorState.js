@@ -46,6 +46,9 @@ export class VocalMonitorState {
     this.lastStablePitch = null;
     this.stablePitchCount = 0;
     this.stablePitchThreshold = 3; // Need 3 similar pitches to establish baseline
+
+    // Current scale context (for timeline-aware rendering)
+    this.currentScaleContext = null; // { rootNote, scaleType }
   }
 
   /**
@@ -139,10 +142,10 @@ export class VocalMonitorState {
         stability: vocalAnalysis?.stability ?? 1.0,
         brightness: vocalAnalysis?.spectralCentroid ?? 0.5,
         breathiness: 1 - (vocalAnalysis?.hnr ?? 0.5), // Invert HNR so higher = more breathy
+        // Scale context for timeline-aware rendering
+        scaleContext: this.currentScaleContext ? { ...this.currentScaleContext } : null,
       });
 
-      // Trim old history
-      this.trimHistory(elapsedTime);
     } else {
       this.currentPitch = pitchData;
       this.isSinging = false;
@@ -314,6 +317,15 @@ export class VocalMonitorState {
   }
 
   /**
+   * Set current scale context (for timeline-aware rendering)
+   * @param {string} rootNote - Root note with octave (e.g., "C3")
+   * @param {string} scaleType - Scale type (e.g., "major")
+   */
+  setScaleContext(rootNote, scaleType) {
+    this.currentScaleContext = { rootNote, scaleType };
+  }
+
+  /**
    * Get pitch range as frequencies
    * @returns {{min: number, max: number}}
    */
@@ -353,6 +365,14 @@ export class VocalMonitorState {
     const maxStart = Math.max(0, this.currentTime - this.viewportWidth + 1000);
     this.viewportStart = Math.max(0, Math.min(maxStart, newStart));
     this.isAutoScrolling = false; // Manual scroll disables auto-scroll
+  }
+
+  /**
+   * Jump to the current time and resume auto-scrolling
+   */
+  jumpToFront() {
+    this.viewportStart = Math.max(0, this.currentTime - this.viewportWidth + 1000);
+    this.isAutoScrolling = true;
   }
 
   /**

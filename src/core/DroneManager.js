@@ -10,6 +10,8 @@ export class DroneManager {
     this.tonePlayer = new TonePlayer();
     this.currentDroneFrequency = null;
     this.isDronePlaying = false;
+    this.isChordMode = false;
+    this.currentChordType = null;
   }
 
   /**
@@ -50,10 +52,18 @@ export class DroneManager {
 
   /**
    * Stop the drone
+   * @returns {Promise} Resolves when drone fully stops
    */
-  stopDrone() {
-    this.tonePlayer.stopDrone();
+  async stopDrone() {
+    if (!this.isDronePlaying || this._isStopping) {
+      return;
+    }
+
+    this._isStopping = true;
+    await this.tonePlayer.stopDrone();
+
     this.isDronePlaying = false;
+    this._isStopping = false;
     this.currentDroneFrequency = null;
   }
 
@@ -85,17 +95,100 @@ export class DroneManager {
   }
 
   // ==========================================
-  // Future chord/melody support methods
+  // Chord drone support
+  // ==========================================
+
+  /**
+   * Start playing a chord drone (root, third, fifth)
+   * @param {number} rootFrequency - Root note frequency
+   * @param {string} chordType - 'major' or 'minor'
+   */
+  startChordDrone(rootFrequency, chordType = 'major') {
+    this.tonePlayer.startChordDrone(rootFrequency, chordType);
+    this.currentDroneFrequency = rootFrequency;
+    this.isDronePlaying = true;
+    this.isChordMode = true;
+    this.currentChordType = chordType;
+  }
+
+  /**
+   * Stop the chord drone
+   * @returns {Promise} Resolves when chord drone fully stops
+   */
+  async stopChordDrone() {
+    if (!this.isDronePlaying || !this.isChordMode || this._isChordStopping) {
+      return;
+    }
+
+    this._isChordStopping = true;
+    await this.tonePlayer.stopChordDrone();
+
+    this.isDronePlaying = false;
+    this.isChordMode = false;
+    this._isChordStopping = false;
+    this.currentDroneFrequency = null;
+    this.currentChordType = null;
+  }
+
+  /**
+   * Switch from root drone to chord drone (async, waits for stop)
+   * @param {number} rootFrequency - Root note frequency
+   * @param {string} chordType - 'major' or 'minor'
+   */
+  async switchToChordDrone(rootFrequency, chordType = 'major') {
+    await this.stopDrone();
+    this.startChordDrone(rootFrequency, chordType);
+  }
+
+  /**
+   * Switch from chord drone to root drone (async, waits for stop)
+   * @param {number} frequency - Root note frequency
+   */
+  async switchToRootDrone(frequency) {
+    await this.stopChordDrone();
+    this.startDrone(frequency);
+  }
+
+  /**
+   * Update chord drone frequency and type
+   * @param {number} rootFrequency - New root frequency
+   * @param {string} chordType - 'major' or 'minor'
+   */
+  updateChordDroneFrequency(rootFrequency, chordType = 'major') {
+    if (this.isDronePlaying && this.isChordMode) {
+      this.tonePlayer.updateChordDroneFrequency(rootFrequency, chordType);
+      this.currentDroneFrequency = rootFrequency;
+      this.currentChordType = chordType;
+    }
+  }
+
+  /**
+   * Check if in chord drone mode
+   * @returns {boolean}
+   */
+  isInChordMode() {
+    return this.isChordMode === true;
+  }
+
+  /**
+   * Get current chord type
+   * @returns {string|null}
+   */
+  getChordType() {
+    return this.currentChordType || null;
+  }
+
+  // ==========================================
+  // Future melody support methods
   // ==========================================
 
   /**
    * Start a chord (multiple frequencies)
-   * Future implementation for interval training
+   * Legacy method - use startChordDrone instead
    * @param {number[]} frequencies - Array of frequencies to play
    */
   startChord(frequencies) {
-    // TODO: Implement chord support
-    // For now, just play the root
+    // For backwards compatibility
     if (frequencies.length > 0) {
       this.startDrone(frequencies[0]);
     }
@@ -123,16 +216,18 @@ export class DroneManager {
   /**
    * Stop all sounds
    */
-  stop() {
-    this.tonePlayer.stop();
+  async stop() {
+    await this.tonePlayer.stop();
     this.isDronePlaying = false;
+    this.isChordMode = false;
     this.currentDroneFrequency = null;
+    this.currentChordType = null;
   }
 
   /**
    * Clean up resources
    */
-  dispose() {
-    this.stop();
+  async dispose() {
+    await this.stop();
   }
 }
