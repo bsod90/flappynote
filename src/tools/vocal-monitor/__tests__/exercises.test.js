@@ -248,15 +248,16 @@ describe('TonicReturnMajor', () => {
   });
 
   describe('generateTonicReturnPattern', () => {
-    it('should generate tonic return pattern for 8 degrees', () => {
+    it('should generate double tonic return pattern for 8 degrees', () => {
       const pattern = TonicReturnMajor.generateTonicReturnPattern(8);
-      // 1-2-1-3-1-4-1-5-1-6-1-7-1-8 (as indices: 0,1,0,2,0,3,0,4,0,5,0,6,0,7)
-      expect(pattern).toEqual([0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7]);
+      // 1-2-1-1-3-1-1-4-1-1-5-1-1-6-1-1-7-1-1-8 (as indices)
+      expect(pattern).toEqual([0, 1, 0, 0, 2, 0, 0, 3, 0, 0, 4, 0, 0, 5, 0, 0, 6, 0, 0, 7]);
     });
 
     it('should generate pattern for smaller scales', () => {
       const pattern = TonicReturnMajor.generateTonicReturnPattern(4);
-      expect(pattern).toEqual([0, 1, 0, 2, 0, 3]);
+      // 1-2-1-1-3-1-1-4
+      expect(pattern).toEqual([0, 1, 0, 0, 2, 0, 0, 3]);
     });
   });
 
@@ -266,10 +267,10 @@ describe('TonicReturnMajor', () => {
       expect(phases).toHaveLength(1);
     });
 
-    it('should generate 14 targets for 8-degree scale', () => {
+    it('should generate 20 targets for 8-degree scale', () => {
       const phases = exercise.generatePhases(scaleManager);
-      // 7 returns to tonic + 7 scale degrees = 14 targets
-      expect(phases[0].targets).toHaveLength(14);
+      // Pattern: 1-2-1-1-3-1-1-4-1-1-5-1-1-6-1-1-7-1-1-8 = 20 targets
+      expect(phases[0].targets).toHaveLength(20);
     });
 
     it('should have targets in WAITING state', () => {
@@ -279,10 +280,10 @@ describe('TonicReturnMajor', () => {
       });
     });
 
-    it('should have correct pattern (alternating with tonic)', () => {
+    it('should have correct pattern (double tonic return)', () => {
       const phases = exercise.generatePhases(scaleManager);
       const degreeNumbers = phases[0].targets.map(t => t.degreeNumber);
-      expect(degreeNumbers).toEqual([1, 2, 1, 3, 1, 4, 1, 5, 1, 6, 1, 7, 1, 8]);
+      expect(degreeNumbers).toEqual([1, 2, 1, 1, 3, 1, 1, 4, 1, 1, 5, 1, 1, 6, 1, 1, 7, 1, 1, 8]);
     });
 
     it('should have correct MIDI notes', () => {
@@ -296,7 +297,7 @@ describe('TonicReturnMajor', () => {
     it('should include solfege labels', () => {
       const phases = exercise.generatePhases(scaleManager);
       const lyrics = phases[0].targets.map(t => t.lyric);
-      expect(lyrics).toEqual(['Do', 'Re', 'Do', 'Mi', 'Do', 'Fa', 'Do', 'Sol', 'Do', 'La', 'Do', 'Ti', 'Do', 'Do']);
+      expect(lyrics).toEqual(['Do', 'Re', 'Do', 'Do', 'Mi', 'Do', 'Do', 'Fa', 'Do', 'Do', 'Sol', 'Do', 'Do', 'La', 'Do', 'Do', 'Ti', 'Do', 'Do', 'Do']);
     });
   });
 });
@@ -322,13 +323,13 @@ describe('TonicReturnMinor', () => {
   it('should generate phases with minor scale intervals', () => {
     const phases = exercise.generatePhases(scaleManager);
     expect(phases).toHaveLength(1);
-    expect(phases[0].targets).toHaveLength(14);
+    expect(phases[0].targets).toHaveLength(20);
   });
 
   it('should include minor third (Me)', () => {
     const phases = exercise.generatePhases(scaleManager);
-    // Third target pair: 1-3 → Do-Me (indices 2,3)
-    expect(phases[0].targets[3].lyric).toBe('Me');
+    // Pattern: 1-2-1-1-3-... so index 4 is the 3rd degree (Me)
+    expect(phases[0].targets[4].lyric).toBe('Me');
   });
 });
 

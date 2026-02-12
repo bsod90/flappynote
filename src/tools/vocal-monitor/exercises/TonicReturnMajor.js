@@ -1,8 +1,8 @@
 /**
- * TonicReturnMajor - Scale degree exercise returning to tonic after each step.
+ * TonicReturnMajor - Scale degree exercise with double tonic return after each step.
  *
- * Pattern: 1-2-1-3-1-4-1-5-1-6-1-7-1-8
- * Returns to the root (tonic) after each ascending scale degree.
+ * Pattern: 1-2-1-1-3-1-1-4-1-1-5-1-1-6-1-1-7-1-1-8
+ * Returns to double tonic after each ascending scale degree.
  */
 
 import { BaseExercise } from './BaseExercise.js';
@@ -13,22 +13,25 @@ export class TonicReturnMajor extends BaseExercise {
   constructor() {
     super();
     this.name = 'Tonic Return (Major)';
-    this.description = 'Return to tonic after each scale degree: 1-2-1-3-1-4-1-5-1-6-1-7-1-8';
+    this.description = 'Double tonic return after each scale degree: 1-2-1-1-3-1-1-4-...';
     this.scaleType = 'major';
     this.sustainDuration = 300;
   }
 
   /**
-   * Generate the tonic return pattern.
-   * For an 8-degree scale: [0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7]
+   * Generate the tonic return pattern with double tonic.
+   * Pattern: 1-2-1-1-3-1-1-4-1-1-5-1-1-6-1-1-7-1-1-8
    * @param {number} degreeCount - Number of degrees in the scale
    * @returns {number[]} Array of scale degree indices
    */
   static generateTonicReturnPattern(degreeCount) {
-    const pattern = [];
+    const pattern = [0]; // Start with tonic
     for (let i = 1; i < degreeCount; i++) {
-      pattern.push(0); // Tonic
-      pattern.push(i); // Next scale degree
+      pattern.push(i); // Scale degree
+      if (i < degreeCount - 1) {
+        pattern.push(0); // Tonic
+        pattern.push(0); // Double tonic
+      }
     }
     return pattern;
   }
