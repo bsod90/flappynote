@@ -7,6 +7,8 @@ import { AscendingMajorLadder } from '../exercises/AscendingMajorLadder.js';
 import { AscendingMinorLadder } from '../exercises/AscendingMinorLadder.js';
 import { DescendingMajorLadder } from '../exercises/DescendingMajorLadder.js';
 import { DescendingMinorLadder } from '../exercises/DescendingMinorLadder.js';
+import { TonicReturnMajor } from '../exercises/TonicReturnMajor.js';
+import { TonicReturnMinor } from '../exercises/TonicReturnMinor.js';
 import { MajorTriad } from '../exercises/MajorTriad.js';
 import { MinorTriad } from '../exercises/MinorTriad.js';
 import { MajorSeventh } from '../exercises/MajorSeventh.js';
@@ -221,6 +223,115 @@ describe('DescendingMinorLadder', () => {
   });
 });
 
+describe('TonicReturnMajor', () => {
+  let exercise;
+  let scaleManager;
+
+  beforeEach(() => {
+    exercise = new TonicReturnMajor();
+    scaleManager = createMockScaleManager('C3', 'major');
+  });
+
+  describe('metadata', () => {
+    it('should have correct name', () => {
+      expect(exercise.name).toBe('Tonic Return (Major)');
+    });
+
+    it('should lock scale to major', () => {
+      expect(exercise.locksScale()).toBe(true);
+      expect(exercise.getRequiredScaleType()).toBe('major');
+    });
+
+    it('should have default sustain duration', () => {
+      expect(exercise.sustainDuration).toBe(300);
+    });
+  });
+
+  describe('generateTonicReturnPattern', () => {
+    it('should generate tonic return pattern for 8 degrees', () => {
+      const pattern = TonicReturnMajor.generateTonicReturnPattern(8);
+      // 1-2-1-3-1-4-1-5-1-6-1-7-1-8 (as indices: 0,1,0,2,0,3,0,4,0,5,0,6,0,7)
+      expect(pattern).toEqual([0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7]);
+    });
+
+    it('should generate pattern for smaller scales', () => {
+      const pattern = TonicReturnMajor.generateTonicReturnPattern(4);
+      expect(pattern).toEqual([0, 1, 0, 2, 0, 3]);
+    });
+  });
+
+  describe('generatePhases', () => {
+    it('should return one phase', () => {
+      const phases = exercise.generatePhases(scaleManager);
+      expect(phases).toHaveLength(1);
+    });
+
+    it('should generate 14 targets for 8-degree scale', () => {
+      const phases = exercise.generatePhases(scaleManager);
+      // 7 returns to tonic + 7 scale degrees = 14 targets
+      expect(phases[0].targets).toHaveLength(14);
+    });
+
+    it('should have targets in WAITING state', () => {
+      const phases = exercise.generatePhases(scaleManager);
+      phases[0].targets.forEach(target => {
+        expect(target.state).toBe(TargetState.WAITING);
+      });
+    });
+
+    it('should have correct pattern (alternating with tonic)', () => {
+      const phases = exercise.generatePhases(scaleManager);
+      const degreeNumbers = phases[0].targets.map(t => t.degreeNumber);
+      expect(degreeNumbers).toEqual([1, 2, 1, 3, 1, 4, 1, 5, 1, 6, 1, 7, 1, 8]);
+    });
+
+    it('should have correct MIDI notes', () => {
+      const phases = exercise.generatePhases(scaleManager);
+      // First target should be root (C3 = MIDI 48)
+      expect(phases[0].targets[0].midiNote).toBe(48);
+      // Second target should be Re (D3 = MIDI 50)
+      expect(phases[0].targets[1].midiNote).toBe(50);
+    });
+
+    it('should include solfege labels', () => {
+      const phases = exercise.generatePhases(scaleManager);
+      const lyrics = phases[0].targets.map(t => t.lyric);
+      expect(lyrics).toEqual(['Do', 'Re', 'Do', 'Mi', 'Do', 'Fa', 'Do', 'Sol', 'Do', 'La', 'Do', 'Ti', 'Do', 'Do']);
+    });
+  });
+});
+
+describe('TonicReturnMinor', () => {
+  let exercise;
+  let scaleManager;
+
+  beforeEach(() => {
+    exercise = new TonicReturnMinor();
+    scaleManager = createMockScaleManager('A3', 'minor');
+  });
+
+  it('should have correct name', () => {
+    expect(exercise.name).toBe('Tonic Return (Minor)');
+  });
+
+  it('should lock scale to minor', () => {
+    expect(exercise.locksScale()).toBe(true);
+    expect(exercise.getRequiredScaleType()).toBe('minor');
+  });
+
+  it('should generate phases with minor scale intervals', () => {
+    const phases = exercise.generatePhases(scaleManager);
+    expect(phases).toHaveLength(1);
+    expect(phases[0].targets).toHaveLength(14);
+  });
+
+  it('should include minor third (Me)', () => {
+    const phases = exercise.generatePhases(scaleManager);
+    // Third target pair: 1-3 → Do-Me (indices 2,3)
+    expect(phases[0].targets[3].lyric).toBe('Me');
+  });
+});
+
 describe('MajorTriad', () => {
   let exercise;
   let scaleManager;
@@ -429,6 +540,8 @@ describe('Exercise Registry', () => {
       expect(getExerciseClass('ascendingMinorLadder')).toBe(AscendingMinorLadder);
       expect(getExerciseClass('descendingMajorLadder')).toBe(DescendingMajorLadder);
       expect(getExerciseClass('descendingMinorLadder')).toBe(DescendingMinorLadder);
+      expect(getExerciseClass('tonicReturnMajor')).toBe(TonicReturnMajor);
+      expect(getExerciseClass('tonicReturnMinor')).toBe(TonicReturnMinor);
     });
 
     it('should return correct class for triad exercises', () => {

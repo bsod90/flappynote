@@ -12,6 +12,8 @@ export { AscendingMajorLadder } from './AscendingMajorLadder.js';
 export { AscendingMinorLadder } from './AscendingMinorLadder.js';
 export { DescendingMajorLadder } from './DescendingMajorLadder.js';
 export { DescendingMinorLadder } from './DescendingMinorLadder.js';
+export { TonicReturnMajor } from './TonicReturnMajor.js';
+export { TonicReturnMinor } from './TonicReturnMinor.js';
 
 // Triad and seventh exercises
 export { MajorTriad } from './MajorTriad.js';
@@ -36,6 +38,8 @@ import { AscendingMajorLadder } from './AscendingMajorLadder.js';
 import { AscendingMinorLadder } from './AscendingMinorLadder.js';
 import { DescendingMajorLadder } from './DescendingMajorLadder.js';
 import { DescendingMinorLadder } from './DescendingMinorLadder.js';
+import { TonicReturnMajor } from './TonicReturnMajor.js';
+import { TonicReturnMinor } from './TonicReturnMinor.js';
 import { MajorTriad } from './MajorTriad.js';
 import { MinorTriad } from './MinorTriad.js';
 import { MajorSeventh } from './MajorSeventh.js';
@@ -52,6 +56,8 @@ export const ExerciseRegistry = {
   ascendingMinorLadder: AscendingMinorLadder,
   descendingMajorLadder: DescendingMajorLadder,
   descendingMinorLadder: DescendingMinorLadder,
+  tonicReturnMajor: TonicReturnMajor,
+  tonicReturnMinor: TonicReturnMinor,
 
   // Triads & Sevenths
   majorTriad: MajorTriad,
