@@ -225,9 +225,16 @@ export class HitTracker {
 
   /** Aggregate stats over the last `windowSeconds`. */
   getStats({ now, windowSeconds = 8 } = {}) {
-    const cutoff = (now ?? this._latest()) - windowSeconds;
+    const ref = now ?? this._latest();
+    const cutoff = ref - windowSeconds;
     const recentHits = this.hits.filter((h) => h.time > cutoff);
-    const recentExpected = this.expectedBeats.filter((b) => b.time > cutoff);
+    // Only count beats that have *already happened* — the engine schedules
+    // ~120ms ahead and outputLatency pushes beat times further into the
+    // future, so including those would show a hit rate that drops every
+    // time the next beat is queued (before you've even heard it).
+    const recentExpected = this.expectedBeats.filter(
+      (b) => b.time > cutoff && b.time <= ref
+    );
 
     // Grid-relative
     const gridMatched = recentHits.filter((h) => h.gridOffsetMs != null);

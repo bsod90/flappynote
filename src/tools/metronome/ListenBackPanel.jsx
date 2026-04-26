@@ -274,12 +274,26 @@ export default function ListenBackPanel({
 
   return (
     <div ref={wrapRef} className="w-full">
-      <div className="mb-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+      <div className="mb-1 flex items-center justify-between gap-3 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
           <Headphones className="h-3.5 w-3.5" />
           Listen back
         </span>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 font-mono tabular-nums text-[11px]">
+          <InlineStat
+            label="grid"
+            value={stats?.onGridPct != null ? `${stats.onGridPct}%` : '—'}
+            sub={stats?.gridHits ? `${signed(stats.avgGridOffsetMs)}ms` : null}
+          />
+          <InlineStat
+            label="click"
+            value={stats?.onClickPct != null ? `${stats.onClickPct}%` : '—'}
+            sub={stats?.clickHits ? `${signed(stats.avgClickOffsetMs)}ms` : null}
+          />
+          <InlineStat
+            label="hits"
+            value={stats && stats.expected > 0 ? `${Math.round(stats.hitRate * 100)}%` : '—'}
+          />
           <button
             type="button"
             onClick={onToggleTriplets}
@@ -299,34 +313,17 @@ export default function ListenBackPanel({
       </div>
 
       <canvas ref={canvasRef} className="block w-full rounded-md" />
-
-      <div className="mt-2 grid grid-cols-3 gap-2 text-center text-xs text-muted-foreground">
-        <Stat
-          label="On grid"
-          value={stats?.onGridPct != null ? `${stats.onGridPct}%` : '—'}
-          sub={stats?.gridHits ? `${signed(stats.avgGridOffsetMs)}ms` : null}
-        />
-        <Stat
-          label="Click sync"
-          value={stats?.onClickPct != null ? `${stats.onClickPct}%` : '—'}
-          sub={stats?.clickHits ? `${signed(stats.avgClickOffsetMs)}ms` : null}
-        />
-        <Stat
-          label="Hit rate"
-          value={stats && stats.expected > 0 ? `${Math.round(stats.hitRate * 100)}%` : '—'}
-        />
-      </div>
     </div>
   );
 }
 
-function Stat({ label, value, sub }) {
+function InlineStat({ label, value, sub }) {
   return (
-    <div className="rounded-md border border-border bg-card/40 p-2">
-      <div className="font-mono text-sm tabular-nums text-foreground">{value}</div>
-      {sub && <div className="font-mono text-[10px] tabular-nums text-muted-foreground">{sub}</div>}
-      <div className="text-[10px] uppercase tracking-wider">{label}</div>
-    </div>
+    <span className="inline-flex items-baseline gap-1">
+      <span className="text-foreground">{value}</span>
+      {sub && <span className="text-[10px] text-muted-foreground">{sub}</span>}
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+    </span>
   );
 }
 

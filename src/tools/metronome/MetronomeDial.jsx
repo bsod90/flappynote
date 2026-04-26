@@ -212,7 +212,7 @@ export default function MetronomeDial({
   return (
     <div
       ref={wrapperRef}
-      className="relative aspect-square w-full max-w-[28rem] touch-none select-none"
+      className="relative aspect-square w-full max-w-[22rem] touch-none select-none lg:max-w-[26rem] xl:max-w-[28rem]"
       style={{ touchAction: 'none' }}
     >
       <svg

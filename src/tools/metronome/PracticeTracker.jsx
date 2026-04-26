@@ -30,7 +30,7 @@ export default function PracticeTracker({
   const intervalMins = Math.round(intervalDurationSec / 60);
 
   return (
-    <div className="flex w-full max-w-[36rem] flex-col gap-3">
+    <div className="flex w-full max-w-[36rem] flex-col gap-2">
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
           <Timer className="h-3.5 w-3.5" />
@@ -69,7 +69,7 @@ export default function PracticeTracker({
         })}
       </div>
 
-      <div className="flex h-12 items-center justify-center">
+      <div className="flex h-9 items-center justify-center">
         {state === 'countdown' && (
           <div className="font-mono text-5xl font-bold leading-none tabular-nums text-super-accent">
             {countdown}

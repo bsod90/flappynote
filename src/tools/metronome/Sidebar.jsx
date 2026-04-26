@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Headphones, Timer, Volume2 } from 'lucide-react';
 
 import {
@@ -99,37 +100,36 @@ export default function Sidebar({
   };
 
   return (
-    <div className="flex flex-col gap-6 p-1">
+    <div className="flex flex-col gap-2 p-1">
       <Section title="Time">
-        <Field label="Time signature">
-          <Select value={timeSig} onValueChange={setSig}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {TIME_SIGNATURES.map((s) => (
-                <SelectItem key={s.key} value={s.key}>{s.key}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Time signature">
+            <Select value={timeSig} onValueChange={setSig}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {TIME_SIGNATURES.map((s) => (
+                  <SelectItem key={s.key} value={s.key}>{s.key}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
 
-        <Field label="Subdivision">
-          <Select
-            value={String(subdivision)}
-            onValueChange={(v) => settings.set('metronomeSubdivision', Number(v))}
-          >
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {SUBDIVISIONS.map((s) => (
-                <SelectItem key={s.value} value={String(s.value)}>{s.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
+          <Field label="Subdivision">
+            <Select
+              value={String(subdivision)}
+              onValueChange={(v) => settings.set('metronomeSubdivision', Number(v))}
+            >
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {SUBDIVISIONS.map((s) => (
+                  <SelectItem key={s.value} value={String(s.value)}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
 
-        <Field
-          label="Accent pattern"
-          hint="Tap a beat to cycle: regular → accent → silent"
-        >
+        <Field label="Accent pattern">
           <div className="flex flex-wrap gap-1.5">
             {pattern.map((kind, i) => (
               <button
@@ -149,40 +149,37 @@ export default function Sidebar({
       <Separator />
 
       <Section title="Sound">
-        <Field label="Click timbre">
-          <Select value={timbre} onValueChange={(v) => settings.set('metronomeTimbre', v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {TIMBRE_LIST.map((t) => (
-                <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-
-        <Field label={`Volume — ${Math.round(volume * 100)}%`}>
-          <div className="flex items-center gap-2">
-            <Volume2 className="h-4 w-4 text-muted-foreground" />
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={Math.round(volume * 100)}
-              onChange={(e) => settings.set('metronomeVolume', e.target.valueAsNumber / 100)}
-              className="w-full accent-primary"
-            />
-          </div>
-        </Field>
+        <div className="grid grid-cols-[1fr_1.4fr] items-end gap-2">
+          <Field label="Click">
+            <Select value={timbre} onValueChange={(v) => settings.set('metronomeTimbre', v)}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {TIMBRE_LIST.map((t) => (
+                  <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label={`Volume — ${Math.round(volume * 100)}%`}>
+            <div className="flex items-center gap-2">
+              <Volume2 className="h-4 w-4 text-muted-foreground" />
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={Math.round(volume * 100)}
+                onChange={(e) => settings.set('metronomeVolume', e.target.valueAsNumber / 100)}
+                className="w-full accent-primary"
+              />
+            </div>
+          </Field>
+        </div>
       </Section>
 
       <Separator />
 
       <Section title="Skip pattern">
-        <p className="text-xs text-muted-foreground">
-          Practice keeping the beat without the click. Set "skip" &gt; 0 to
-          mute the metronome periodically.
-        </p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           <Field label="Play bars">
             <NumberInput
               value={playBars}
@@ -200,19 +197,14 @@ export default function Sidebar({
             />
           </Field>
         </div>
-        <p className="text-xs text-muted-foreground">
-          {skipBars > 0
-            ? `Plays ${playBars} bar${playBars > 1 ? 's' : ''}, then silent for ${skipBars}.`
-            : 'No skip — click on every bar.'}
-        </p>
         {skipBars > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
+          <button
+            type="button"
             onClick={() => settings.set('metronomeSkipSkip', 0)}
+            className="text-[11px] text-muted-foreground hover:text-foreground"
           >
-            Disable skip
-          </Button>
+            Plays {playBars}, mutes {skipBars} — tap to disable
+          </button>
         )}
       </Section>
 
@@ -232,14 +224,9 @@ export default function Sidebar({
             onCheckedChange={(c) => settings.set('metronomePracticeEnabled', !!c)}
           />
         </div>
-        <p className="text-xs text-muted-foreground">
-          Splits a long session into equal intervals. A distinct beep marks
-          each transition.
-        </p>
-
         {practiceEnabled && (
           <>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <Field label="Session (min)">
                 <NumberInput
                   value={practiceSessionMin}
@@ -257,10 +244,6 @@ export default function Sidebar({
                 />
               </Field>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {Math.max(1, Math.ceil(practiceSessionMin / practiceIntervalMin))} interval
-              {Math.ceil(practiceSessionMin / practiceIntervalMin) === 1 ? '' : 's'} of {practiceIntervalMin} min.
-            </p>
           </>
         )}
       </Section>
@@ -281,16 +264,14 @@ export default function Sidebar({
             onCheckedChange={(c) => settings.set('metronomeListenBack', !!c)}
           />
         </div>
-        <p className="text-xs text-muted-foreground">
-          Detects your hits via mic and plots them against the beats.
-          <strong className="ml-1 text-yellow-500">Wear headphones</strong> so the
-          metronome's own click doesn't bleed into the mic.
-        </p>
-
         {listenBack && (
           <Field
             label={`Sensitivity — ${sensitivity}`}
-            hint="Higher = more sensitive (catches softer hits). Lower if false triggers from background noise."
+            hint={(
+              <>
+                <strong className="text-yellow-500">Wear headphones</strong> · higher catches softer hits.
+              </>
+            )}
           >
             <input
               type="range"
@@ -305,21 +286,13 @@ export default function Sidebar({
           </Field>
         )}
 
-        <Field
-          label="Latency"
-          hint="Roundtrip delay between scheduling a click and detecting it via mic. Calibrate using speakers (not headphones), or type a value manually."
-        >
+        <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <input
-              type="number"
-              step={1}
+            <Label className="text-xs">Latency</Label>
+            <LatencyInput
               value={latencyMs}
               disabled={calibrating}
-              onChange={(e) => {
-                const n = e.target.valueAsNumber;
-                settings.set('metronomeLatencyMs', Number.isFinite(n) ? n : 0);
-              }}
-              className="h-8 w-20 rounded-md border border-input bg-background px-2 text-sm font-mono"
+              onCommit={(n) => settings.set('metronomeLatencyMs', n)}
             />
             <span className="text-xs text-muted-foreground">ms</span>
             <Button
@@ -358,7 +331,7 @@ export default function Sidebar({
               {calibrationStatus.message}
             </p>
           )}
-        </Field>
+        </div>
       </Section>
     </div>
   );
@@ -381,22 +354,55 @@ function beatButtonClass(kind) {
 
 function Section({ title, children }) {
   return (
-    <div className="space-y-3">
-      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="space-y-1.5">
+      <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
         {title}
       </h3>
-      <div className="space-y-3">{children}</div>
+      <div className="space-y-1.5">{children}</div>
     </div>
   );
 }
 
 function Field({ label, hint, children }) {
   return (
-    <div className="space-y-1.5">
-      <Label className="text-sm">{label}</Label>
+    <div className="space-y-1">
+      <Label className="text-xs">{label}</Label>
       {children}
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {hint && <p className="text-[11px] leading-snug text-muted-foreground">{hint}</p>}
     </div>
+  );
+}
+
+/**
+ * Number input that lets the user clear the field without snapping back to
+ * 0 mid-edit. The local string drives the visible value; we only push to
+ * `onCommit` when the parsed number is valid. On blur with empty/invalid
+ * input we revert to the last committed value.
+ */
+function LatencyInput({ value, disabled, onCommit }) {
+  const [text, setText] = useState(String(value));
+  useEffect(() => {
+    setText(String(value));
+  }, [value]);
+  return (
+    <input
+      type="number"
+      step={1}
+      value={text}
+      disabled={disabled}
+      onChange={(e) => {
+        const next = e.target.value;
+        setText(next);
+        const n = parseInt(next, 10);
+        if (Number.isFinite(n)) onCommit(n);
+      }}
+      onBlur={() => {
+        if (text === '' || !Number.isFinite(parseInt(text, 10))) {
+          setText(String(value));
+        }
+      }}
+      className="h-8 w-16 rounded-md border border-input bg-background px-2 text-sm font-mono"
+    />
   );
 }
 

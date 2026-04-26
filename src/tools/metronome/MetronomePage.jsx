@@ -333,7 +333,11 @@ export default function MetronomePage() {
       try {
         const ctx = engine.ensureAudio();
         if (ctx.state === 'suspended') await ctx.resume();
-        tracker.setOutputLatency(engine.getOutputLatency());
+        // Note: do NOT call tracker.setOutputLatency() here. The
+        // manualLatencyMs effect owns that and would otherwise be silently
+        // overwritten with the AudioContext's auto-detected value every
+        // time this effect re-runs (e.g. when micVersion bumps after
+        // AudioContext recreation on iOS sleep recovery).
         const mic = new MicListener(ctx);
         await mic.start({
           threshold: detectorThreshold,
@@ -347,9 +351,11 @@ export default function MetronomePage() {
           onLevel: (sample) => {
             const buf = levelBufferRef.current;
             buf.push(sample);
-            // Keep last 4s of levels — pruning amortized
-            if (buf.length > 600) {
-              const cutoff = sample.time - 4;
+            // Keep enough samples to fill the panel's full 6s window plus a
+            // small safety margin, so the waveform doesn't fade out before
+            // it scrolls off the left edge.
+            if (buf.length > 800) {
+              const cutoff = sample.time - 8;
               while (buf.length && buf[0].time < cutoff) buf.shift();
             }
           },
@@ -601,7 +607,7 @@ export default function MetronomePage() {
       )}
 
       {/* Main metronome area */}
-      <div className="no-scrollbar flex flex-1 min-w-0 flex-col items-center justify-center gap-6 overflow-y-auto p-4 sm:p-6">
+      <div className="no-scrollbar flex flex-1 min-w-0 flex-col items-center justify-center gap-3 overflow-y-auto p-3 sm:p-4">
         <MetronomeDial
           bpm={bpm}
           onBpmChange={handleBpmChange}
@@ -672,6 +678,7 @@ export default function MetronomePage() {
               getNow={getNow}
               isActive={listenBack}
               bpm={bpm}
+              height={140}
               showTriplets={showTriplets}
               onToggleTriplets={() => settings.set('metronomeGridTriplets', !showTriplets)}
               warning={listenError}
