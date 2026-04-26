@@ -10,6 +10,7 @@ coverage/
 playwright-report/
 test-results/
 *.png
+!public/*.png
 
 # IDE
 .vscode/

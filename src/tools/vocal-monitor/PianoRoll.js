@@ -63,11 +63,15 @@ export class PianoRoll {
       11: 'rgba(255, 152, 0, 0.2)',    // 7
     };
 
-    // Out-of-scale color (gray with hatching)
+    // Out-of-scale fallback (overridden per-frame from theme when available)
     this.outOfScaleColor = 'rgba(120, 120, 120, 0.08)';
 
-    // Hatched pattern canvas (created lazily)
+    // Theme tokens injected by VocalMonitorRenderer per frame
+    this.theme = null;
+
+    // Hatched pattern canvas (created lazily, invalidated on theme change)
     this.hatchPattern = null;
+    this._hatchPatternThemeKey = null;
 
     // Cache for current scale info
     this.cachedScaleInfo = null;
@@ -79,15 +83,15 @@ export class PianoRoll {
    * @returns {CanvasPattern}
    */
   createHatchPattern(ctx) {
-    if (this.hatchPattern) return this.hatchPattern;
+    const stroke = this.theme?.muted ?? 'rgba(150, 150, 150, 0.15)';
+    if (this.hatchPattern && this._hatchPatternThemeKey === stroke) return this.hatchPattern;
 
     const patternCanvas = document.createElement('canvas');
     patternCanvas.width = 8;
     patternCanvas.height = 8;
     const patternCtx = patternCanvas.getContext('2d');
 
-    // Draw diagonal lines
-    patternCtx.strokeStyle = 'rgba(150, 150, 150, 0.15)';
+    patternCtx.strokeStyle = stroke;
     patternCtx.lineWidth = 1;
     patternCtx.beginPath();
     patternCtx.moveTo(0, 8);
@@ -95,6 +99,7 @@ export class PianoRoll {
     patternCtx.stroke();
 
     this.hatchPattern = ctx.createPattern(patternCanvas, 'repeat');
+    this._hatchPatternThemeKey = stroke;
     return this.hatchPattern;
   }
 
@@ -137,12 +142,10 @@ export class PianoRoll {
       const isPressed = midi === pressedKey;
 
       if (!isBlackKey) {
-        // White key - highlight if pressed
-        ctx.fillStyle = isPressed ? '#ffcc80' : '#ffffff';
+        ctx.fillStyle = isPressed ? '#ffcc80' : (this.theme?.keyWhite ?? '#ffffff');
         ctx.fillRect(0, y - this.noteHeight, this.keyboardWidth, this.noteHeight);
 
-        // Border - highlight if pressed
-        ctx.strokeStyle = isPressed ? '#ff9800' : '#ddd';
+        ctx.strokeStyle = isPressed ? '#ff9800' : (this.theme?.keyWhiteBorder ?? '#ddd');
         ctx.lineWidth = isPressed ? 2 : 1;
         ctx.strokeRect(0, y - this.noteHeight, this.keyboardWidth, this.noteHeight);
       }
@@ -156,9 +159,15 @@ export class PianoRoll {
       const isPressed = midi === pressedKey;
 
       if (isBlackKey) {
-        // Black key - highlight if pressed
-        ctx.fillStyle = isPressed ? '#ff9800' : '#333';
+        ctx.fillStyle = isPressed ? '#ff9800' : (this.theme?.keyBlack ?? '#333');
         ctx.fillRect(0, y - this.noteHeight, blackKeyWidth, this.noteHeight);
+
+        // Outline so the dark key reads against a dark canvas (skipped in light mode)
+        if (!isPressed && this.theme?.keyBlackBorder) {
+          ctx.strokeStyle = this.theme.keyBlackBorder;
+          ctx.lineWidth = 1;
+          ctx.strokeRect(0, y - this.noteHeight, blackKeyWidth, this.noteHeight);
+        }
       }
     }
 
@@ -188,24 +197,22 @@ export class PianoRoll {
       const intervalColor = this.intervalColors[intervalFromRoot];
 
       if (isBlackKey) {
-        // Black key: white note name on the left of the black key
+        // Black key: invert text against the dark key surface (always light)
         ctx.textAlign = 'left';
         ctx.fillStyle = '#fff';
         ctx.fillText(noteName, 3, centerY);
 
-        // Solfege right-aligned (same position as white keys)
         if (solfege) {
           ctx.textAlign = 'right';
           ctx.fillStyle = intervalColor;
           ctx.fillText(solfege, this.keyboardWidth - 4, centerY);
         }
       } else {
-        // White key: note name on the left, solfege on the right
+        // White key: theme-driven label color
         ctx.textAlign = 'left';
-        ctx.fillStyle = '#666';
+        ctx.fillStyle = this.theme?.keyLabel ?? '#666';
         ctx.fillText(`${noteName}${octave}`, 3, centerY);
 
-        // Solfege right-aligned
         if (solfege) {
           ctx.textAlign = 'right';
           ctx.fillStyle = intervalColor;
@@ -254,8 +261,8 @@ export class PianoRoll {
         ctx.fillStyle = color;
         ctx.fillRect(x, y - this.noteHeight, width, this.noteHeight);
       } else {
-        // Out-of-scale note: gray with hatching
-        ctx.fillStyle = this.outOfScaleColor;
+        // Out-of-scale note: muted with hatching
+        ctx.fillStyle = this.theme?.outOfScale ?? this.outOfScaleColor;
         ctx.fillRect(x, y - this.noteHeight, width, this.noteHeight);
 
         // Add hatch pattern overlay
@@ -370,19 +377,19 @@ export class PianoRoll {
       const y = this.midiToY(midi, height, pitchRangeMin, pitchRangeMax);
       const noteIndex = midi % 12;
 
-      // Bold line for Do (root note of current scale)
+      // Bold line for Do (root of current scale) — keep blue accent (works in both modes)
       if (noteIndex === rootPitchClass) {
-        ctx.strokeStyle = 'rgba(91, 139, 213, 0.6)'; // Blue color matching root
+        ctx.strokeStyle = 'rgba(91, 139, 213, 0.6)';
         ctx.lineWidth = 3;
       }
       // Medium line for C notes (if not the root)
       else if (noteIndex === 0) {
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.strokeStyle = this.theme?.gridLineStrong ?? 'rgba(0, 0, 0, 0.2)';
         ctx.lineWidth = 1.5;
       }
       // Thin lines for other notes
       else {
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+        ctx.strokeStyle = this.theme?.gridLine ?? 'rgba(0, 0, 0, 0.06)';
         ctx.lineWidth = 1;
       }
 

@@ -34,6 +34,26 @@ const DEFAULT_SETTINGS = {
 
   // First-time user flags
   onboardingSeen: false,
+
+  // Metronome
+  metronomeBpm: 120,
+  metronomeTimeSig: '4/4',
+  metronomeAccentPattern: ['accent', 'regular', 'regular', 'regular'],
+  metronomeTimbre: 'woodblock',
+  metronomeVolume: 0.8,
+  metronomeSkipPlay: 4,
+  metronomeSkipSkip: 0,
+  metronomeSubdivision: 1,
+  metronomeListenBack: false,
+  metronomeListenSensitivity: 50, // 1..100 (high = more sensitive)
+  metronomeGridTriplets: false,   // overlay 8th-note triplet grid in panel
+  metronomeLatencyMs: 12,         // default 12ms; user can recalibrate or manually edit
+
+  // Practice sessions: split a long session into N equal intervals,
+  // signal each transition with a beep.
+  metronomePracticeEnabled: false,
+  metronomePracticeSessionMinutes: 10,
+  metronomePracticeIntervalMinutes: 1,
 };
 
 export class SharedSettings {

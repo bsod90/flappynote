@@ -6,6 +6,7 @@
 import { PianoRoll } from './PianoRoll.js';
 import { ExerciseRenderer } from './ExerciseRenderer.js';
 import { FrequencyConverter } from '../../pitch-engine/index.js';
+import { getCanvasTheme } from './canvasTheme.js';
 
 export class VocalMonitorRenderer {
   constructor(canvas) {
@@ -106,11 +107,16 @@ export class VocalMonitorRenderer {
   render(state, scaleManager, pressedKey = null, exerciseState = null, showLyrics = true, scaleTimeline = null) {
     if (!this.ctx) return;
 
+    // Re-read CSS-token-derived theme each frame so dark-mode toggles retint instantly.
+    this.theme = getCanvasTheme();
+    this.pianoRoll.theme = this.theme;
+    this.exerciseRenderer.theme = this.theme;
+
     this.ctx.save();
     this.ctx.scale(this.dpr, this.dpr);
 
     // Clear with background color
-    this.ctx.fillStyle = '#f5f5f5';
+    this.ctx.fillStyle = this.theme.background;
     this.ctx.fillRect(0, 0, this.width, this.height);
 
     const keyboardWidth = this.pianoRoll.getKeyboardWidth();
@@ -229,10 +235,10 @@ export class VocalMonitorRenderer {
     const secondInterval = 1000;
     const startSecond = Math.ceil(viewportStart / secondInterval) * secondInterval;
 
-    this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+    this.ctx.strokeStyle = this.theme.gridLine;
     this.ctx.lineWidth = 1;
     this.ctx.font = '10px Arial';
-    this.ctx.fillStyle = '#999';
+    this.ctx.fillStyle = this.theme.textMuted;
     this.ctx.textAlign = 'center';
 
     for (let time = startSecond; time < viewportStart + viewportWidth; time += secondInterval) {
@@ -508,13 +514,13 @@ export class VocalMonitorRenderer {
 
     // Background for label
     const labelWidth = this.ctx.measureText(noteLabel + ' ' + centsLabel + '¢').width + 10;
-    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    this.ctx.fillStyle = this.theme.overlay;
     this.ctx.beginPath();
     this.ctx.roundRect(pixelX + radius + 5, pixelY - 10, labelWidth, 20, 4);
     this.ctx.fill();
 
     // Label text
-    this.ctx.fillStyle = '#fff';
+    this.ctx.fillStyle = this.theme.textInverse;
     this.ctx.fillText(`${noteLabel} ${centsLabel}¢`, pixelX + radius + 10, pixelY);
   }
 

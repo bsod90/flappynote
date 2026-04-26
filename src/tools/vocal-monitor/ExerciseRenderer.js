@@ -165,43 +165,49 @@ export class ExerciseRenderer {
       ctx.translate(-centerX, -centerY);
     }
 
+    // Dark mode needs higher alpha so targets pop against dark scale highlights
+    const dark = !!this.theme?.isDark;
+    const fillBoost = dark ? 1.8 : 1;
+    const strokeBoost = dark ? 1.4 : 1;
+    const clamp = (a) => Math.min(1, a);
+
     if (isHit) {
-      // Hit target: green
-      ctx.fillStyle = 'rgba(76, 175, 80, 0.35)';
-      ctx.strokeStyle = 'rgba(76, 175, 80, 0.7)';
+      ctx.fillStyle = `rgba(76, 175, 80, ${clamp(0.35 * fillBoost)})`;
+      ctx.strokeStyle = `rgba(76, 175, 80, ${clamp(0.7 * strokeBoost)})`;
     } else if (isCurrent) {
-      // Current target: brighter yellow with pulse
       const pulse = 0.8 + 0.2 * Math.sin(currentTime / 200);
-      ctx.fillStyle = `rgba(255, 220, 50, ${0.35 * pulse})`;
-      ctx.strokeStyle = `rgba(255, 220, 50, ${0.7 * pulse})`;
+      ctx.fillStyle = `rgba(255, 220, 50, ${clamp(0.35 * pulse * fillBoost)})`;
+      ctx.strokeStyle = `rgba(255, 220, 50, ${clamp(0.7 * pulse * strokeBoost)})`;
     } else {
-      // Upcoming target: semi-transparent yellow
-      ctx.fillStyle = 'rgba(255, 220, 50, 0.15)';
-      ctx.strokeStyle = 'rgba(255, 220, 50, 0.35)';
+      ctx.fillStyle = `rgba(255, 220, 50, ${clamp(0.15 * fillBoost)})`;
+      ctx.strokeStyle = `rgba(255, 220, 50, ${clamp(0.35 * strokeBoost)})`;
     }
 
-    // Draw background
-    ctx.lineWidth = 2;
+    ctx.lineWidth = dark ? 2.5 : 2;
     ctx.beginPath();
     ctx.roundRect(x, y, width, height, 3);
     ctx.fill();
     ctx.stroke();
 
-    // Draw sustain progress fill for current target
     if (isCurrent && sustainFraction > 0) {
-      ctx.fillStyle = 'rgba(255, 220, 50, 0.4)';
+      ctx.fillStyle = `rgba(255, 220, 50, ${clamp(0.4 * fillBoost)})`;
       ctx.beginPath();
       ctx.roundRect(x, y, width * sustainFraction, height, 3);
       ctx.fill();
     }
 
-    // Draw lyrics (solfege)
     if (showLyrics && target.lyric) {
       const fontSize = Math.min(14, Math.max(9, height * 0.6));
       ctx.font = `bold ${fontSize}px Arial`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = isHit ? 'rgba(76, 175, 80, 0.9)' : 'rgba(100, 80, 0, 0.8)';
+      // Light cream on dark mode, dark olive on light mode — both readable
+      // against the yellow target fill at any boost level.
+      if (isHit) {
+        ctx.fillStyle = dark ? 'rgba(180, 240, 180, 0.95)' : 'rgba(76, 175, 80, 0.9)';
+      } else {
+        ctx.fillStyle = dark ? 'rgba(255, 245, 210, 0.95)' : 'rgba(100, 80, 0, 0.8)';
+      }
       ctx.fillText(target.lyric, x + width / 2, y + height / 2);
     }
 
@@ -372,12 +378,12 @@ export class ExerciseRenderer {
     const labelWidth = ctx.measureText(labelText).width + 20;
     const labelX = mainAreaX + mainAreaWidth / 2;
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.fillStyle = this.theme?.overlay ?? 'rgba(0, 0, 0, 0.6)';
     ctx.beginPath();
     ctx.roundRect(labelX - labelWidth / 2, labelY - 12, labelWidth, 24, 6);
     ctx.fill();
 
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = this.theme?.textInverse ?? '#fff';
     ctx.fillText(labelText, labelX, labelY);
 
     // Progress bar below the label
@@ -387,7 +393,7 @@ export class ExerciseRenderer {
     const barX = labelX - barWidth / 2;
 
     // Background
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.fillStyle = this.theme?.muted ?? 'rgba(255, 255, 255, 0.2)';
     ctx.beginPath();
     ctx.roundRect(barX, barY, barWidth, barHeight, 2);
     ctx.fill();

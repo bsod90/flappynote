@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Flappy Note Deployment Script
-# This script builds and deploys the application to AWS S3 and CloudFront
+# Musical Playground Deployment Script
+# Builds and deploys the application to the flappynote.com S3 bucket
+# and invalidates the matching CloudFront distribution.
 
 set -e  # Exit on any error
 
@@ -11,7 +12,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}🎵 Flappy Note Deployment Script${NC}\n"
+echo -e "${GREEN}🎵 Musical Playground Deployment Script${NC}\n"
 
 # Check if .env file exists
 if [ ! -f .env ]; then

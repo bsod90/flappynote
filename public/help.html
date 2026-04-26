@@ -4,30 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Help - Vocal Trainer | Flappy Note & Vocal Monitor Guide</title>
-  <meta name="description" content="Learn how to use Vocal Trainer tools: Flappy Note pitch game and Vocal Monitor for real-time pitch visualization. Complete guide with tips for vocal training.">
-  <meta name="keywords" content="vocal trainer help, flappy note guide, vocal monitor tutorial, pitch training, singing game, ear training, solfege, pitch detection">
+  <title>Help — Musical Playground</title>
+  <meta name="description" content="How to use Musical Playground: Vocal Monitor for pitch visualization and ear training, and the Metronome with mic listen-back for timing accuracy.">
+  <meta name="keywords" content="musical playground help, vocal monitor tutorial, metronome guide, listen back, mic calibration, practice session, drum practice">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://flappynote.com/help.html">
 
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://flappynote.com/help.html">
-  <meta property="og:title" content="Help - Vocal Trainer | Flappy Note & Vocal Monitor Guide">
-  <meta property="og:description" content="Learn how to use Vocal Trainer tools for pitch training and ear training.">
+  <meta property="og:title" content="Help — Musical Playground">
+  <meta property="og:description" content="How to use the Vocal Monitor and the Metronome with mic listen-back.">
   <meta property="og:image" content="https://flappynote.com/og-image.png">
 
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Help - Vocal Trainer | Flappy Note & Vocal Monitor Guide">
-  <meta name="twitter:description" content="Learn how to use Vocal Trainer tools for pitch training and ear training.">
+  <meta name="twitter:title" content="Help — Musical Playground">
+  <meta name="twitter:description" content="How to use the Vocal Monitor and the Metronome with mic listen-back.">
 
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
@@ -35,43 +30,16 @@
       min-height: 100vh;
       line-height: 1.6;
     }
-
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 40px 20px;
-    }
-
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
-      color: #4ec0ca;
-    }
-
-    .subtitle {
-      color: #888;
-      margin-bottom: 40px;
-      font-size: 1.1rem;
-    }
-
+    .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+    h1 { font-size: 2.5rem; margin-bottom: 10px; color: #4ec0ca; }
+    .subtitle { color: #888; margin-bottom: 40px; font-size: 1.1rem; }
     .back-link {
-      display: inline-flex;
-      align-items: center;
-      color: #4ec0ca;
-      text-decoration: none;
-      margin-bottom: 30px;
-      font-weight: 500;
+      display: inline-flex; align-items: center; color: #4ec0ca;
+      text-decoration: none; margin-bottom: 30px; font-weight: 500;
       transition: color 0.2s;
     }
-
-    .back-link:hover {
-      color: #6dd5df;
-    }
-
-    .back-link svg {
-      margin-right: 8px;
-    }
-
+    .back-link:hover { color: #6dd5df; }
+    .back-link svg { margin-right: 8px; }
     .requirements {
       background: rgba(255, 107, 53, 0.15);
       border: 1px solid rgba(255, 107, 53, 0.3);
@@ -79,145 +47,58 @@
       padding: 20px;
       margin-bottom: 40px;
     }
-
     .requirements h2 {
-      color: #ff6b35;
-      font-size: 1.2rem;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      color: #ff6b35; font-size: 1.2rem; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 8px;
     }
-
-    .requirements ul {
-      margin-left: 20px;
-    }
-
-    .requirements li {
-      margin-bottom: 8px;
-    }
-
+    .requirements ul { margin-left: 20px; }
+    .requirements li { margin-bottom: 8px; }
     .tool-section {
       background: rgba(255, 255, 255, 0.05);
-      border-radius: 16px;
-      padding: 30px;
-      margin-bottom: 30px;
+      border-radius: 16px; padding: 30px; margin-bottom: 30px;
     }
-
     .tool-header {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 15px; margin-bottom: 20px;
     }
-
-    .tool-icon {
-      font-size: 2.5rem;
-    }
-
-    .tool-header h2 {
-      color: #fff;
-      font-size: 1.8rem;
-    }
-
-    .tool-description {
-      color: #aaa;
-      margin-bottom: 25px;
-      font-size: 1.1rem;
-    }
-
+    .tool-icon { font-size: 2rem; }
+    .tool-header h2 { color: #fff; font-size: 1.8rem; }
+    .tool-description { color: #aaa; margin-bottom: 25px; font-size: 1.1rem; }
     h3 {
-      color: #4ec0ca;
-      font-size: 1.2rem;
-      margin: 25px 0 15px;
-      border-bottom: 1px solid rgba(78, 192, 202, 0.3);
-      padding-bottom: 8px;
+      color: #4ec0ca; font-size: 1.2rem; margin: 25px 0 15px;
+      border-bottom: 1px solid rgba(78, 192, 202, 0.3); padding-bottom: 8px;
     }
-
-    ul, ol {
-      margin-left: 20px;
-      margin-bottom: 20px;
-    }
-
-    li {
-      margin-bottom: 10px;
-    }
-
+    ul, ol { margin-left: 20px; margin-bottom: 20px; }
+    li { margin-bottom: 10px; }
     .tip {
       background: rgba(78, 192, 202, 0.1);
       border-left: 3px solid #4ec0ca;
-      padding: 15px;
-      margin: 20px 0;
-      border-radius: 0 8px 8px 0;
+      padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;
     }
-
-    .tip strong {
-      color: #4ec0ca;
+    .tip strong { color: #4ec0ca; }
+    .legend {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 8px; margin: 15px 0;
     }
-
-    .settings-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 15px 0;
+    .legend-row {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 8px 12px; border-radius: 8px;
     }
-
-    .settings-table th,
-    .settings-table td {
-      text-align: left;
-      padding: 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    .swatch {
+      width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
     }
-
-    .settings-table th {
-      color: #4ec0ca;
-      font-weight: 600;
-    }
-
-    .settings-table td:first-child {
-      font-weight: 500;
-      color: #fff;
-      width: 30%;
-    }
-
     .keyboard-shortcut {
       background: rgba(255, 255, 255, 0.1);
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-family: monospace;
-      font-size: 0.9em;
+      padding: 3px 8px; border-radius: 4px;
+      font-family: monospace; font-size: 0.9em;
     }
-
-    footer {
-      text-align: center;
-      padding: 40px 20px;
-      color: #666;
-    }
-
-    footer a {
-      color: #4ec0ca;
-      text-decoration: none;
-    }
-
-    footer a:hover {
-      text-decoration: underline;
-    }
-
+    footer { text-align: center; padding: 40px 20px; color: #666; }
+    footer a { color: #4ec0ca; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
     @media (max-width: 600px) {
-      h1 {
-        font-size: 2rem;
-      }
-
-      .tool-header h2 {
-        font-size: 1.4rem;
-      }
-
-      .tool-section {
-        padding: 20px;
-      }
-
-      .settings-table td:first-child {
-        width: auto;
-      }
+      h1 { font-size: 2rem; }
+      .tool-header h2 { font-size: 1.4rem; }
+      .tool-section { padding: 20px; }
     }
   </style>
 </head>
@@ -227,11 +108,11 @@
       <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
         <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"/>
       </svg>
-      Back to Vocal Trainer
+      Back to Musical Playground
     </a>
 
-    <h1>Help & Instructions</h1>
-    <p class="subtitle">Learn how to use Vocal Trainer's pitch training tools</p>
+    <h1>Help</h1>
+    <p class="subtitle">How to use the Vocal Monitor and Metronome.</p>
 
     <div class="requirements">
       <h2>
@@ -241,186 +122,174 @@
         Requirements
       </h2>
       <ul>
-        <li><strong>Microphone access</strong> - Both tools need to hear your voice</li>
-        <li><strong>Modern browser</strong> - Chrome, Safari, Firefox, or Edge (latest versions)</li>
-        <li><strong>Quiet environment</strong> - Background noise can affect pitch detection</li>
-        <li><strong>Headphones recommended</strong> - To avoid feedback from the drone</li>
+        <li><strong>Microphone access</strong> — both tools listen to you in real time</li>
+        <li><strong>Modern browser</strong> — Chrome, Safari, Firefox, or Edge (recent)</li>
+        <li><strong>Headphones recommended</strong> — keeps the drone (vocal monitor) and the metronome click out of the mic signal</li>
+        <li><strong>Quiet environment</strong> — improves pitch detection and onset detection accuracy</li>
       </ul>
       <p style="margin-top: 15px; color: #ff6b35;">
-        <strong>Note:</strong> If opening from social media apps (Facebook, Instagram, etc.),
-        tap the menu and select "Open in Browser" for microphone access to work properly.
+        <strong>Note:</strong> If you opened this from a social-media app (Instagram, Facebook, etc.) and the mic doesn't work, tap the menu and choose <em>Open in Browser</em>.
       </p>
     </div>
 
-    <!-- Flappy Note Section -->
+    <h3>Getting started</h3>
+    <ol>
+      <li>Open <a href="/" style="color:#4ec0ca">the home page</a> and pick a tool.</li>
+      <li>Allow microphone access when the browser asks.</li>
+      <li>Put on headphones if you can — both tools play audio that the mic might otherwise pick up.</li>
+    </ol>
+
+    <!-- VOCAL MONITOR -->
     <div class="tool-section">
       <div class="tool-header">
-        <span class="tool-icon">🐦</span>
-        <h2>Flappy Note</h2>
-      </div>
-      <p class="tool-description">
-        A singing game where you control a bird by matching pitches. Guide the bird through
-        gates by singing the target notes displayed on each gate.
-      </p>
-
-      <h3>How to Play</h3>
-      <ol>
-        <li>Click <strong>Start Game</strong> and allow microphone access when prompted</li>
-        <li>The bird follows your voice - sing higher to go up, lower to go down</li>
-        <li>Each gate shows a target note (Do, Re, Mi, etc.) - sing that note to pass through</li>
-        <li>Match the pitch shown on the gate to score points</li>
-        <li>The game ends if you miss a gate or go off-screen</li>
-      </ol>
-
-      <div class="tip">
-        <strong>Tip:</strong> Start with the Major Scale on a comfortable root note (like D or E).
-        Enable the Root Drone to help you hear the tonal center.
-      </div>
-
-      <h3>Settings</h3>
-      <table class="settings-table">
-        <tr>
-          <th>Setting</th>
-          <th>Description</th>
-        </tr>
-        <tr>
-          <td>Root Note</td>
-          <td>The tonal center of the scale. Choose based on your vocal range.</td>
-        </tr>
-        <tr>
-          <td>Mode</td>
-          <td>The scale or chord pattern to practice. Start with Major Scale.</td>
-        </tr>
-        <tr>
-          <td>Direction</td>
-          <td>Ascending (up), Descending (down), or Random order of scale degrees.</td>
-        </tr>
-        <tr>
-          <td>Root Drone</td>
-          <td>Plays a sustained root note for pitch reference.</td>
-        </tr>
-      </table>
-
-      <h3>Scoring</h3>
-      <ul>
-        <li>Pass through a gate while matching the pitch = +1 point</li>
-        <li>The closer you are to the target pitch, the better</li>
-        <li>Try to complete the full scale without missing any gates</li>
-      </ul>
-    </div>
-
-    <!-- Vocal Monitor Section -->
-    <div class="tool-section">
-      <div class="tool-header">
-        <span class="tool-icon">🎤</span>
+        <span class="tool-icon">🎙</span>
         <h2>Vocal Monitor</h2>
       </div>
       <p class="tool-description">
-        A real-time pitch visualization tool that displays your voice on a piano roll.
-        Watch your pitch as a continuous line over time.
+        Real-time pitch trace on a piano roll. Use it for free-form ear training or to run vocal exercises against a moving target.
       </p>
 
-      <h3>How to Use</h3>
-      <ol>
-        <li>Click <strong>Start</strong> to begin recording</li>
-        <li>Sing or hum - your pitch appears as an orange line on the piano roll</li>
-        <li>The line thickness indicates detection confidence</li>
-        <li>Scale degree rows are highlighted with colors matching the keyboard</li>
-        <li>Click <strong>Clear</strong> to reset the display</li>
-      </ol>
-
-      <h3>Piano Roll Features</h3>
+      <h3>The view</h3>
       <ul>
-        <li><strong>Left keyboard</strong> - Shows note names and solfege syllables (Do, Re, Mi...)</li>
-        <li><strong>Colored rows</strong> - Scale degrees are highlighted; gray hatched rows are out-of-scale notes</li>
-        <li><strong>Click & drag on keys</strong> - Play reference notes (glide across keys for portamento effect)</li>
-        <li><strong>Scroll/drag the main area</strong> - Navigate through your recording history</li>
-        <li><strong>Mouse wheel</strong> - Scroll through time</li>
+        <li>The <strong>piano keyboard</strong> on the left shows the pitch range; scale notes are color-coded by degree (Do, Re, Mi…) with solfège labels.</li>
+        <li>Your <strong>pitch trace</strong> draws as a continuous line scrolling left as time advances.</li>
+        <li>The vertical <strong>playhead</strong> on the right marks "now". Drag the canvas to scrub back through history; use the <em>Re-capture</em> button to jump to the playhead.</li>
+      </ul>
+
+      <h3>Controls</h3>
+      <ul>
+        <li><strong>Start / Stop</strong> — toggles mic capture and the trace.</li>
+        <li><strong>Clear</strong> — wipes pitch history.</li>
+        <li><strong>Restart</strong> (circle-arrow icon) — when an exercise or rolling key is on, restarts from beginning without clearing trace.</li>
+      </ul>
+
+      <h3>Sidebar</h3>
+      <ul>
+        <li><strong>Root note + scale type</strong> — your tonal center and mode (Major, Minor, Pentatonic, Blues, Dorian, etc.).</li>
+        <li><strong>Root drone</strong> — sustained reference tone. Optional <em>Play as chord</em> for triad context.</li>
+        <li><strong>Rolling key</strong> — automatically advances the root through a range as exercises complete (semitone / whole tone / scale degree steps; ascending or descending).</li>
+        <li><strong>Exercise mode</strong> — when on, draws target notes ahead of the playhead. Choose from ladders, tonic-return patterns, triads, sevenths, and intervals (semitone through fifth, up and down).</li>
+        <li><strong>Show solfège</strong> — print Do/Re/Mi labels on the targets.</li>
       </ul>
 
       <div class="tip">
-        <strong>Tip:</strong> Use this tool to visualize vibrato, pitch slides, and intonation.
-        The piano roll shows exactly how your voice moves between notes.
+        <strong>Tip:</strong> When an exercise locks the scale (e.g. Major Triad), the scale-type select is disabled and a "Locked" hint appears. Disable the exercise to free it.
       </div>
-
-      <h3>Settings</h3>
-      <table class="settings-table">
-        <tr>
-          <th>Setting</th>
-          <th>Description</th>
-        </tr>
-        <tr>
-          <td>Root Note</td>
-          <td>Sets which note is "Do" and determines scale highlighting.</td>
-        </tr>
-        <tr>
-          <td>Scale</td>
-          <td>Determines which notes are highlighted on the piano roll.</td>
-        </tr>
-        <tr>
-          <td>Root Drone</td>
-          <td>Plays a sustained root note for pitch reference.</td>
-        </tr>
-      </table>
     </div>
 
-    <!-- General Tips Section -->
+    <!-- METRONOME -->
     <div class="tool-section">
       <div class="tool-header">
-        <span class="tool-icon">💡</span>
-        <h2>General Tips</h2>
+        <span class="tool-icon">⏱</span>
+        <h2>Metronome</h2>
       </div>
+      <p class="tool-description">
+        A clean rotary metronome with subdivisions, accent patterns, tap tempo, skip-pattern training, timed practice sessions, and a mic listen-back mode that tells you how on-beat you actually are.
+      </p>
 
-      <h3>Getting Better Pitch Detection</h3>
+      <h3>The dial</h3>
       <ul>
-        <li>Sing clearly with good breath support</li>
-        <li>Avoid very quiet or very loud singing</li>
-        <li>Use headphones to prevent the drone from interfering with detection</li>
-        <li>Find a quiet room with minimal background noise</li>
-        <li>Hold your device at a consistent distance from your mouth</li>
+        <li><strong>Drag</strong> anywhere on the outer ring to change BPM (≈5° per BPM step). Mouse wheel works too.</li>
+        <li><strong>Tap inside</strong> the inner circle to start/stop.</li>
+        <li><strong>Click the BPM number</strong> to type a tempo directly. Use the <em>−</em> / <em>+</em> buttons for fine adjustment.</li>
+        <li>The <strong>outer ring</strong> is the bar visualization — one segment per beat (or per subdivision when set higher), filling smoothly as the bar progresses, with a glow on each beat hit. Accent beats render in magenta.</li>
+        <li><strong>Tap-tempo</strong> pill: tap repeatedly in time and the BPM updates from your tap median.</li>
       </ul>
 
-      <h3>Practice Suggestions</h3>
+      <h3>Sidebar</h3>
       <ul>
-        <li><strong>Start simple</strong> - Begin with Major Scale ascending before trying modes or chords</li>
-        <li><strong>Use the drone</strong> - It helps establish the key center in your ear</li>
-        <li><strong>Slow down</strong> - Focus on accuracy over speed</li>
-        <li><strong>Record yourself</strong> - Use Vocal Monitor to spot patterns in your intonation</li>
-        <li><strong>Practice intervals</strong> - Try 7th chords to work on larger jumps</li>
+        <li><strong>Time signature</strong> — 2/4 through 12/8.</li>
+        <li><strong>Subdivision</strong> — quarters, eighths, triplets, sixteenths, sextuplets. Adds quieter sub-clicks within each beat.</li>
+        <li><strong>Accent pattern</strong> — tap a beat number to cycle <em>regular → accent → silent</em>.</li>
+        <li><strong>Click timbre</strong> — Woodblock, Click, Beep, or Cowbell (all synthesized).</li>
+        <li><strong>Skip pattern</strong> — play <em>N</em> bars, then mute for <em>M</em> bars. Practice keeping the beat without the click.</li>
       </ul>
 
-      <h3>Keyboard Shortcuts</h3>
-      <table class="settings-table">
-        <tr>
-          <th>Shortcut</th>
-          <th>Action</th>
-        </tr>
-        <tr>
-          <td><span class="keyboard-shortcut">Ctrl/Cmd + Shift + D</span></td>
-          <td>Toggle debug overlay (shows pitch detection details)</td>
-        </tr>
-      </table>
+      <h3>Practice sessions</h3>
+      <p>Toggle <strong>Practice mode</strong> in the sidebar and set the session and interval lengths (e.g. 10-min session, 1-min intervals). Then on the page:</p>
+      <ol>
+        <li><strong>Start session</strong> → 5-second countdown, then the metronome begins.</li>
+        <li>A distinct <strong>two-tone chime</strong> plays at every interval transition.</li>
+        <li>The progress bar fills smoothly through each interval; the time-remaining countdown sits beneath it.</li>
+        <li><strong>Stop</strong> ends the session and the metronome. <strong>Restart</strong> resets and runs the 5-second countdown again. The session auto-completes at the end of the configured duration.</li>
+      </ol>
+    </div>
 
-      <h3>Fullscreen Mode</h3>
+    <!-- LISTEN BACK -->
+    <div class="tool-section">
+      <div class="tool-header">
+        <span class="tool-icon">🎧</span>
+        <h2>Listen back (Metronome)</h2>
+      </div>
+      <p class="tool-description">
+        Hears your hits via the mic (drum pad, claps, taps) and plots them against the beat grid in real time. Designed for percussion practice; works with anything percussive.
+      </p>
+
+      <h3>Setup</h3>
+      <ol>
+        <li>Toggle <strong>Listen back</strong> on (under the dial or in the sidebar). Allow mic access when asked.</li>
+        <li><strong>Wear headphones</strong> so the metronome's own click doesn't bleed into the mic.</li>
+        <li>Calibrate roundtrip latency once (see below). Default is 12&nbsp;ms.</li>
+      </ol>
+
+      <h3>What you see</h3>
       <ul>
-        <li><strong>Desktop</strong> - Click "Fullscreen" in the footer to toggle fullscreen mode</li>
-        <li><strong>iOS (iPhone/iPad)</strong> - Tap "Install App" to add to your home screen for a fullscreen experience</li>
-        <li><strong>Android</strong> - Use the fullscreen toggle or install as an app from your browser menu</li>
+        <li><strong>Vertical ticks</strong> — beat positions. Magenta = accent, dashed = silent / skipped bar.</li>
+        <li><strong>Subdivision grid</strong> — subtle lines between beats: quarter &gt; eighth &gt; sixteenth (always on). Toggle <strong>Triplets</strong> in the panel header for the 8th-triplet grid (dashed magenta).</li>
+        <li><strong>Waveform</strong> — what the mic is hearing right now, mirrored above and below the time axis.</li>
+        <li><strong>Threshold band</strong> — the lighter horizontal band shows your sensitivity threshold; signals poking above it are detected as hits. Higher sensitivity = narrower band.</li>
+        <li><strong>Hit dots</strong> — your detected hits, color-coded:</li>
+      </ul>
+      <div class="legend">
+        <div class="legend-row"><span class="swatch" style="background:rgb(34,197,94)"></span> on-grid (quarter)</div>
+        <div class="legend-row"><span class="swatch" style="background:rgb(132,204,22)"></span> on-grid (eighth)</div>
+        <div class="legend-row"><span class="swatch" style="background:rgb(20,184,166)"></span> on-grid (sixteenth)</div>
+        <div class="legend-row"><span class="swatch" style="background:rgb(16,185,129)"></span> on-grid (triplet)</div>
+        <div class="legend-row"><span class="swatch" style="background:rgb(234,179,8)"></span> close (≤80&nbsp;ms off)</div>
+        <div class="legend-row"><span class="swatch" style="background:rgb(239,68,68)"></span> off (&gt;80&nbsp;ms)</div>
+      </div>
+      <ul>
+        <li><strong>FLAM</strong> marker — when two hits land within ~80&nbsp;ms of each other (typical drum-flam mistake when the sticks aren't perfectly synced), a small yellow dot + "FLAM" label appears at the bottom of the panel.</li>
       </ul>
 
-      <h3>Direct Links</h3>
-      <p>Share these direct links to each tool:</p>
+      <h3>Stats</h3>
       <ul>
-        <li><strong>Vocal Monitor</strong> - <a href="/vocal-monitor" style="color: #4ec0ca;">flappynote.com/vocal-monitor</a></li>
-        <li><strong>Flappy Note</strong> - <a href="/flappy-note" style="color: #4ec0ca;">flappynote.com/flappy-note</a></li>
+        <li><strong>On grid</strong> — % of hits within ±35&nbsp;ms of <em>any</em> grid line (including silent beats — the most important metric for keeping time when the click is muted).</li>
+        <li><strong>Click sync</strong> — % of hits within ±35&nbsp;ms of an <em>audible</em> beat. Compares only against the clicks you actually hear.</li>
+        <li><strong>Hit rate</strong> — fraction of expected beats you registered a hit for.</li>
       </ul>
+
+      <h3>Calibration</h3>
+      <p>Audio output and mic input have a roundtrip latency that varies per device. Calibration measures it and subtracts it from your stats so an "on the click" hit reads as 0&nbsp;ms.</p>
+      <ol>
+        <li>Open the <strong>Latency</strong> field in the sidebar's Listen Back section.</li>
+        <li>Click <strong>Calibrate</strong>. The mic auto-enables (if off), the metronome auto-starts (if stopped), and the detector listens at maximum sensitivity for 5&nbsp;s.</li>
+        <li><strong>Use speakers, not headphones</strong> for calibration — the mic needs to actually hear the metronome.</li>
+        <li>Don't tap anything during the 5&nbsp;s window. The median delta between scheduled clicks and detected onsets becomes your latency value.</li>
+        <li>You can also type a value manually if you know your setup's latency.</li>
+      </ol>
+      <div class="tip">
+        <strong>Sensitivity slider:</strong> higher = catches softer hits, lower = ignores background noise. Watch the waveform: hits should clearly poke above the threshold band.
+      </div>
+    </div>
+
+    <!-- PRIVACY -->
+    <div class="tool-section">
+      <div class="tool-header">
+        <span class="tool-icon">🔒</span>
+        <h2>Privacy</h2>
+      </div>
+      <p>
+        All audio processing happens in your browser. The mic stream is analyzed locally — nothing is recorded, uploaded, or sent to any server.
+        Your settings (root note, exercise type, BPM, etc.) are stored in your browser's localStorage and never leave your device.
+      </p>
     </div>
   </div>
 
   <footer>
     <p>
-      <a href="/">Return to Vocal Trainer</a> ·
-      <a href="https://github.com/bsod90/flappynote" target="_blank" rel="noopener">GitHub</a>
+      <a href="/">Return to Musical Playground</a> ·
+      <a href="https://github.com/bsod90/flappynote" target="_blank" rel="noopener noreferrer">GitHub</a>
     </p>
   </footer>
 </body>

@@ -1,7 +1,7 @@
 {
   "name": "flappynote",
   "version": "1.0.0",
-  "description": "A browser-based pitch-matching game that helps you learn musical scales by singing",
+  "description": "Free in-browser music practice tools: Vocal Monitor for pitch visualization and a Metronome with mic listen-back.",
   "homepage": "https://flappynote.com",
   "repository": {
     "type": "git",
@@ -20,21 +20,46 @@
   "keywords": [
     "music",
     "pitch",
-    "game",
-    "education"
+    "vocal",
+    "training",
+    "education",
+    "metronome",
+    "tempo",
+    "tap-tempo",
+    "listen-back",
+    "onset-detection",
+    "practice-session",
+    "vocal-training"
   ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@playwright/test": "^1.41.0",
-    "happy-dom": "^20.0.0",
+    "@playwright/test": "^1.49.1",
+    "@vitejs/plugin-react": "^5.2.0",
+    "autoprefixer": "^10.4.20",
     "jsdom": "^27.0.0",
-    "patch-package": "^8.0.1",
-    "vite": "^5.0.0",
-    "vitest": "^1.2.0"
+    "postcss": "^8.5.12",
+    "tailwindcss": "^3.4.19",
+    "tailwindcss-animate": "^1.0.7",
+    "vite": "^7.1.0",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-label": "^2.1.8",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-separator": "^1.1.8",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-switch": "^1.2.6",
+    "@radix-ui/react-tooltip": "^1.2.8",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.11.0",
     "pitchfinder": "^2.3.2",
-    "pitchy": "^4.1.0"
+    "pitchy": "^4.1.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^7.14.2",
+    "tailwind-merge": "^3.5.0"
   }
 }

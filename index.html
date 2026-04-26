@@ -5,43 +5,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Primary Meta Tags -->
-  <title>Vocal Trainer - Free Pitch Training Tools for Singers</title>
-  <meta name="title" content="Vocal Trainer - Free Pitch Training Tools for Singers">
-  <meta name="description" content="Free vocal training tools for singers. Includes Flappy Note pitch game and Vocal Monitor for real-time pitch visualization. Practice scales, improve pitch accuracy, and train your ear with interactive exercises.">
-  <meta name="keywords" content="vocal training, pitch training, singing game, ear training, learn to sing, pitch matching, music training, vocal exercises, singing practice, pitch detection, voice training, flappy note, vocal monitor">
-  <meta name="author" content="Vocal Trainer">
+  <title>Musical Playground - Free Music Practice Tools</title>
+  <meta name="title" content="Musical Playground - Free Music Practice Tools">
+  <meta name="description" content="Free music practice tools — Vocal Monitor visualizes your pitch on a piano roll for ear training and scale practice; the Metronome with mic listen-back tracks your timing in real time. No install, no signup.">
+  <meta name="keywords" content="vocal training, pitch training, ear training, learn to sing, pitch matching, music training, vocal exercises, singing practice, pitch detection, voice training, vocal monitor, metronome, tap tempo, mic listen-back, drum practice, rhythm training, click track, latency calibration, practice session">
+  <meta name="author" content="Musical Playground">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://flappynote.com/">
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://flappynote.com/">
-  <meta property="og:title" content="Vocal Trainer - Free Pitch Training Tools for Singers">
-  <meta property="og:description" content="Free vocal training tools including Flappy Note game and Vocal Monitor. Practice pitch accuracy with interactive exercises.">
+  <meta property="og:title" content="Musical Playground - Free Music Practice Tools">
+  <meta property="og:description" content="Vocal Monitor for pitch visualization and a Metronome with mic listen-back for timing accuracy. Free, no install.">
   <meta property="og:image" content="https://flappynote.com/og-image.png">
-  <meta property="og:image:width" content="1400">
-  <meta property="og:image:height" content="867">
-  <meta property="og:site_name" content="Vocal Trainer">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="628">
+  <meta property="og:image:alt" content="Musical Playground metronome with mic listen-back showing the rotary BPM dial and a real-time waveform timeline of detected hits">
+  <meta property="og:site_name" content="Musical Playground">
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://flappynote.com/">
-  <meta name="twitter:title" content="Vocal Trainer - Free Pitch Training Tools for Singers">
-  <meta name="twitter:description" content="Free vocal training tools including Flappy Note game and Vocal Monitor. Practice pitch accuracy with interactive exercises.">
+  <meta name="twitter:title" content="Musical Playground - Free Music Practice Tools">
+  <meta name="twitter:description" content="Vocal Monitor for pitch visualization and a Metronome with mic listen-back for timing accuracy. Free, no install.">
   <meta name="twitter:image" content="https://flappynote.com/og-image.png">
+  <meta name="twitter:image:alt" content="Musical Playground metronome with mic listen-back showing the rotary BPM dial and a real-time waveform timeline of detected hits">
 
   <!-- Additional SEO -->
-  <meta name="application-name" content="Vocal Trainer">
-  <meta name="theme-color" content="#4ec0ca">
+  <meta name="application-name" content="Musical Playground">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Vocal Trainer">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Musical Playground">
 
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/favicon.svg">
-  <link rel="stylesheet" href="/src/ui/styles.css">
 
   <!-- TensorFlow.js for CREPE pitch detection -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
@@ -51,10 +53,10 @@
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "Vocal Trainer",
+    "name": "Musical Playground",
     "url": "https://flappynote.com",
-    "description": "A suite of free vocal training tools for singers. Includes Flappy Note pitch game and Vocal Monitor for real-time pitch visualization.",
-    "applicationCategory": "GameApplication",
+    "description": "Free music practice tools — Vocal Monitor visualizes your pitch on a piano roll for ear training and scale practice; the Metronome with mic listen-back tracks your timing in real time.",
+    "applicationCategory": "EducationalApplication",
     "genre": ["Music", "Educational"],
     "operatingSystem": "Web Browser",
     "offers": {
@@ -64,11 +66,15 @@
     },
     "browserRequirements": "Requires microphone access",
     "featureList": [
-      "Real-time pitch detection",
-      "Flappy Note singing game",
-      "Vocal Monitor pitch visualization",
-      "Multiple scales and modes",
-      "Root drone for pitch reference"
+      "Real-time pitch detection on a piano roll",
+      "Interactive vocal exercises (ladders, intervals, triads)",
+      "Rolling-key practice across the vocal range",
+      "Root drone for pitch reference",
+      "Customizable metronome with accent patterns and subdivisions",
+      "Tap tempo and roundtrip latency calibration",
+      "Mic listen-back for real-time timing accuracy feedback",
+      "Practice sessions with timed intervals",
+      "Skip-pattern training (silent bars)"
     ],
     "screenshot": "https://flappynote.com/og-image.png"
   }
@@ -91,360 +97,7 @@
   </script>
 </head>
 <body>
-  <div id="app">
-    <!-- Tool Selection Screen (created dynamically by main.js) -->
-
-    <!-- Flappy Note Tool Container -->
-    <div id="flappy-note-container" style="display: none;">
-      <div id="ui-container">
-        <div id="controls">
-          <!-- Title -->
-          <h1>Flappy Note</h1>
-
-          <!-- Settings group -->
-          <div id="settings-group">
-            <button id="settings-toggle" class="settings-toggle">Settings ⚙️</button>
-            <div id="settings-panel" class="settings-panel">
-              <div class="control-group">
-                <label for="root-note">Root Note:</label>
-                <select id="root-note">
-                  <option value="C">C</option>
-                  <option value="C#">C# / Db</option>
-                  <option value="D" selected>D</option>
-                  <option value="D#">D# / Eb</option>
-                  <option value="E">E</option>
-                  <option value="F">F</option>
-                  <option value="F#">F# / Gb</option>
-                  <option value="G">G</option>
-                  <option value="G#">G# / Ab</option>
-                  <option value="A">A</option>
-                  <option value="A#">A# / Bb</option>
-                  <option value="B">B</option>
-                </select>
-              </div>
-              <div class="control-group">
-                <label for="scale-type">Mode:</label>
-                <select id="scale-type">
-                  <optgroup label="Scales">
-                    <option value="major" selected>Major Scale</option>
-                    <option value="minor">Natural Minor</option>
-                    <option value="harmonicMinor">Harmonic Minor</option>
-                    <option value="melodicMinor">Melodic Minor</option>
-                    <option value="pentatonic">Pentatonic Major</option>
-                    <option value="blues">Blues Scale</option>
-                    <option value="chromatic">Chromatic</option>
-                  </optgroup>
-                  <optgroup label="Modes">
-                    <option value="dorian">Dorian</option>
-                    <option value="mixolydian">Mixolydian</option>
-                  </optgroup>
-                  <optgroup label="Advanced">
-                    <option value="wholeTone">Whole Tone</option>
-                    <option value="diminished">Diminished</option>
-                  </optgroup>
-                </select>
-              </div>
-              <div class="control-group">
-                <label for="direction">Direction:</label>
-                <select id="direction">
-                  <option value="up" selected>Ascending ↑</option>
-                  <option value="down">Descending ↓</option>
-                  <option value="random">Random 🎲</option>
-                </select>
-              </div>
-              <div class="control-group drone-toggle-group">
-                <label for="drone-toggle" class="drone-label">
-                  <input type="checkbox" id="drone-toggle" checked>
-                  Root Drone
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- Button group -->
-          <div id="button-group">
-            <button id="flappy-back-button" class="back-button">← Back</button>
-            <button id="start-button">Start Game</button>
-            <button id="reset-button" disabled>Reset</button>
-          </div>
-        </div>
-        <div id="game-info">
-          <div id="pitch-display">Pitch: --</div>
-          <div id="score-display">Score: 0</div>
-          <div id="status-display">Click Start to begin</div>
-        </div>
-      </div>
-      <canvas id="game-canvas"></canvas>
-    </div>
-
-    <!-- Vocal Monitor Tool Container -->
-    <div id="vocal-monitor-container" style="display: none;">
-      <div id="vocal-monitor-ui">
-        <div id="vocal-monitor-controls">
-          <!-- Simplified navbar - main buttons only -->
-          <div id="vocal-button-group">
-            <button id="vocal-back-button" class="back-button">← Back</button>
-            <button id="vocal-start-button">Start</button>
-            <button id="vocal-clear-button" disabled>Clear</button>
-            <button id="vocal-sidebar-toggle" aria-expanded="false" aria-controls="vocal-sidebar">Settings</button>
-          </div>
-
-          <!-- Hidden form elements for legacy support (not visible, just for data binding) -->
-          <div id="vocal-settings-group" style="display: none;">
-            <select id="vocal-root-note">
-              <option value="C">C</option>
-              <option value="C#">C# / Db</option>
-              <option value="D" selected>D</option>
-              <option value="D#">D# / Eb</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="F#">F# / Gb</option>
-              <option value="G">G</option>
-              <option value="G#">G# / Ab</option>
-              <option value="A">A</option>
-              <option value="A#">A# / Bb</option>
-              <option value="B">B</option>
-            </select>
-            <select id="vocal-scale-type">
-              <option value="major" selected>Major Scale</option>
-              <option value="minor">Natural Minor</option>
-            </select>
-            <input type="checkbox" id="vocal-drone-toggle" checked>
-            <input type="checkbox" id="vocal-exercise-toggle">
-            <input type="checkbox" id="vocal-show-lyrics" checked>
-          </div>
-        </div>
-      </div>
-      <div id="vocal-monitor-canvas-container">
-        <canvas id="vocal-monitor-canvas"></canvas>
-        <button id="vocal-jump-to-front" class="jump-to-front-button" style="display: none;" title="Jump to current time">
-          <span class="jump-icon">▶▶</span>
-        </button>
-      </div>
-
-      <!-- Right Sidebar -->
-      <div id="vocal-sidebar">
-        <div class="sidebar-content">
-        <!-- Scale Settings Section -->
-        <div class="sidebar-section">
-          <h3>Scale</h3>
-          <div id="scale-locked-notice" class="scale-locked-notice" style="display: none;">
-            Scale locked by exercise
-          </div>
-
-          <!-- Rolling Key toggle -->
-          <label class="sidebar-toggle">
-            <input type="checkbox" id="sidebar-rolling-key-toggle">
-            <span>Rolling Key</span>
-          </label>
-
-          <!-- Static Key Options (shown when key mode is static) -->
-          <div id="sidebar-static-key-options">
-            <div class="sidebar-control">
-              <label for="sidebar-root-note">Root Note</label>
-              <select id="sidebar-root-note">
-                <option value="C">C</option>
-                <option value="C#">C# / Db</option>
-                <option value="D" selected>D</option>
-                <option value="D#">D# / Eb</option>
-                <option value="E">E</option>
-                <option value="F">F</option>
-                <option value="F#">F# / Gb</option>
-                <option value="G">G</option>
-                <option value="G#">G# / Ab</option>
-                <option value="A">A</option>
-                <option value="A#">A# / Bb</option>
-                <option value="B">B</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Rolling Key Options (shown when key mode is rolling) -->
-          <div id="sidebar-rolling-key-options" style="display: none;">
-            <div class="sidebar-control">
-              <label for="sidebar-rolling-key-lowest">Lowest Root</label>
-              <select id="sidebar-rolling-key-lowest">
-                <!-- Chromatic order by pitch -->
-                <option value="C2">C2</option>
-                <option value="D2">D2</option>
-                <option value="E2">E2</option>
-                <option value="F2">F2</option>
-                <option value="G2">G2</option>
-                <option value="A2">A2</option>
-                <option value="B2">B2</option>
-                <option value="C3" selected>C3</option>
-                <option value="D3">D3</option>
-                <option value="E3">E3</option>
-                <option value="F3">F3</option>
-                <option value="G3">G3</option>
-                <option value="A3">A3</option>
-                <option value="B3">B3</option>
-                <option value="C4">C4</option>
-                <option value="D4">D4</option>
-                <option value="E4">E4</option>
-                <option value="F4">F4</option>
-                <option value="G4">G4</option>
-                <option value="A4">A4</option>
-                <option value="B4">B4</option>
-              </select>
-            </div>
-            <div class="sidebar-control">
-              <label for="sidebar-rolling-key-highest">Highest Root</label>
-              <select id="sidebar-rolling-key-highest">
-                <!-- Chromatic order by pitch -->
-                <option value="C3">C3</option>
-                <option value="D3">D3</option>
-                <option value="E3">E3</option>
-                <option value="F3">F3</option>
-                <option value="G3">G3</option>
-                <option value="A3">A3</option>
-                <option value="B3">B3</option>
-                <option value="C4">C4</option>
-                <option value="D4">D4</option>
-                <option value="E4">E4</option>
-                <option value="F4">F4</option>
-                <option value="G4" selected>G4</option>
-                <option value="A4">A4</option>
-                <option value="B4">B4</option>
-                <option value="C5">C5</option>
-                <option value="D5">D5</option>
-                <option value="E5">E5</option>
-                <option value="F5">F5</option>
-                <option value="G5">G5</option>
-                <option value="A5">A5</option>
-                <option value="B5">B5</option>
-              </select>
-            </div>
-            <div class="sidebar-control">
-              <label for="sidebar-rolling-key-direction">Direction</label>
-              <select id="sidebar-rolling-key-direction">
-                <option value="ascending" selected>Ascending</option>
-                <option value="descending">Descending</option>
-              </select>
-            </div>
-            <div class="sidebar-control">
-              <label for="sidebar-rolling-key-step">Step Type</label>
-              <select id="sidebar-rolling-key-step">
-                <option value="semitone" selected>Semitone</option>
-                <option value="wholeTone">Whole Tone</option>
-                <option value="scaleDegree">Scale Degree</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="sidebar-control">
-            <label for="sidebar-scale-type">Scale Type</label>
-            <select id="sidebar-scale-type">
-              <optgroup label="Scales">
-                <option value="major" selected>Major Scale</option>
-                <option value="minor">Natural Minor</option>
-                <option value="harmonicMinor">Harmonic Minor</option>
-                <option value="melodicMinor">Melodic Minor</option>
-                <option value="pentatonic">Pentatonic Major</option>
-                <option value="blues">Blues Scale</option>
-                <option value="chromatic">Chromatic</option>
-              </optgroup>
-              <optgroup label="Modes">
-                <option value="dorian">Dorian</option>
-                <option value="mixolydian">Mixolydian</option>
-              </optgroup>
-              <optgroup label="Advanced">
-                <option value="wholeTone">Whole Tone</option>
-                <option value="diminished">Diminished</option>
-              </optgroup>
-            </select>
-          </div>
-          <label class="sidebar-toggle">
-            <input type="checkbox" id="sidebar-drone-toggle" checked>
-            <span>Root Drone</span>
-          </label>
-          <label class="sidebar-toggle" id="drone-chord-option">
-            <input type="checkbox" id="sidebar-drone-chord">
-            <span>Play as Chord</span>
-          </label>
-        </div>
-
-        <!-- Exercise Section -->
-        <div class="sidebar-section">
-          <h3>Exercise</h3>
-          <label class="sidebar-toggle">
-            <input type="checkbox" id="sidebar-exercise-toggle">
-            <span>Exercise Mode</span>
-          </label>
-          <div id="sidebar-exercise-options" style="display: none;">
-            <div class="sidebar-control">
-              <label for="sidebar-exercise-type">Exercise Type</label>
-              <select id="sidebar-exercise-type">
-                <optgroup label="Ladders">
-                  <option value="ascendingMajorLadder">Ascending Major Ladder</option>
-                  <option value="ascendingMinorLadder">Ascending Minor Ladder</option>
-                  <option value="descendingMajorLadder">Descending Major Ladder</option>
-                  <option value="descendingMinorLadder">Descending Minor Ladder</option>
-                  <option value="tonicReturnMajor">Tonic Return (Major)</option>
-                  <option value="tonicReturnMinor">Tonic Return (Minor)</option>
-                </optgroup>
-                <optgroup label="Triads & Chords">
-                  <option value="majorTriad">Major Triad (1-3-5-8)</option>
-                  <option value="minorTriad">Minor Triad (1-3-5-8)</option>
-                  <option value="majorSeventh">Major Seventh (1-3-5-7-8)</option>
-                  <option value="minorSeventh">Minor Seventh (1-3-5-7-8)</option>
-                </optgroup>
-                <optgroup label="Intervals">
-                  <option value="semitoneUp">Semitone Up</option>
-                  <option value="semitoneDown">Semitone Down</option>
-                  <option value="toneUp">Whole Tone Up</option>
-                  <option value="toneDown">Whole Tone Down</option>
-                  <option value="minorThirdUp">Minor Third Up</option>
-                  <option value="majorThirdUp">Major Third Up</option>
-                  <option value="minorThirdDown">Minor Third Down</option>
-                  <option value="majorThirdDown">Major Third Down</option>
-                  <option value="fourthUp">Perfect Fourth Up</option>
-                  <option value="fourthDown">Perfect Fourth Down</option>
-                  <option value="fifthUp">Perfect Fifth Up</option>
-                  <option value="fifthDown">Perfect Fifth Down</option>
-                </optgroup>
-              </select>
-            </div>
-            <label class="sidebar-toggle">
-              <input type="checkbox" id="sidebar-show-lyrics" checked>
-              <span>Show Lyrics</span>
-            </label>
-          </div>
-        </div>
-        </div><!-- /.sidebar-content -->
-      </div>
-    </div>
-  </div>
-
-  <!-- Footer -->
-  <footer id="game-footer">
-    <p>
-      <a href="https://github.com/bsod90/flappynote" target="_blank" rel="noopener noreferrer">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 4px;">
-          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
-        </svg>
-        GitHub
-      </a>
-      <span style="margin: 0 8px; color: rgba(255, 255, 255, 0.5);">•</span>
-      <a href="/help.html">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 4px;">
-          <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-          <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
-        </svg>
-        Help
-      </a>
-      <span style="margin: 0 8px; color: rgba(255, 255, 255, 0.5);">•</span>
-      <a href="#" id="fullscreen-toggle">
-        <svg id="fullscreen-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 4px;">
-          <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
-        </svg>
-        <span id="fullscreen-text">Fullscreen</span>
-      </a>
-    </p>
-  </footer>
-
-  <!-- Debug Toggle Button (hidden by default, shown only in dev or via keyboard shortcut) -->
-  <button id="debug-toggle" title="Toggle Debug Overlay" style="display: none;">🎵</button>
+  <div id="root"></div>
 
   <!-- GitHub Pages SPA redirect handler -->
   <script>
@@ -457,6 +110,6 @@
     })();
   </script>
 
-  <script type="module" src="/src/main.js?v=43"></script>
+  <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

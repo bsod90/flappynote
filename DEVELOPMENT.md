@@ -2,9 +2,11 @@
 
 ## Project Overview
 
-Vocal Trainer is a suite of browser-based vocal training tools:
-- **Vocal Monitor** - Real-time pitch visualization on a piano roll
-- **Flappy Note** - Pitch-matching singing game
+Musical Playground is a suite of browser-based music practice tools:
+- **Vocal Monitor** — real-time pitch visualization on a piano roll, with interactive vocal exercises and rolling-key practice.
+- **Metronome** — rotary BPM dial with subdivisions, accent patterns, tap tempo, skip-pattern training, timed practice sessions, and a mic listen-back mode that scores your timing in real time.
+
+Both tools share dark/light theming via shadcn HSL CSS variables and run entirely in the browser — no audio leaves the device.
 
 ## Getting Started
 
@@ -25,118 +27,132 @@ npm run preview
 ## Testing
 
 ```bash
-# Run all tests
-npm test
-
-# Run pitch engine unit tests only (fast)
-npm run test:pitch-engine
-
-# Watch mode for unit tests during development
-npm run test:watch
-
-# Run browser integration tests (requires dev server)
-npm run test:browser
+npm test                       # all unit tests
+npm run test:watch             # watch mode
+npm run test:pitch-engine      # only pitch-engine specs (fast)
+npm run test:browser           # Playwright (requires dev server)
 ```
 
 ## Project Structure
 
 ```
 src/
-├── core/                      # Shared systems (used by all tools)
-│   ├── ToolBase.js               - Abstract base class for tools
-│   ├── PitchContext.js           - Shared pitch detection with subscriptions
-│   ├── ScaleManager.js           - Musical scale management
-│   ├── DroneManager.js           - Reference tone playback
-│   ├── SharedSettings.js         - Cross-tool settings (localStorage)
-│   └── index.js                  - Core exports
+├── app/                       # React app shell
+│   ├── App.jsx                  - BrowserRouter + routes + page-view tracking
+│   ├── AppShell.jsx             - Top bar with brand + active-tool icon + back link
+│   ├── AppFooter.jsx            - Help / GitHub / Fullscreen toggle
+│   ├── ToolIndex.jsx            - "/" — tool catalog cards
+│   ├── ToolFallback.jsx, NotFound.jsx
+│   ├── useColorScheme.js        - Mirrors prefers-color-scheme onto <html>
+│   └── icons/GithubIcon.jsx
 │
-├── tools/                     # Individual tools
-│   ├── vocal-monitor/            - Piano roll visualization tool
-│   │   ├── VocalMonitorTool.js      - Main tool class
-│   │   ├── VocalMonitorState.js     - Pitch history & state
-│   │   ├── VocalMonitorRenderer.js  - Canvas rendering
-│   │   └── PianoRoll.js             - Piano keyboard component
+├── components/ui/             # shadcn/ui primitives (Button, Select, Sheet, …)
+├── lib/
+│   ├── utils.js                 - cn() helper
+│   └── analytics.js             - Tiny gtag wrapper
+│
+├── tools/
+│   ├── registry.js              - Tool catalog (single source of truth)
 │   │
-│   └── flappy-note/              - Pitch-matching game
-│       ├── FlappyNoteTool.js        - Main tool class
-│       ├── FlappyGameState.js       - Game logic & state
-│       ├── FlappyRenderer.js        - Canvas rendering
-│       ├── Ball.js                  - Player entity
-│       └── Gate.js                  - Target obstacles
+│   ├── vocal-monitor/
+│   │   ├── VocalMonitorPage.jsx
+│   │   ├── VocalMonitorController.js   - DOM-agnostic canvas controller
+│   │   ├── VocalMonitorRenderer.js
+│   │   ├── VocalMonitorState.js
+│   │   ├── PianoRoll.js, ExerciseRenderer.js
+│   │   ├── PitchCanvas.jsx
+│   │   ├── Sidebar.jsx, Toolbar.jsx
+│   │   ├── ExerciseEngine.js
+│   │   ├── ScaleTimeline.js, RollingKeyManager.js
+│   │   ├── canvasTheme.js              - Reads CSS HSL vars per frame
+│   │   ├── useSharedSettings.js
+│   │   ├── rollingKeyOptions.js
+│   │   └── exercises/                  - Individual exercise definitions
+│   │
+│   └── metronome/
+│       ├── MetronomePage.jsx
+│       ├── MetronomeEngine.js          - Web Audio lookahead scheduler
+│       ├── MetronomeDial.jsx           - Rotary BPM dial + visual beat ring
+│       ├── PracticeTracker.jsx         - Session state machine
+│       ├── ListenBackPanel.jsx         - Unified canvas: waveform / grid / hits
+│       ├── MicListener.js              - Mic stream + AnalyserNode → detector
+│       ├── OnsetDetector.js            - Peak-based percussion onset detection
+│       ├── HitTracker.js               - Beat matching + flam detection + stats
+│       ├── clickSamples.js             - Synthesized click bank
+│       ├── sensitivity.js              - Slider ↔ detector threshold
+│       └── Sidebar.jsx
 │
-├── pitch-engine/              # Pitch detection module
-│   ├── PitchDetector.js          - Main detection API
-│   ├── AudioAnalyzer.js          - Mic input, AGC, filtering
-│   ├── FrequencyConverter.js     - Musical frequency utilities
-│   ├── detectors/
-│   │   ├── BasePitchDetector.js    - Detector interface
-│   │   ├── TFCREPEDetector.js      - CREPE-style (TensorFlow.js)
-│   │   └── HybridPitchDetector.js  - MPM+YIN fallback
-│   └── __tests__/                - Unit tests
+├── core/                      # Shared, non-React systems
+│   ├── PitchContext.js, ScaleManager.js, DroneManager.js
+│   ├── SharedSettings.js        - localStorage-backed observable settings
+│   └── index.js
 │
-├── audio/                     # Audio playback
-│   └── TonePlayer.js             - Reference tone generation
-│
-├── config/                    # Configuration
-│   ├── scales.js                 - Musical scale definitions
-│   └── gameConfig.js             - Game physics parameters
-│
-├── ui/                        # UI components
-│   ├── styles.css                - All CSS styles
-│   └── DebugOverlay.js           - Debug info display
-│
-└── main.js                    # App entry & ToolSelector class
+├── pitch-engine/              # Pitch detection (CREPE / MPM+YIN)
+├── audio/TonePlayer.js
+├── config/scales.js
+├── index.css                  # Tailwind base + shadcn HSL theme tokens
+└── main.jsx                   # ReactDOM.createRoot mount
 ```
 
 ## Architecture
 
-### Tool System
+### Tool registry
 
-All tools extend `ToolBase` and share core systems:
+`src/tools/registry.js` is the single source of truth for both the index page and the router. Each entry:
 
-```javascript
-class MyTool extends ToolBase {
-  async initialize() {
-    // Set up UI, event listeners
-  }
-
-  async start() {
-    // Called when tool becomes active
-  }
-
-  stop() {
-    // Called when leaving tool
-  }
-
-  onPitchDetected(pitchData) {
-    // Receives pitch updates from shared PitchContext
-  }
+```jsx
+{
+  id: 'vocal-monitor',
+  path: '/vocal-monitor',
+  name: 'Vocal Monitor',
+  tagline: '...',
+  icon: AudioLines,                                // lucide-react component
+  Component: lazy(() => import('./vocal-monitor/VocalMonitorPage.jsx')),
 }
 ```
 
-### Shared Systems
+Adding a tool: drop a new entry — the router and the index page both pick it up automatically. The active tool's icon also renders in the AppShell breadcrumb.
 
-Tools receive shared instances via `connect*` methods:
+### Vocal Monitor: React + headless controller
 
-```javascript
-tool.connectPitchContext(pitchContext);   // Pitch detection
-tool.connectScaleManager(scaleManager);   // Musical scales
-tool.connectDroneManager(droneManager);   // Reference tones
-tool.connectSettings(settings);           // User preferences
-```
+Stateful canvas/audio logic lives in a plain class (`VocalMonitorController.js`); React owns the DOM around it.
+
+- `VocalMonitorPage.jsx` instantiates `SharedSettings`, `ScaleManager`, `PitchContext`, `DroneManager`.
+- `PitchCanvas.jsx` mounts the controller against a `<canvas ref>` in `useEffect`, disposes on unmount.
+- `Sidebar.jsx` reads/writes `SharedSettings` via `useSharedSettingValues`. The controller subscribes to the same `SharedSettings` and reacts (drone, scale lock, exercise restart, rolling-key advance).
+
+Settings are the cross-cutting bus — both React and the controller go through `SharedSettings`. There's no React→controller imperative API for setting changes. The controller never writes to settings inside its own subscriber (avoids re-entrancy); ephemeral overrides like rolling-key root and scale lock live as controller state and are exposed via `effective*` getters.
+
+### Metronome: JS scheduler + Web Audio listen-back
+
+Stateful audio + onset processing lives in plain classes; React composes the UI and lifecycle.
+
+- `MetronomeEngine.js` — Web Audio **lookahead scheduler** (25ms tick, 120ms-ahead window, anchored to `AudioContext.currentTime`). Holds bar/beat state, accent pattern, skip pattern, subdivision multiplier. Emits `onBeat({ time, beatIndex, barNumber, kind, skipped })` aligned to the audible beat. Click playback uses synthesized `AudioBuffer` samples (`clickSamples.js`) — no audio files shipped. Includes `playIntervalBeep()` for practice-session transitions (a distinct two-tone chime).
+- `MetronomeDial.jsx` — rotary BPM control. Drag (mouse / touch / wheel), click-to-edit number, optional `navigator.vibrate(3)` haptic per BPM step. Renders the segment-per-beat ring with smooth fill + glow on each beat, accent beats in super-accent color.
+- `PracticeTracker.jsx` — session state machine `idle → countdown(5s) → running → complete`. RAF-driven progress bar, distinct chime on every interval transition. Auto-starts/stops the engine.
+- `MicListener.js` — opens the mic with `echoCancellation: false` (preserves percussive transients), attaches an `AnalyserNode` to the engine's shared `AudioContext`. Per-RAF reads time-domain samples, feeds the detector, also fires `onLevel({ time, peak })` for the live waveform.
+- `OnsetDetector.js` — peak-based percussion onset detector. Sample-accurate timestamp (finds peak index within the buffer), adaptive ambient via EMA, refractory + rise-ratio gates.
+- `HitTracker.js` — receives expected beats (from engine) and detected hits (from listener). Anchors each hit to a **virtual beat** projected from the latest known beat by BPM (handles the "hit just before the next click was emitted" case). Computes:
+  - `gridOffsetMs` against the closest grid point (quarter / eighth / sixteenth, plus optional 8th-triplet) → drives the colored hit dot
+  - `clickOffsetMs` against the closest *audible* beat → drives the "Click sync" stat
+  - **Flam detection** — close-paired hits (5–80ms apart, comparable energy, BPM-aware gap cap) collapse into one main hit flagged `hasFlam: true`
+- `ListenBackPanel.jsx` — single unified canvas with a 6s rolling window: subdivision grid, beat ticks (audible solid / silent dashed / accent magenta), threshold band, mirrored waveform, hit dots colored by grid status, FLAM markers along the bottom edge. Stats footer: On grid / Click sync / Hit rate.
+
+The roundtrip latency between scheduling a click and detecting it via mic is calibrated by listening to the metronome's own clicks for 5s and recording the median delta. Default 12ms; user-editable in the sidebar.
 
 ### URL Routing
 
-The app uses History API for clean URLs:
-- `/` - Tool selection screen
-- `/vocal-monitor` - Vocal Monitor tool
-- `/flappy-note` - Flappy Note game
+`react-router-dom` with `BrowserRouter`:
+- `/` → tool index
+- `/vocal-monitor` → Vocal Monitor
+- `/metronome` → Metronome
+- `*` → NotFound
 
-## Key Components
+SPA fallback is handled by CloudFront (403/404 responses redirected to `/index.html`) for the production AWS hosting; `_redirects` (Netlify) and `404.html` (GitHub Pages) are also bundled for alternate hosts.
+
+## Key APIs
 
 ### PitchDetector
-
-Supports multiple detection algorithms:
 
 ```javascript
 import { PitchDetector, DetectorType } from './pitch-engine/index.js';
@@ -147,57 +163,82 @@ const detector = new PitchDetector({
   onModelLoading: () => console.log('Loading...'),
   onModelReady: () => console.log('Ready!'),
 });
-
 await detector.start();
 ```
 
-### ScaleManager
+### MetronomeEngine
 
-Handles all musical scale logic:
+```javascript
+const engine = new MetronomeEngine({
+  onBeat: ({ time, beatIndex, barNumber, kind, skipped }) => { /* … */ },
+});
+engine.setBpm(120);
+engine.setTimeSignature(4, 4);
+engine.setAccentPattern(['accent', 'regular', 'regular', 'regular']);
+engine.setSubdivision(2);              // 1=quarters, 2=eighths, 3=triplets, 4=sixteenths, 6=sextuplets
+engine.setSkipPattern(4, 0);           // play 4 bars, skip 0
+engine.setTimbre('woodblock');
+await engine.start();
+engine.playIntervalBeep();             // distinct two-tone chime
+engine.stop();
+```
+
+### HitTracker
+
+```javascript
+const tracker = new HitTracker({ outputLatency: 0.012 });
+tracker.setBpm(120);
+tracker.setGridConfig({ includeTriplets: false });
+tracker.addExpectedBeat({ time, beatIndex, barNumber, kind, skipped });
+tracker.addHit({ time, energy });    // returns { gridOffsetMs, clickOffsetMs, hasFlam, status, … }
+tracker.getStats({ now, windowSeconds: 8 });
+```
+
+### ScaleManager
 
 ```javascript
 const scaleManager = new ScaleManager('D3', 'major');
 scaleManager.setRootNote('E3');
 scaleManager.setScaleType('minor');
-
 const scaleInfo = scaleManager.getScaleInfo();
-// { degrees: [...], rootFrequency: 146.83 }
 ```
 
 ### TonePlayer
 
-Audio playback for reference tones:
-
 ```javascript
 const tonePlayer = new TonePlayer();
 tonePlayer.playTone(440, 0.5);  // 440Hz for 0.5 seconds
-tonePlayer.startDrone(146.83); // Sustained drone
+tonePlayer.startDrone(146.83);  // sustained drone
 ```
 
-## Adding a New Tool
+## Adding a new tool
 
 1. Create directory: `src/tools/my-tool/`
-2. Create tool class extending `ToolBase`
-3. Create state management class
-4. Create renderer class
-5. Add HTML container to `index.html`
-6. Register in `main.js` TOOLS array
+2. Build a `MyToolPage.jsx` (own services, lay out toolbar/canvas/sidebar)
+3. Add the tool to `src/tools/registry.js`:
 
-```javascript
-// src/tools/my-tool/MyTool.js
-export class MyTool extends ToolBase {
-  constructor() {
-    super('My Tool', 'Description of my tool');
-  }
+```jsx
+import { Activity } from 'lucide-react';
 
-  async initialize() {
-    this.container = document.getElementById('my-tool-container');
-    // ... setup
-  }
-}
+const MyToolPage = lazy(() => import('./my-tool/MyToolPage.jsx'));
+
+export const tools = [
+  // …existing tools
+  {
+    id: 'my-tool',
+    path: '/my-tool',
+    name: 'My Tool',
+    tagline: 'What it does in one phrase',
+    description: 'Longer card description for the index.',
+    icon: Activity,
+    Component: MyToolPage,
+  },
+];
 ```
 
-## Adding a New Scale
+The router and the tool index page pick it up automatically — no changes to `App.jsx` or `index.html` are needed.
+
+## Adding a new scale
 
 Edit `src/config/scales.js`:
 
@@ -211,64 +252,49 @@ export const SCALES = {
 };
 ```
 
-Then add option to HTML select elements.
-
-## Debugging
-
-### Debug Overlay
-
-Press `Ctrl/Cmd + Shift + D` to toggle debug overlay showing:
-- Detected frequency and note
-- RMS level and threshold
-- Pitch detector algorithm in use
-- Confidence scores
-
-### Console Logging
-
-Key areas to enable logging:
-
-```javascript
-// AudioAnalyzer.js - pitch detection
-console.log('Detected:', frequency, 'Hz, clarity:', clarity);
-
-// PitchDetector.js - detector switching
-console.log('Using detector:', this.activeDetector?.name);
-
-// TFCREPEDetector.js - CREPE status
-console.log('CREPE state:', this.state);
-```
+Then add an entry to the `SCALE_GROUPS` constant in `src/tools/vocal-monitor/Sidebar.jsx`.
 
 ## Performance
 
-### Pitch Detection
-- Detection runs every 30ms (configurable)
+### Pitch detection
+- Runs every 30ms (configurable)
 - Buffer size: 8192 samples
 - Target latency: <50ms
 
+### Metronome
+- Lookahead scheduler: 25ms timer, 120ms ahead window
+- Onset detection on AnalyserNode (1024 samples ≈ 23ms), peak-index timestamp ≈ ±0.5ms accuracy
+- Listen-back panel canvas runs on requestAnimationFrame; per-frame stats refresh capped at 4Hz
+
 ### Rendering
-- Both tools use requestAnimationFrame
 - ResizeObserver handles responsive canvas
 - DPR-aware rendering for retina displays
 
 ## Deployment
 
-### Build
+Production hosting is **AWS S3 + CloudFront** at `flappynote.com`. Use the bundled `deploy.sh` script:
 
 ```bash
-npm run build
+./deploy.sh
 ```
 
-Output in `dist/` directory.
+It builds (`npm run build`), syncs `dist/` to the `flappynote.com` S3 bucket, and invalidates the matching CloudFront distribution. Requires `.env` with:
 
-### Hosting Requirements
+```
+VITE_GA_MEASUREMENT_ID=G-…
+AWS_ACCESS_KEY_ID=…
+AWS_SECRET_ACCESS_KEY=…
+AWS_ACCOUNT_ID=…
+```
 
-- HTTPS required (for microphone access)
-- SPA routing support (redirects to index.html)
-- Included: `_redirects` (Netlify), `vercel.json`, `404.html` (GitHub Pages)
+You can also `npm run build` to produce `dist/` and host it elsewhere.
 
-### Environment Variables
+### Hosting requirements
+- HTTPS (browsers require it for microphone access)
+- SPA routing — fall back any non-asset path to `index.html`. On CloudFront this is handled via Custom Error Responses (403/404 → `/index.html`, status 200). `_redirects` (Netlify) and `404.html` (GitHub Pages) are also bundled for alternate hosts.
 
-- `VITE_GA_MEASUREMENT_ID` - Google Analytics ID
+### Environment variables
+- `VITE_GA_MEASUREMENT_ID` — Google Analytics ID. When unset, the GA snippet doesn't load and `analytics.js` is a silent no-op.
 
 ## Resources
 

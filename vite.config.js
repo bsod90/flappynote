@@ -1,4 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'node:path';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -15,8 +17,14 @@ export default defineConfig(({ mode }) => {
     preview: {
       port: 3000,
     },
-    appType: 'spa', // Enable SPA fallback for dev server
+    appType: 'spa',
+    resolve: {
+      alias: {
+        '@': path.resolve(process.cwd(), 'src'),
+      },
+    },
     plugins: [
+      react(),
       {
         name: 'html-transform',
         transformIndexHtml(html) {

@@ -1,7 +1,7 @@
 {
-  "name": "Vocal Trainer",
-  "short_name": "Vocal Trainer",
-  "description": "Free vocal training tools for singers. Practice pitch accuracy with interactive exercises.",
+  "name": "Musical Playground",
+  "short_name": "Musical Playground",
+  "description": "Free in-browser music practice tools — Vocal Monitor for pitch visualization and a Metronome with mic listen-back for timing accuracy.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "any",
@@ -15,5 +15,21 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["education", "music", "games"]
+  "screenshots": [
+    {
+      "src": "/screenshot-metronome.png",
+      "sizes": "1600x1215",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Metronome with mic listen-back"
+    },
+    {
+      "src": "/screenshot-vocal-monitor.png",
+      "sizes": "1600x834",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Vocal Monitor — pitch trace on a piano roll"
+    }
+  ],
+  "categories": ["education", "music", "productivity"]
 }
