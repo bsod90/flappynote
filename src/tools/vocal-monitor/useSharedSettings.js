@@ -1,12 +1,13 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useState } from 'react';
 
 export function useSharedSettingsValue(settings, key) {
-  const value = useSyncExternalStore(
-    (cb) => settings.subscribe((changedKey) => {
-      if (changedKey === key) cb();
-    }),
-    () => settings.get(key)
-  );
+  const [value, setValue] = useState(() => settings.get(key));
+  useEffect(() => {
+    setValue(settings.get(key));
+    return settings.subscribe((changedKey) => {
+      if (changedKey === key) setValue(settings.get(key));
+    });
+  }, [settings, key]);
   return value;
 }
 

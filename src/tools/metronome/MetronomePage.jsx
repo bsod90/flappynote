@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Headphones, Settings2 } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, Headphones, Settings2 } from 'lucide-react';
 
 import { SharedSettings } from '@/core';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -45,6 +45,7 @@ const SETTINGS_KEYS = [
   'metronomePracticeEnabled',
   'metronomePracticeSessionMinutes',
   'metronomePracticeIntervalMinutes',
+  'settingsCollapsed',
 ];
 
 const TAP_WINDOW = 4;
@@ -75,6 +76,7 @@ export default function MetronomePage() {
   const practiceIntervalMin = Math.max(1, values.metronomePracticeIntervalMinutes ?? 1);
   const totalIntervals = Math.max(1, Math.ceil(practiceSessionMin / practiceIntervalMin));
   const intervalDurationSec = practiceIntervalMin * 60;
+  const sidebarCollapsed = !!values.settingsCollapsed;
 
   const [isRunning, setIsRunning] = useState(false);
   const [currentBeat, setCurrentBeat] = useState(-1);
@@ -555,9 +557,21 @@ export default function MetronomePage() {
   };
 
   return (
-    <div className="flex h-full">
+    <div className="relative flex h-full">
+      {sidebarCollapsed && (
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => settings.set('settingsCollapsed', false)}
+          aria-label="Expand settings"
+          className="absolute right-3 top-3 z-10 hidden h-8 w-8 shadow-sm lg:inline-flex"
+        >
+          <ChevronsLeft className="h-4 w-4" />
+        </Button>
+      )}
+
       {/* Main metronome area */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto p-4 sm:p-6">
+      <div className="no-scrollbar flex flex-1 min-w-0 flex-col items-center justify-center gap-6 overflow-y-auto p-4 sm:p-6">
         <MetronomeDial
           bpm={bpm}
           onBpmChange={handleBpmChange}
@@ -592,7 +606,7 @@ export default function MetronomePage() {
             onClick={() => setSidebarOpen(true)}
             variant="ghost"
             size="sm"
-            className="lg:hidden gap-2 text-muted-foreground"
+            className="gap-2 text-muted-foreground lg:hidden"
           >
             <Settings2 className="h-4 w-4" />
             Settings
@@ -639,22 +653,35 @@ export default function MetronomePage() {
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="hidden w-80 shrink-0 overflow-y-auto border-l bg-background lg:block">
-        <div className="p-4">
-          <Sidebar
-            settings={settings}
-            calibrating={calibrating}
-            calibrationCountdown={calibrationCountdown}
-            calibrationStatus={calibrationStatus}
-            onStartCalibration={startCalibration}
-            onResetLatency={resetLatency}
-          />
-        </div>
-      </aside>
+      {!sidebarCollapsed && (
+        <aside className="no-scrollbar hidden w-80 shrink-0 overflow-y-auto border-l bg-background lg:block">
+          <div className="flex justify-end px-2 pt-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => settings.set('settingsCollapsed', true)}
+              aria-label="Collapse settings"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="px-4 pb-4">
+            <Sidebar
+              settings={settings}
+              calibrating={calibrating}
+              calibrationCountdown={calibrationCountdown}
+              calibrationStatus={calibrationStatus}
+              onStartCalibration={startCalibration}
+              onResetLatency={resetLatency}
+            />
+          </div>
+        </aside>
+      )}
 
       {/* Mobile sidebar (sheet) */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
+        <SheetContent side="right" className="no-scrollbar w-full overflow-y-auto sm:max-w-md">
           <SheetHeader>
             <SheetTitle>Settings</SheetTitle>
           </SheetHeader>

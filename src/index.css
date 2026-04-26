@@ -94,3 +94,14 @@
     -moz-appearance: textfield;
   }
 }
+
+@layer utilities {
+  /* Hide scrollbars while keeping the element scrollable. */
+  .no-scrollbar {
+    scrollbar-width: none;          /* Firefox */
+    -ms-overflow-style: none;       /* IE/legacy Edge */
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;                  /* Chrome/Safari/Webkit */
+  }
+}

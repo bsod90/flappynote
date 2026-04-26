@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS = {
   // UI preferences
   lastTool: null,
   sidebarOpen: false,
+  settingsCollapsed: false,
 
   // Exercise settings
   exerciseEnabled: false,

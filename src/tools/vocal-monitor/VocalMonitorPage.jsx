@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 import { SharedSettings, PitchContext, DroneManager, ScaleManager } from '@/core';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 import { trackEvent } from '@/lib/analytics';
 import { useWakeLock } from '@/lib/useWakeLock';
 
 import PitchCanvas from './PitchCanvas.jsx';
 import Toolbar from './Toolbar.jsx';
 import Sidebar from './Sidebar.jsx';
+import { useSharedSettingsValue } from './useSharedSettings.js';
 
 export default function VocalMonitorPage() {
   const services = useMemo(() => createServices(), []);
@@ -26,6 +29,7 @@ export default function VocalMonitorPage() {
   );
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [error, setError] = useState(null);
+  const sidebarCollapsed = useSharedSettingsValue(services.settings, 'settingsCollapsed');
 
   useWakeLock(isRecording);
 
@@ -85,8 +89,8 @@ export default function VocalMonitorPage() {
         </div>
       )}
 
-      <div className="flex flex-1 overflow-hidden">
-        <div className="flex flex-1 p-3">
+      <div className="relative flex flex-1 overflow-hidden">
+        <div className="flex flex-1 min-w-0 p-3">
           <PitchCanvas
             services={services}
             onControllerReady={(c) => {
@@ -105,24 +109,49 @@ export default function VocalMonitorPage() {
           />
         </div>
 
-        <aside className="hidden w-80 shrink-0 overflow-y-auto border-l bg-background lg:block">
-          <div className="p-4">
-            <Sidebar
-              settings={services.settings}
-              scaleLocked={scaleLocked}
-              lockedScaleType={lockedScaleType}
-              effectiveRootName={effectiveRootName}
-              isRollingKeyActive={isRollingKeyActive}
-              exerciseRange={exerciseRange}
-              effectiveRollingKeyLowest={effectiveRollingKeyLowest}
-              effectiveRollingKeyHighest={effectiveRollingKeyHighest}
-            />
-          </div>
-        </aside>
+        {sidebarCollapsed && (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => services.settings.set('settingsCollapsed', false)}
+            aria-label="Expand settings"
+            className="absolute right-3 top-3 z-10 hidden h-8 w-8 shadow-sm lg:inline-flex"
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </Button>
+        )}
+
+        {!sidebarCollapsed && (
+          <aside className="no-scrollbar hidden w-80 shrink-0 overflow-y-auto border-l bg-background lg:block">
+            <div className="flex justify-end px-2 pt-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => services.settings.set('settingsCollapsed', true)}
+                aria-label="Collapse settings"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="px-4 pb-4">
+              <Sidebar
+                settings={services.settings}
+                scaleLocked={scaleLocked}
+                lockedScaleType={lockedScaleType}
+                effectiveRootName={effectiveRootName}
+                isRollingKeyActive={isRollingKeyActive}
+                exerciseRange={exerciseRange}
+                effectiveRollingKeyLowest={effectiveRollingKeyLowest}
+                effectiveRollingKeyHighest={effectiveRollingKeyHighest}
+              />
+            </div>
+          </aside>
+        )}
       </div>
 
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+        <SheetContent side="right" className="no-scrollbar w-full sm:max-w-md overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Settings</SheetTitle>
           </SheetHeader>
