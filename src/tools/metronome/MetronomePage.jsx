@@ -103,6 +103,7 @@ export default function MetronomePage() {
   const [intervalRemainingSec, setIntervalRemainingSec] = useState(0);
   const sessionStartRef = useRef(0); // engine.now() at session start
   const lastIntervalRef = useRef(0); // last interval index we beeped on
+  const lastWarnedIntervalRef = useRef(-1); // interval index we already warned for (5s pre-cue)
 
   // Keep the screen awake while the metronome is playing, listen-back is on,
   // or a practice session is running. Released as soon as everything stops.
@@ -190,6 +191,7 @@ export default function MetronomePage() {
       if (!engine) return;
       sessionStartRef.current = engine.now();
       lastIntervalRef.current = 0;
+      lastWarnedIntervalRef.current = -1;
       setIntervalIndex(0);
       setIntervalRemainingSec(intervalDurationSec);
       // Make sure the metronome is playing
@@ -233,6 +235,19 @@ export default function MetronomePage() {
       if (idx > lastIntervalRef.current) {
         lastIntervalRef.current = idx;
         engine.playIntervalBeep();
+      }
+      // Subtle 5s heads-up before the next transition (or session end).
+      // Suppressed for very short intervals where the warning would
+      // overlap with the previous transition's chime.
+      const remaining = Math.min(totalDur - elapsed, intervalDur - (elapsed % intervalDur));
+      if (
+        intervalDur > 6 &&
+        remaining <= 5 &&
+        remaining > 0 &&
+        lastWarnedIntervalRef.current !== idx
+      ) {
+        lastWarnedIntervalRef.current = idx;
+        engine.playIntervalWarning();
       }
       setIntervalIndex(idx);
       setIntervalRemainingSec(intervalDur - (elapsed % intervalDur));

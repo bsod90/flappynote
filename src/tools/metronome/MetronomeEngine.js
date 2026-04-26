@@ -273,6 +273,17 @@ export class MetronomeEngine {
     this._beepTone(t + 0.18, 1320, 0.2, 0.65);
   }
 
+  /**
+   * Subtle "5 seconds to go" cue — a single short low tone. Quieter than
+   * playIntervalBeep so it reads as a heads-up rather than a transition.
+   */
+  playIntervalWarning() {
+    this._ensureAudio();
+    const ctx = this.audioContext;
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    this._beepTone(ctx.currentTime, 520, 0.12, 0.28);
+  }
+
   _beepTone(when, freq, dur, peak) {
     const ctx = this.audioContext;
     const osc = ctx.createOscillator();
