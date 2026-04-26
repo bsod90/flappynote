@@ -25,12 +25,14 @@ export class MicListener {
     this.rafId = null;
     this.onOnset = () => {};
     this.onLevel = () => {};
+    this.onLost = () => {};
   }
 
-  async start({ onOnset, onLevel, threshold, echoCancellation = false } = {}) {
+  async start({ onOnset, onLevel, onLost, threshold, echoCancellation = false } = {}) {
     if (this.stream) return;
     this.onOnset = onOnset ?? (() => {});
     this.onLevel = onLevel ?? (() => {});
+    this.onLost = onLost ?? (() => {});
 
     this.stream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -39,6 +41,15 @@ export class MicListener {
         autoGainControl: false,
       },
     });
+
+    // If the mic stream dies (page backgrounded long enough, permission
+    // revoked, device unplugged) the analyser quietly returns silence.
+    // Notify so the page can rebuild a fresh listener.
+    for (const track of this.stream.getAudioTracks()) {
+      track.addEventListener('ended', () => {
+        try { this.onLost(); } catch (e) { console.error(e); }
+      });
+    }
 
     this.source = this.audioContext.createMediaStreamSource(this.stream);
     this.analyser = this.audioContext.createAnalyser();

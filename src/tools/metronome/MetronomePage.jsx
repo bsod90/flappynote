@@ -95,6 +95,10 @@ export default function MetronomePage() {
   const [calibrating, setCalibrating] = useState(false);
   const [calibrationCountdown, setCalibrationCountdown] = useState(0);
   const [calibrationStatus, setCalibrationStatus] = useState(null);
+  // Bumped to force the listen-back useEffect to tear down + rebuild the
+  // mic listener — used when the AudioContext is recreated (iOS sleep
+  // recovery) or when the mic stream's track ends underneath us.
+  const [micVersion, setMicVersion] = useState(0);
 
   // Practice session state
   const [practiceState, setPracticeState] = useState('idle'); // idle | countdown | running | complete
@@ -127,6 +131,11 @@ export default function MetronomePage() {
         if (calibrationRef.current && !beat.skipped && beat.kind !== 'silent') {
           calibrationRef.current.beats.push(beat.time);
         }
+      },
+      onAudioContextChanged: () => {
+        // Engine recreated its AudioContext — any active mic listener is
+        // wired to a now-closed context. Rebuild it.
+        setMicVersion((v) => v + 1);
       },
     });
     engineRef.current = engine;
@@ -344,6 +353,11 @@ export default function MetronomePage() {
               while (buf.length && buf[0].time < cutoff) buf.shift();
             }
           },
+          onLost: () => {
+            // Stream died (background, permission, device unplug). If
+            // listen-back is still on, rebuild a fresh listener.
+            setMicVersion((v) => v + 1);
+          },
         });
         if (cancelled) {
           mic.stop();
@@ -367,9 +381,10 @@ export default function MetronomePage() {
       micRef.current = null;
     };
     // detectorThreshold is intentionally NOT in deps — we apply it live below
-    // without restarting the mic.
+    // without restarting the mic. micVersion bumps force a rebuild when the
+    // engine recreates its AudioContext or the underlying mic stream dies.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listenBack]);
+  }, [listenBack, micVersion]);
 
   // Apply sensitivity changes to the live detector without restarting.
   // During calibration we temporarily override with T_MIN, so skip the

@@ -24,8 +24,9 @@ export const BeatKind = {
 };
 
 export class MetronomeEngine {
-  constructor({ onBeat } = {}) {
+  constructor({ onBeat, onAudioContextChanged } = {}) {
     this.onBeat = onBeat ?? (() => {});
+    this.onAudioContextChanged = onAudioContextChanged ?? (() => {});
 
     this.audioContext = null;
     this.masterGain = null;
@@ -323,6 +324,10 @@ export class MetronomeEngine {
       this.masterGain = null;
     }
     this._ensureAudio();
+    // Anything attached to the old context (e.g. the mic listener's
+    // MediaStreamSource + AnalyserNode) is now dead — let consumers know
+    // so they can rebuild against the new context.
+    try { this.onAudioContextChanged(); } catch (e) { console.error(e); }
   }
 
   _scheduler() {

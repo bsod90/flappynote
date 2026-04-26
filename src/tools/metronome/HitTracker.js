@@ -251,10 +251,17 @@ export class HitTracker {
       ? Math.round((onClick / clickMatched.length) * 100)
       : null;
 
-    // Hit rate vs all expected beats
-    const matchedSet = new Set(gridMatched.map((h) => h.matchedBeatTime).filter(Boolean));
+    // Hit rate vs all expected beats. Only count matched beat times that
+    // fall inside the same window — otherwise a recent hit anchored to a
+    // beat just before the cutoff inflates matchedSet.size past
+    // recentExpected.length and the rate creeps over 100%.
+    const matchedSet = new Set(
+      gridMatched
+        .map((h) => h.matchedBeatTime)
+        .filter((t) => t != null && t > cutoff)
+    );
     const hitRate = recentExpected.length > 0
-      ? matchedSet.size / recentExpected.length
+      ? Math.min(1, matchedSet.size / recentExpected.length)
       : 0;
 
     // Accent precision (only audible accent beats)
