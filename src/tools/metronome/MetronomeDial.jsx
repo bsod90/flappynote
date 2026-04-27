@@ -171,8 +171,12 @@ export default function MetronomeDial({
   const beats = Array.from({ length: beatsPerBar }, (_, i) => {
     const beatStart = -90 + i * (beatDeg + beatGap) + beatGap / 2;
     const beatEnd = beatStart + beatDeg;
-    const isAccent = accentPattern[i] === 'accent';
-    const isSilent = accentPattern[i] === 'silent';
+    // accentPattern is length = beatsPerBar * subdivision; the main beat
+    // sits at index i * subdivision.
+    const patStride = Math.max(1, accentPattern.length / Math.max(1, beatsPerBar));
+    const mainKind = accentPattern[i * patStride] ?? 'regular';
+    const isAccent = mainKind === 'accent';
+    const isSilent = mainKind === 'silent';
     const isCurrent = i === currentBeat && isRunning;
     let fillProgress = 0;
     if (isRunning && currentBeat >= 0) {

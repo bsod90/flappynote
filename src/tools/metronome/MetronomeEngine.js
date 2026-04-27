@@ -64,19 +64,13 @@ export class MetronomeEngine {
   setTimeSignature(beatsPerBar, beatUnit) {
     this.beatsPerBar = clamp(beatsPerBar | 0, 1, 16);
     this.beatUnit = beatUnit | 0;
-    // Resize accent pattern to match
-    if (this.accentPattern.length !== this.beatsPerBar) {
-      const next = [];
-      for (let i = 0; i < this.beatsPerBar; i++) {
-        next.push(this.accentPattern[i] ?? (i === 0 ? BeatKind.ACCENT : BeatKind.REGULAR));
-      }
-      this.accentPattern = next;
-    }
+    this._resizePattern();
     if (this.nextBeatIndex >= this.beatsPerBar) this.nextBeatIndex = 0;
   }
 
   setAccentPattern(pattern) {
-    if (!Array.isArray(pattern) || pattern.length !== this.beatsPerBar) return;
+    const expected = this.beatsPerBar * this.subdivision;
+    if (!Array.isArray(pattern) || pattern.length !== expected) return;
     this.accentPattern = [...pattern];
   }
 
@@ -98,6 +92,39 @@ export class MetronomeEngine {
 
   setSubdivision(n) {
     this.subdivision = clamp(n | 0, 1, 6);
+    this._resizePattern();
+  }
+
+  /**
+   * Reshape the accent pattern to length beatsPerBar * subdivision.
+   * When growing, new subdivision cells default to regular. When the new
+   * length doesn't match, main beats (cells where index % subdivision === 0)
+   * inherit from the old main beats; everything else defaults to regular.
+   */
+  _resizePattern() {
+    const desired = this.beatsPerBar * this.subdivision;
+    if (this.accentPattern.length === desired) return;
+    const oldPattern = this.accentPattern;
+    const oldSub = oldPattern.length > 0 && this.beatsPerBar > 0
+      ? Math.max(1, Math.round(oldPattern.length / this.beatsPerBar))
+      : 1;
+    const next = [];
+    for (let i = 0; i < desired; i++) {
+      const beatIdx = Math.floor(i / this.subdivision);
+      const subInBeat = i % this.subdivision;
+      let kind;
+      if (subInBeat === 0) {
+        // Main beat — inherit from the old main beat at this position
+        const oldIdx = beatIdx * oldSub;
+        kind = oldPattern[oldIdx] ?? (beatIdx === 0 ? BeatKind.ACCENT : BeatKind.REGULAR);
+      } else {
+        // Sub-beat — try to inherit if the subdivision count matches
+        const oldIdx = beatIdx * oldSub + subInBeat;
+        kind = (oldSub === this.subdivision ? oldPattern[oldIdx] : null) ?? BeatKind.REGULAR;
+      }
+      next.push(kind);
+    }
+    this.accentPattern = next;
   }
 
   // ──────────────────────────────────────────────────────────────────────
@@ -337,29 +364,30 @@ export class MetronomeEngine {
     const beatDur = 60 / this.bpm;
 
     while (this.nextBeatTime < horizon) {
-      const kind = this._kindForBeat(this.nextBeatIndex, this.barCounter);
       const skipped = this._isSkippedBar(this.barCounter);
-      if (kind !== BeatKind.SILENT && !skipped) {
-        this._scheduleClick(this.nextBeatTime, kind, 1.0);
-      }
+      const subDur = beatDur / this.subdivision;
+      const mainKind = this._kindForCell(this.nextBeatIndex, 0);
 
-      // Schedule subdivisions inside this beat (silent beats stay silent)
-      if (this.subdivision > 1 && kind !== BeatKind.SILENT && !skipped) {
-        const subDur = beatDur / this.subdivision;
-        for (let s = 1; s < this.subdivision; s++) {
+      // Schedule each subdivision cell with its own kind, looked up from
+      // accentPattern[beatIndex * subdivision + s]. Sub-clicks (s > 0) get
+      // the softer subVolume; the main click (s === 0) stays at full level.
+      for (let s = 0; s < this.subdivision; s++) {
+        const kind = this._kindForCell(this.nextBeatIndex, s);
+        if (kind !== BeatKind.SILENT && !skipped) {
           this._scheduleClick(
             this.nextBeatTime + s * subDur,
-            BeatKind.REGULAR,
-            this.subVolume
+            kind,
+            s === 0 ? 1.0 : this.subVolume
           );
         }
       }
 
+      // onBeat fires once per main beat for the UI / tracker.
       this._pendingBeats.push({
         time: this.nextBeatTime,
         beatIndex: this.nextBeatIndex,
         barNumber: this.barCounter,
-        kind,
+        kind: mainKind,
         skipped,
       });
 
@@ -373,8 +401,9 @@ export class MetronomeEngine {
     }
   }
 
-  _kindForBeat(beatIndex, _barNumber) {
-    return this.accentPattern[beatIndex] ?? BeatKind.REGULAR;
+  _kindForCell(beatIndex, subInBeat) {
+    const idx = beatIndex * this.subdivision + subInBeat;
+    return this.accentPattern[idx] ?? BeatKind.REGULAR;
   }
 
   _isSkippedBar(barNumber) {

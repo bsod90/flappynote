@@ -58,7 +58,11 @@ export default function MetronomePage() {
   const bpm = values.metronomeBpm ?? 120;
   const timeSig = TIME_SIGNATURES.find((s) => s.key === values.metronomeTimeSig)
     ?? TIME_SIGNATURES[2];
-  const accentPattern = normalizePattern(values.metronomeAccentPattern, timeSig.beatsPerBar);
+  const accentPattern = normalizePattern(
+    values.metronomeAccentPattern,
+    timeSig.beatsPerBar,
+    values.metronomeSubdivision ?? 1
+  );
   const timbre = values.metronomeTimbre ?? 'woodblock';
   const volume = values.metronomeVolume ?? 0.8;
   const playBars = values.metronomeSkipPlay ?? 4;
@@ -163,7 +167,7 @@ export default function MetronomePage() {
     const tracker = trackerRef.current;
     if (tracker) {
       tracker.setBpm(bpm);
-      tracker.setGridConfig({ includeTriplets: showTriplets });
+      tracker.setGridConfig({ includeTriplets: showTriplets, subdivision });
     }
   }, [bpm, timeSig, accentPattern, timbre, volume, playBars, skipBars, subdivision, showTriplets]);
 
@@ -738,11 +742,27 @@ export default function MetronomePage() {
   );
 }
 
-function normalizePattern(value, length) {
-  if (!Array.isArray(value) || value.length !== length) {
-    const arr = [];
-    for (let i = 0; i < length; i++) arr.push(i === 0 ? 'accent' : 'regular');
-    return arr;
+function normalizePattern(value, beatsPerBar, subdivision = 1) {
+  const desired = beatsPerBar * subdivision;
+  if (Array.isArray(value) && value.length === desired) return value;
+  const oldSub = Array.isArray(value) && beatsPerBar > 0
+    ? Math.max(1, Math.round(value.length / beatsPerBar))
+    : 1;
+  const arr = [];
+  for (let i = 0; i < desired; i++) {
+    const beatIdx = Math.floor(i / subdivision);
+    const subInBeat = i % subdivision;
+    let kind;
+    if (subInBeat === 0) {
+      const oldIdx = beatIdx * oldSub;
+      kind = (Array.isArray(value) ? value[oldIdx] : null)
+        ?? (beatIdx === 0 ? 'accent' : 'regular');
+    } else if (oldSub === subdivision && Array.isArray(value)) {
+      kind = value[beatIdx * oldSub + subInBeat] ?? 'regular';
+    } else {
+      kind = 'regular';
+    }
+    arr.push(kind);
   }
-  return value;
+  return arr;
 }

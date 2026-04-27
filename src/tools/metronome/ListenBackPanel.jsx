@@ -127,9 +127,10 @@ export default function ListenBackPanel({
         const beatsForward = Math.ceil((now - anchor.time) / beatDur) + 1;
         for (let i = -beatsBack; i <= beatsForward; i++) {
           const bt = anchor.time + i * beatDur;
-          // 16ths (lightest)
-          drawSubLine(bt + 0.25 * beatDur, colors.muted, 0.22, 1);
-          drawSubLine(bt + 0.75 * beatDur, colors.muted, 0.22, 1);
+          // 16ths — dotted, so they read as a finer-grain reference
+          // without competing with the solid 8th lines.
+          drawSubLine(bt + 0.25 * beatDur, colors.muted, 0.4, 1, [1, 3]);
+          drawSubLine(bt + 0.75 * beatDur, colors.muted, 0.4, 1, [1, 3]);
           // 8th (medium)
           drawSubLine(bt + 0.5 * beatDur, colors.muted, 0.42, 1.25);
           // Triplets (optional, dashed super-accent so they read as alt grid)
@@ -218,22 +219,25 @@ export default function ListenBackPanel({
       //   eighth    → lime
       //   sixteenth → teal
       //   triplet   → emerald
-      // Flam hits (drum-grace + main pair) get a subtle small dot below.
+      // In-between hits (intentional fills not aligned with the click) get
+      // a small neutral dot — visible but stat-neutral.
       for (const hit of tracker.hits) {
         if (hit.time < winStart || hit.time > now) continue;
         const x = tToX(hit.time);
-        const r = hit.isAccentHit ? 6 : 4;
+        const isBetween = hit.status === 'inBetween';
+        const r = isBetween ? 3.5 : (hit.isAccentHit ? 6 : 4);
         const color = colorForHit(hit);
         ctx.fillStyle = color;
-        ctx.globalAlpha = 0.25;
-        ctx.beginPath();
-        ctx.arc(x, midY, r + 4, 0, Math.PI * 2);
-        ctx.fill();
+        if (!isBetween) {
+          ctx.globalAlpha = 0.25;
+          ctx.beginPath();
+          ctx.arc(x, midY, r + 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
         ctx.globalAlpha = 1;
         ctx.beginPath();
         ctx.arc(x, midY, r, 0, Math.PI * 2);
         ctx.fill();
-
       }
 
       // ── Flam indicators — yellow dot + tiny "FLAM" label at the bottom
@@ -339,6 +343,12 @@ const HIT_GREENS = {
 };
 
 function colorForHit(hit) {
+  // In-between hits keep the subdivision color (8th = lime, 16th = teal,
+  // triplet = emerald) so the user can see what they aligned to. The
+  // smaller dot + missing halo signal that they're stat-neutral.
+  if (hit.status === 'inBetween') {
+    return HIT_GREENS[hit.gridSubdivision] ?? 'rgb(148, 163, 184)';
+  }
   if (hit.status === 'onTime') {
     return HIT_GREENS[hit.gridSubdivision] ?? HIT_GREENS.quarter;
   }

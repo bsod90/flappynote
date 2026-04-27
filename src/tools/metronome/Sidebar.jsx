@@ -63,12 +63,12 @@ export default function Sidebar({
   const values = useSharedSettingValues(settings, KEYS);
   const timeSig = values.metronomeTimeSig ?? '4/4';
   const sig = TIME_SIGNATURES.find((s) => s.key === timeSig) ?? TIME_SIGNATURES[2];
-  const pattern = normalizePattern(values.metronomeAccentPattern, sig.beatsPerBar);
+  const subdivision = values.metronomeSubdivision ?? 1;
+  const pattern = normalizePattern(values.metronomeAccentPattern, sig.beatsPerBar, subdivision);
   const timbre = values.metronomeTimbre ?? 'woodblock';
   const volume = values.metronomeVolume ?? 0.8;
   const playBars = values.metronomeSkipPlay ?? 4;
   const skipBars = values.metronomeSkipSkip ?? 0;
-  const subdivision = values.metronomeSubdivision ?? 1;
   const listenBack = !!values.metronomeListenBack;
   const latencyMs = values.metronomeLatencyMs ?? 12;
   const latencyIsDefault = latencyMs === 12;
@@ -84,15 +84,21 @@ export default function Sidebar({
     const next = TIME_SIGNATURES.find((s) => s.key === newKey);
     if (!next) return;
     settings.set('metronomeTimeSig', newKey);
-    // Resize accent pattern: keep existing values where possible, default new beats
-    const resized = [];
-    for (let i = 0; i < next.beatsPerBar; i++) {
-      resized.push(pattern[i] ?? (i === 0 ? 'accent' : 'regular'));
-    }
-    settings.set('metronomeAccentPattern', resized);
+    settings.set(
+      'metronomeAccentPattern',
+      normalizePattern(pattern, next.beatsPerBar, subdivision)
+    );
   };
 
-  const togglePatternBeat = (idx) => {
+  const setSubdivisionAndResize = (newSub) => {
+    settings.set('metronomeSubdivision', newSub);
+    settings.set(
+      'metronomeAccentPattern',
+      resizeForSubdivision(pattern, sig.beatsPerBar, subdivision, newSub)
+    );
+  };
+
+  const togglePatternCell = (idx) => {
     const next = [...pattern];
     const cur = next[idx] ?? 'regular';
     next[idx] = BEAT_KIND_CYCLE[(BEAT_KIND_CYCLE.indexOf(cur) + 1) % BEAT_KIND_CYCLE.length];
@@ -117,7 +123,7 @@ export default function Sidebar({
           <Field label="Subdivision">
             <Select
               value={String(subdivision)}
-              onValueChange={(v) => settings.set('metronomeSubdivision', Number(v))}
+              onValueChange={(v) => setSubdivisionAndResize(Number(v))}
             >
               <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -131,16 +137,25 @@ export default function Sidebar({
 
         <Field label="Accent pattern">
           <div className="flex flex-wrap gap-1.5">
-            {pattern.map((kind, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => togglePatternBeat(i)}
-                className={`h-9 min-w-9 rounded-md border px-2 text-xs font-mono ${beatButtonClass(kind)}`}
-                aria-label={`Beat ${i + 1} (${kind})`}
-              >
-                {i + 1}
-              </button>
+            {Array.from({ length: sig.beatsPerBar }, (_, beatIdx) => (
+              <div key={beatIdx} className="flex gap-0.5">
+                {Array.from({ length: subdivision }, (_, subIdx) => {
+                  const i = beatIdx * subdivision + subIdx;
+                  const kind = pattern[i] ?? 'regular';
+                  const label = subdivisionLabel(beatIdx, subIdx, subdivision);
+                  return (
+                    <button
+                      key={subIdx}
+                      type="button"
+                      onClick={() => togglePatternCell(i)}
+                      className={`h-8 min-w-7 rounded-md border px-1.5 text-[11px] font-mono ${beatButtonClass(kind, subIdx === 0)}`}
+                      aria-label={`Beat ${beatIdx + 1}${subIdx === 0 ? '' : ` sub ${subIdx + 1}`} (${kind})`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             ))}
           </div>
         </Field>
@@ -337,19 +352,71 @@ export default function Sidebar({
   );
 }
 
-function normalizePattern(value, length) {
-  if (!Array.isArray(value) || value.length !== length) {
-    const arr = [];
-    for (let i = 0; i < length; i++) arr.push(i === 0 ? 'accent' : 'regular');
-    return arr;
+function normalizePattern(value, beatsPerBar, subdivision = 1) {
+  const desired = beatsPerBar * subdivision;
+  if (Array.isArray(value) && value.length === desired) return value;
+  // Migrate from a different length: try to infer the old subdivision and
+  // copy main-beat marks across; default new cells to regular (or accent
+  // for the first main beat).
+  const oldSub = Array.isArray(value) && beatsPerBar > 0
+    ? Math.max(1, Math.round(value.length / beatsPerBar))
+    : 1;
+  const arr = [];
+  for (let i = 0; i < desired; i++) {
+    const beatIdx = Math.floor(i / subdivision);
+    const subInBeat = i % subdivision;
+    let kind;
+    if (subInBeat === 0) {
+      const oldIdx = beatIdx * oldSub;
+      kind = (Array.isArray(value) ? value[oldIdx] : null)
+        ?? (beatIdx === 0 ? 'accent' : 'regular');
+    } else if (oldSub === subdivision && Array.isArray(value)) {
+      kind = value[beatIdx * oldSub + subInBeat] ?? 'regular';
+    } else {
+      kind = 'regular';
+    }
+    arr.push(kind);
   }
-  return value;
+  return arr;
 }
 
-function beatButtonClass(kind) {
+function resizeForSubdivision(pattern, beatsPerBar, oldSub, newSub) {
+  if (oldSub === newSub) return pattern;
+  const next = [];
+  for (let beatIdx = 0; beatIdx < beatsPerBar; beatIdx++) {
+    for (let s = 0; s < newSub; s++) {
+      if (s === 0) {
+        // Main beat — keep the existing kind
+        next.push(pattern[beatIdx * oldSub] ?? (beatIdx === 0 ? 'accent' : 'regular'));
+      } else if (newSub === oldSub) {
+        next.push(pattern[beatIdx * oldSub + s] ?? 'regular');
+      } else {
+        next.push('regular');
+      }
+    }
+  }
+  return next;
+}
+
+const SUBDIVISION_LABELS = {
+  2: ['', '&'],
+  3: ['', '·', '·'],
+  4: ['', 'e', '&', 'a'],
+  6: ['', '·', '·', '·', '·', '·'],
+};
+
+function subdivisionLabel(beatIdx, subIdx, subdivision) {
+  if (subIdx === 0) return String(beatIdx + 1);
+  const labels = SUBDIVISION_LABELS[subdivision];
+  return labels?.[subIdx] ?? '·';
+}
+
+function beatButtonClass(kind, isMain) {
   if (kind === 'accent') return 'border-primary bg-primary/15 text-primary font-bold';
   if (kind === 'silent') return 'border-dashed text-muted-foreground line-through opacity-60';
-  return 'border-input bg-background hover:bg-accent';
+  return isMain
+    ? 'border-input bg-background hover:bg-accent'
+    : 'border-input/60 bg-background/60 text-muted-foreground hover:bg-accent';
 }
 
 function Section({ title, children }) {

@@ -46,7 +46,7 @@ export class HitTracker {
     this.tolerances = tolerances;
 
     this.bpm = 120;
-    this.gridConfig = { includeTriplets: false };
+    this.gridConfig = { includeTriplets: false, subdivision: 1 };
 
     this.expectedBeats = []; // { time, beatIndex, barNumber, isAccent, isSilent, isSkippedBar }
     this.hits = [];
@@ -107,6 +107,7 @@ export class HitTracker {
     // around 0 cover the case correctly.
     let gridOffsetMs = null;
     let gridSubdivision = null;
+    let isInBetween = false;
     if (this.expectedBeats.length > 0) {
       const beatDur = 60 / this.bpm;
       const latest = this.expectedBeats[this.expectedBeats.length - 1];
@@ -114,50 +115,102 @@ export class HitTracker {
       const beatRef = latest.time + beatsFromLatest * beatDur;
       const fracTime = time - beatRef; // |fracTime| ≤ beatDur/2
 
-      const candidates = [
+      // Click positions = positions where the engine actually plays a
+      // click, derived from the subdivision setting. Wrap each into ±0.5
+      // of the virtual beat ref.
+      const subdivision = Math.max(1, this.gridConfig.subdivision | 0);
+      const subLabel = subdivision === 2 ? 'eighth'
+        : subdivision === 3 ? 'triplet'
+        : subdivision === 4 ? 'sixteenth'
+        : subdivision === 6 ? 'triplet'
+        : 'quarter';
+      const clickCandidates = [];
+      for (let k = 0; k < subdivision; k++) {
+        const raw = k / subdivision;
+        const frac = raw > 0.5 ? raw - 1 : raw;
+        const sub = k === 0 ? 'quarter' : subLabel;
+        clickCandidates.push({ frac, sub });
+        if (Math.abs(Math.abs(frac) - 0.5) < 1e-9) {
+          clickCandidates.push({ frac: -frac, sub });
+        }
+      }
+      // Closest CLICK position (drives the on-grid offset / stat).
+      let bestClickOff = Infinity;
+      let bestClickSub = 'quarter';
+      for (const c of clickCandidates) {
+        const off = (fracTime - c.frac * beatDur) * 1000;
+        if (Math.abs(off) < Math.abs(bestClickOff)) {
+          bestClickOff = off;
+          bestClickSub = c.sub;
+        }
+      }
+
+      // Closest FINE-GRID position (used for the visual color — even
+      // hits between clicks should read as the subdivision they aligned
+      // with: 8th = lime, 16th = teal, triplet = emerald).
+      const FINE_CANDIDATES = [
         { frac: 0, sub: 'quarter' },
         { frac: 0.5, sub: 'eighth' },
         { frac: -0.5, sub: 'eighth' },
         { frac: 0.25, sub: 'sixteenth' },
         { frac: -0.25, sub: 'sixteenth' },
+        { frac: 1 / 3, sub: 'triplet' },
+        { frac: -1 / 3, sub: 'triplet' },
       ];
-      if (this.gridConfig.includeTriplets) {
-        candidates.push(
-          { frac: 1 / 3, sub: 'triplet' },
-          { frac: -1 / 3, sub: 'triplet' },
-        );
-      }
-      let bestOff = Infinity;
-      let bestSub = 'quarter';
-      for (const c of candidates) {
+      let bestFineOff = Infinity;
+      let bestFineSub = 'quarter';
+      let bestFineFrac = 0;
+      for (const c of FINE_CANDIDATES) {
         const off = (fracTime - c.frac * beatDur) * 1000;
-        if (Math.abs(off) < Math.abs(bestOff)) {
-          bestOff = off;
-          bestSub = c.sub;
+        if (Math.abs(off) < Math.abs(bestFineOff)) {
+          bestFineOff = off;
+          bestFineSub = c.sub;
+          bestFineFrac = c.frac;
         }
       }
-      gridOffsetMs = bestOff;
-      gridSubdivision = bestSub;
-    }
 
-    // Click-sync offset: nearest *audible* beat
-    let clickOffsetMs = null;
-    let matchedClickTime = null;
-    for (const b of this.expectedBeats) {
-      if (b.isSilent) continue;
-      const off = (time - b.time) * 1000;
-      if (clickOffsetMs == null || Math.abs(off) < Math.abs(clickOffsetMs)) {
-        clickOffsetMs = off;
-        matchedClickTime = b.time;
+      // "In-between" detection: hit is far from any click position but
+      // lands on a finer practice subdivision the engine isn't playing
+      // (e.g. the "&" with subdivision=1). Treat it as intentional fill
+      // and exclude it from stats — but keep the subdivision color so
+      // the user still sees what they hit.
+      const fineIsClick = clickCandidates.some((c) => Math.abs(c.frac - bestFineFrac) < 1e-6);
+      const farFromClick = Math.abs(bestClickOff) > this.tolerances.close;
+      const onFineNonClick = !fineIsClick && Math.abs(bestFineOff) <= this.tolerances.onTime;
+      if (farFromClick && onFineNonClick) {
+        isInBetween = true;
+        gridOffsetMs = null;
+        gridSubdivision = bestFineSub; // keep color
+        matchedBeatTime = null;
+      } else {
+        gridOffsetMs = bestClickOff;
+        gridSubdivision = bestClickSub;
       }
     }
-    if (clickOffsetMs != null && Math.abs(clickOffsetMs) > MATCH_WINDOW_MS) {
-      clickOffsetMs = null;
-      matchedClickTime = null;
+
+    // Click-sync offset: nearest *audible* beat. Skipped for in-between
+    // hits — they're intentional, shouldn't pollute the click metric.
+    let clickOffsetMs = null;
+    let matchedClickTime = null;
+    if (!isInBetween) {
+      for (const b of this.expectedBeats) {
+        if (b.isSilent) continue;
+        const off = (time - b.time) * 1000;
+        if (clickOffsetMs == null || Math.abs(off) < Math.abs(clickOffsetMs)) {
+          clickOffsetMs = off;
+          matchedClickTime = b.time;
+        }
+      }
+      if (clickOffsetMs != null && Math.abs(clickOffsetMs) > MATCH_WINDOW_MS) {
+        clickOffsetMs = null;
+        matchedClickTime = null;
+      }
     }
 
     let status = 'ghost';
-    if (gridOffsetMs != null) {
+    if (isInBetween) {
+      status = 'inBetween';
+    } else if (gridOffsetMs != null) {
       const abs = Math.abs(gridOffsetMs);
       if (abs <= this.tolerances.onTime) status = 'onTime';
       else if (abs <= this.tolerances.close) status = 'close';
