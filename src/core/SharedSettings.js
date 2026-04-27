@@ -55,6 +55,16 @@ const DEFAULT_SETTINGS = {
   metronomePracticeEnabled: false,
   metronomePracticeSessionMinutes: 10,
   metronomePracticeIntervalMinutes: 1,
+
+  // Circle of Fifths
+  circleSelectedPos: 0,             // 0..11 wheel position (0 = C / Am)
+  circleSelectedMode: 'major',      // 'major' | 'minor' — which ring's chord is the tonic
+  circleVoicing: 'triad',           // 'triad' | 'seventh'
+  circleArticulation: 'block',      // 'block' | 'arpeggio'
+  circleVolume: 0.6,
+  circleProgressionGenre: 'pop',
+  circleProgressionBars: 4,
+  circleProgressionTempo: 90,       // BPM for progression playback
 };
 
 export class SharedSettings {
