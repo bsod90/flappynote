@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, Settings2 } from 'lucide-react';
 
 import { SharedSettings } from '@/core';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { trackEvent } from '@/lib/analytics';
 
 import CircleOfFifths from './CircleOfFifths.jsx';
@@ -41,6 +42,7 @@ export default function CircleOfFifthsPage() {
   const sidebarCollapsed = !!v.settingsCollapsed;
 
   const synthRef = useRef(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDark, setIsDark] = useState(() =>
     typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
   );
@@ -125,6 +127,18 @@ export default function CircleOfFifthsPage() {
         </Button>
       )}
 
+      {/* Mobile-only Settings button — opens the Sheet drawer */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setSidebarOpen(true)}
+        aria-label="Open settings"
+        className="absolute right-3 top-3 z-10 gap-2 shadow-sm lg:hidden"
+      >
+        <Settings2 className="h-4 w-4" />
+        <span>Settings</span>
+      </Button>
+
       {/* Main area — wheel centered */}
       <div className="no-scrollbar flex flex-1 min-w-0 flex-col items-center justify-center gap-3 overflow-y-auto p-3 sm:p-4">
         <CircleOfFifths
@@ -161,6 +175,18 @@ export default function CircleOfFifthsPage() {
           </div>
         </aside>
       )}
+
+      {/* Mobile settings drawer */}
+      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <SheetContent side="right" className="no-scrollbar w-full overflow-y-auto sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Settings</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4">
+            <Sidebar settings={settings} />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
