@@ -38,10 +38,16 @@ export class ChordSynth {
 
   /**
    * iOS-safe unlock — synchronous, must be called inside a user gesture
-   * before any await. Mirrors the metronome's pattern.
+   * before any await.
+   *
+   * Important: do NOT recreate a 'suspended' context. On iOS, resume() is
+   * async (50–150ms). If the user clicks rapidly, recreating each time would
+   * abort the in-flight resume and start over — the context never wakes
+   * until the user pauses long enough between clicks. Only recreate when the
+   * context is genuinely 'closed'.
    */
   unlock() {
-    if (this.audioContext && this.audioContext.state !== 'running') {
+    if (this.audioContext && this.audioContext.state === 'closed') {
       this._recreateAudio();
     } else {
       this._ensureAudio();
@@ -62,17 +68,32 @@ export class ChordSynth {
    * Play a chord. Returns a Promise that resolves when the chord finishes.
    *   chord: { semitones (0..11 root pc), type: major|minor|dim|dom|aug, quality? }
    *   options: { voicing: 'triad'|'seventh', articulation: 'block'|'arpeggio', duration: seconds }
+   *
+   * On iOS the AudioContext is often still 'suspended' when this is first
+   * called from a gesture — resume() is async. We await it (with a short
+   * timeout so we never hang) and schedule notes with a small lead so the
+   * start time is always strictly in the future once the context wakes.
    */
-  playChord(chord, { voicing = 'triad', articulation = 'block', duration = 1.4 } = {}) {
+  async playChord(chord, { voicing = 'triad', articulation = 'block', duration = 1.4 } = {}) {
     this._ensureAudio();
     const ctx = this.audioContext;
-    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    if (ctx.state === 'suspended') {
+      try {
+        await Promise.race([
+          ctx.resume(),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('resume timeout')), 400)),
+        ]);
+      } catch { /* noop — proceed; lead time below covers brief slack */ }
+    }
 
     this.stop(); // cut off any previous chord
 
     const recipe = CHORD_RECIPES[chord.type] ?? CHORD_RECIPES.major;
     const intervals = voicing === 'seventh' ? recipe.seventh : recipe.triad;
-    const start = ctx.currentTime;
+    // Lead time keeps the schedule strictly in the future — iOS occasionally
+    // discards "schedule at past time" envelope events on a freshly-resumed
+    // context.
+    const start = ctx.currentTime + 0.04;
     const arpStep = articulation === 'arpeggio' ? 0.09 : 0;
     const noteDur = articulation === 'arpeggio'
       ? Math.max(0.35, duration - arpStep * intervals.length)

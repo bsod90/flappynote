@@ -4,11 +4,10 @@ import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { SharedSettings } from '@/core';
 import { Button } from '@/components/ui/button';
 import { trackEvent } from '@/lib/analytics';
-import { useWakeLock } from '@/lib/useWakeLock';
 
 import CircleOfFifths from './CircleOfFifths.jsx';
 import Sidebar from './Sidebar.jsx';
-import ProgressionLibrary from './ProgressionLibrary.jsx';
+import { DiatonicChordRow } from './KeyHub.jsx';
 import { ChordSynth } from './ChordSynth.js';
 import { diatonicChords as buildDiatonic, MAJOR_KEYS } from './musicTheory.js';
 import { useSharedSettingValues } from '../vocal-monitor/useSharedSettings.js';
@@ -19,9 +18,9 @@ const SETTINGS_KEYS = [
   'circleVoicing',
   'circleArticulation',
   'circleVolume',
-  'circleProgressionGenre',
-  'circleProgressionBars',
-  'circleProgressionTempo',
+  'circleShowSecondaryDoms',
+  'circleShowTritoneSubs',
+  'circleShowParallel',
   'settingsCollapsed',
 ];
 
@@ -34,16 +33,17 @@ export default function CircleOfFifthsPage() {
   const voicing = v.circleVoicing ?? 'triad';
   const articulation = v.circleArticulation ?? 'block';
   const volume = v.circleVolume ?? 0.6;
-  const genre = v.circleProgressionGenre ?? 'pop';
-  const bars = v.circleProgressionBars ?? 4;
-  const tempo = v.circleProgressionTempo ?? 90;
+  const overlays = useMemo(() => ({
+    secondary: !!v.circleShowSecondaryDoms,
+    tritone: !!v.circleShowTritoneSubs,
+    parallel: !!v.circleShowParallel,
+  }), [v.circleShowSecondaryDoms, v.circleShowTritoneSubs, v.circleShowParallel]);
   const sidebarCollapsed = !!v.settingsCollapsed;
 
   const synthRef = useRef(null);
   const [isDark, setIsDark] = useState(() =>
     typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
   );
-  const [playingProgressionId, setPlayingProgressionId] = useState(null);
 
   // Watch for theme changes (followed by useColorScheme on the html root)
   useEffect(() => {
@@ -73,9 +73,6 @@ export default function CircleOfFifthsPage() {
   useEffect(() => {
     synthRef.current?.setVolume(volume);
   }, [volume]);
-
-  // Wake lock while a progression is playing
-  useWakeLock(!!playingProgressionId);
 
   // Compute the diatonic chord descriptors for the selected key.
   const major = MAJOR_KEYS[selectedPos];
@@ -114,25 +111,6 @@ export default function CircleOfFifthsPage() {
     synth.playChord(chord, { voicing, articulation });
   };
 
-  const handlePlayProgression = async (id, chords) => {
-    const synth = synthRef.current;
-    if (!synth) return;
-    synth.unlock();
-    setPlayingProgressionId(id);
-    const secondsPerChord = 60 / Math.max(40, tempo);
-    try {
-      await synth.playProgression(chords, { secondsPerChord, voicing, articulation });
-    } finally {
-      // Only clear if this is still the active one (a newer click replaced us)
-      setPlayingProgressionId((cur) => (cur === id ? null : cur));
-    }
-  };
-
-  const handleStopProgression = () => {
-    synthRef.current?.stop();
-    setPlayingProgressionId(null);
-  };
-
   return (
     <div className="relative flex h-full">
       {sidebarCollapsed && (
@@ -147,32 +125,20 @@ export default function CircleOfFifthsPage() {
         </Button>
       )}
 
-      {/* Main area — wheel on top, progression library below */}
-      <div className="no-scrollbar flex flex-1 min-w-0 flex-col items-center gap-3 overflow-y-auto p-3 sm:p-4">
-        <div className="flex w-full flex-1 items-center justify-center">
-          <CircleOfFifths
-            selectedPos={selectedPos}
-            selectedMode={selectedMode}
-            onSelect={handleSelect}
-            diatonicChords={diatonic}
-            onPlayChord={handleHubChord}
-            isDark={isDark}
-          />
-        </div>
-
-        <div className="w-full self-stretch">
-          <ProgressionLibrary
-            selectedPos={selectedPos}
-            selectedMode={selectedMode}
-            genre={genre}
-            onGenreChange={(g) => settings.set('circleProgressionGenre', g)}
-            bars={bars}
-            onBarsChange={(b) => settings.set('circleProgressionBars', b)}
-            onPlayProgression={handlePlayProgression}
-            onStopProgression={handleStopProgression}
-            isPlaying={!!playingProgressionId}
-            playingId={playingProgressionId}
-          />
+      {/* Main area — wheel centered */}
+      <div className="no-scrollbar flex flex-1 min-w-0 flex-col items-center justify-center gap-3 overflow-y-auto p-3 sm:p-4">
+        <CircleOfFifths
+          selectedPos={selectedPos}
+          selectedMode={selectedMode}
+          onSelect={handleSelect}
+          diatonicChords={diatonic}
+          onPlayChord={handleHubChord}
+          isDark={isDark}
+          overlays={overlays}
+        />
+        {/* Mobile-only diatonic chord row — desktop renders it inside the hub */}
+        <div className="w-full max-w-md px-1 sm:hidden">
+          <DiatonicChordRow chords={diatonic} onChordClick={handleHubChord} />
         </div>
       </div>
 

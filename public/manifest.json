@@ -1,7 +1,7 @@
 {
   "name": "Musical Playground",
   "short_name": "Musical Playground",
-  "description": "Free in-browser music practice tools — Vocal Monitor for pitch visualization and a Metronome with mic listen-back for timing accuracy.",
+  "description": "Free in-browser music practice tools — a Vocal Monitor for pitch visualization, a Metronome with mic listen-back, and an interactive color-coded Circle of Fifths.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "any",
@@ -29,6 +29,13 @@
       "type": "image/png",
       "form_factor": "wide",
       "label": "Vocal Monitor — pitch trace on a piano roll"
+    },
+    {
+      "src": "/screenshot-circle-of-fifths.png",
+      "sizes": "2576x1818",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Circle of Fifths — interactive, color-coded, audible"
     }
   ],
   "categories": ["education", "music", "productivity"]

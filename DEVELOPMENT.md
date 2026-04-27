@@ -5,8 +5,9 @@
 Musical Playground is a suite of browser-based music practice tools:
 - **Vocal Monitor** — real-time pitch visualization on a piano roll, with interactive vocal exercises and rolling-key practice.
 - **Metronome** — rotary BPM dial with subdivisions, accent patterns, tap tempo, skip-pattern training, timed practice sessions, and a mic listen-back mode that scores your timing in real time.
+- **Circle of Fifths** — interactive color-coded SVG wheel of all 12 keys, mini key-signature staff, audible diatonic chords (triad/7th, block/arpeggio), and theory overlays for secondary dominants, tritone substitutions, and parallel keys.
 
-Both tools share dark/light theming via shadcn HSL CSS variables and run entirely in the browser — no audio leaves the device.
+All tools share dark/light theming via shadcn HSL CSS variables and run entirely in the browser — no audio leaves the device.
 
 ## Getting Started
 
@@ -69,18 +70,26 @@ src/
 │   │   ├── rollingKeyOptions.js
 │   │   └── exercises/                  - Individual exercise definitions
 │   │
-│   └── metronome/
-│       ├── MetronomePage.jsx
-│       ├── MetronomeEngine.js          - Web Audio lookahead scheduler
-│       ├── MetronomeDial.jsx           - Rotary BPM dial + visual beat ring
-│       ├── PracticeTracker.jsx         - Session state machine
-│       ├── ListenBackPanel.jsx         - Unified canvas: waveform / grid / hits
-│       ├── MicListener.js              - Mic stream + AnalyserNode → detector
-│       ├── OnsetDetector.js            - Peak-based percussion onset detection
-│       ├── HitTracker.js               - Beat matching + flam detection + stats
-│       ├── clickSamples.js             - Synthesized click bank
-│       ├── sensitivity.js              - Slider ↔ detector threshold
-│       └── Sidebar.jsx
+│   ├── metronome/
+│   │   ├── MetronomePage.jsx
+│   │   ├── MetronomeEngine.js          - Web Audio lookahead scheduler
+│   │   ├── MetronomeDial.jsx           - Rotary BPM dial + visual beat ring
+│   │   ├── PracticeTracker.jsx         - Session state machine
+│   │   ├── ListenBackPanel.jsx         - Unified canvas: waveform / grid / hits
+│   │   ├── MicListener.js              - Mic stream + AnalyserNode → detector
+│   │   ├── OnsetDetector.js            - Peak-based percussion onset detection
+│   │   ├── HitTracker.js               - Beat matching + flam detection + stats
+│   │   ├── clickSamples.js             - Synthesized click bank
+│   │   ├── sensitivity.js              - Slider ↔ detector threshold
+│   │   └── Sidebar.jsx
+│   │
+│   └── circle-of-fifths/
+│       ├── CircleOfFifthsPage.jsx      - Page composition + audio lifecycle
+│       ├── CircleOfFifths.jsx          - SVG wheel + sector hit-testing + overlays
+│       ├── KeyHub.jsx                  - Center hub + diatonic chord row
+│       ├── ChordSynth.js               - Web Audio chord synth (triad/7th, block/arp)
+│       ├── musicTheory.js              - Keys, diatonic builder, chord recipes
+│       └── Sidebar.jsx                 - Voicing / articulation / overlays
 │
 ├── core/                      # Shared, non-React systems
 │   ├── PitchContext.js, ScaleManager.js, DroneManager.js
@@ -140,12 +149,23 @@ Stateful audio + onset processing lives in plain classes; React composes the UI 
 
 The roundtrip latency between scheduling a click and detecting it via mic is calibrated by listening to the metronome's own clicks for 5s and recording the median delta. Default 12ms; user-editable in the sidebar.
 
+### Circle of Fifths: SVG wheel + Web Audio chord synth
+
+A pure-SVG concentric wheel with a small Web Audio synth attached.
+
+- `musicTheory.js` — pure-data: 12 wheel positions for major/minor keys (semitone, accidental count + type), diatonic chord builder, MAJOR_DEGREES / MINOR_DEGREES with Roman numerals + chord types, CHORD_RECIPES (triad + 7th interval sets per chord quality).
+- `CircleOfFifths.jsx` — renders three concentric annular sectors per position (major / minor / leading-tone diminished). Each sector is an SVG `<path>` built from `M + A + L + A + Z` (move, two arcs, line, close). Audio fires on `pointerdown` (not click) so iOS responds without the 300ms tap delay. The selected key's diatonic span (3 sectors × all rings) is outlined in super-accent; the tonic sector gets an additional inner outline. Optional overlays (`secondary`, `tritone`, `parallel`) layer extra labels and a dashed link line on top of the wheel.
+- `KeyHub.jsx` — the HTML overlay inside the wheel hub: tonic name, mini SVG treble-clef key signature with engraved sharps/flats, and the seven diatonic chord buttons. The chord row is hidden on mobile (`hidden sm:block`) and re-rendered below the wheel by the page so it doesn't overflow the small hub area.
+- `ChordSynth.js` — single-voice subtractive synth (triangle + sine harmonic + lowpass + ADSR), summed across chord tones. Block plays everything at `currentTime + 0.04s`; arpeggio staggers by 90ms per note. iOS audio handling mirrors the metronome: lazy AudioContext creation inside the first user gesture, silent `<audio playsinline>` to switch the audio session category, and a `Promise.race(resume, 400ms timeout)` before scheduling so the start time is always in the future once the context wakes. `unlock()` is intentionally non-aggressive — only recreates a `closed` context, never a `suspended` one, so rapid clicks don't keep aborting the in-flight resume.
+- `CircleOfFifthsPage.jsx` — wires settings (`circleSelectedPos`, `circleSelectedMode`, `circleVoicing`, `circleArticulation`, `circleVolume`, `circleShow*` overlays), instantiates the synth on mount, renders the wheel + sidebar, and handles sector clicks (set selected key + play tonic chord) and hub-button clicks (play that diatonic chord).
+
 ### URL Routing
 
 `react-router-dom` with `BrowserRouter`:
 - `/` → tool index
 - `/vocal-monitor` → Vocal Monitor
 - `/metronome` → Metronome
+- `/circle-of-fifths` → Circle of Fifths
 - `*` → NotFound
 
 SPA fallback is handled by CloudFront (403/404 responses redirected to `/index.html`) for the production AWS hosting; `_redirects` (Netlify) and `404.html` (GitHub Pages) are also bundled for alternate hosts.

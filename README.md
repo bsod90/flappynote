@@ -1,6 +1,6 @@
 # Musical Playground
 
-Free in-browser music practice tools — a real-time **Vocal Monitor** with pitch trace and exercises, and a **Metronome** with mic listen-back, latency calibration, and timed practice sessions.
+Free in-browser music practice tools — a real-time **Vocal Monitor** with pitch trace and exercises, a **Metronome** with mic listen-back and timed practice sessions, and an interactive color-coded **Circle of Fifths** for music theory and ear training.
 
 **Live at: [flappynote.com](https://flappynote.com)**
 
@@ -10,6 +10,8 @@ Free in-browser music practice tools — a real-time **Vocal Monitor** with pitc
 ![Metronome with mic listen-back](public/screenshot-metronome.png)
 
 ![Vocal Monitor — pitch trace on a piano roll](public/screenshot-vocal-monitor.png)
+
+![Circle of Fifths — interactive, color-coded, audible](public/screenshot-circle-of-fifths.png)
 
 ---
 
@@ -41,12 +43,22 @@ A clean rotary metronome with deep practice features.
   - **Flam detection** — close-pair hits where sticks aren't synchronized get a "FLAM" marker.
   - **Latency calibration** — 5-second auto-routine that listens to the metronome's own clicks and computes roundtrip latency. Manual override available.
 
+### ⭕ Circle of Fifths
+
+Big interactive, color-coded wheel of all 12 keys with audible chords.
+
+- **Three-ring layout** — outer ring of major tonics with sharp/flat counts on the rim, middle ring of relative minors, inner ring of leading-tone diminished chords (passive reference).
+- **Click any sector** to set the active key — the diatonic region (I/IV/V across all rings) outlines in magenta and the tonic chord plays.
+- **Center hub** — selected key name + treble-clef key signature with engraved accidentals + seven diatonic chord buttons (I, ii, iii, IV, V, vi, vii°). Click any button to play that chord.
+- **Voicing + articulation** — triad or 7th chord; block or arpeggio. Independent volume control.
+- **Theory overlays** — toggle to show secondary dominants (V/X), tritone substitutions (♭II/X), or a dashed link to the parallel-mode tonic.
+
 ---
 
-## Features that span both tools
+## Features that span all tools
 
 - **Dark + light mode** — follows system preference automatically. Theming via shadcn-style CSS HSL tokens; swapping a palette is one block in `src/index.css`.
-- **Bookmarkable URLs** — `/vocal-monitor`, `/metronome`. Add any tool to your iPhone home screen and it opens fullscreen.
+- **Bookmarkable URLs** — `/vocal-monitor`, `/metronome`, `/circle-of-fifths`. Add any tool to your iPhone home screen and it opens fullscreen.
 - **Progressive Web App** — installable, offline-capable manifest, theme-color aware mobile chrome.
 - **No signup, no install, no upload** — all audio processing happens locally in your browser.
 
@@ -141,6 +153,14 @@ src/
 │       ├── sensitivity.js              - Slider ↔ detector threshold mapping
 │       ├── Sidebar.jsx
 │       └── Toolbar.jsx
+│   │
+│   └── circle-of-fifths/
+│       ├── CircleOfFifthsPage.jsx     - Page composition + audio lifecycle
+│       ├── CircleOfFifths.jsx         - SVG wheel, sector hit-testing, overlays
+│       ├── KeyHub.jsx                 - Center hub + diatonic chord row
+│       ├── ChordSynth.js              - Web Audio chord synth (triad/7th, block/arp)
+│       ├── musicTheory.js             - Keys, diatonic builder, chord recipes
+│       └── Sidebar.jsx                - Voicing / articulation / overlays
 │
 ├── core/                      # Shared, non-React systems
 │   ├── PitchContext.js, ScaleManager.js, DroneManager.js
@@ -168,4 +188,5 @@ Built with AI assistance (Claude by Anthropic).
 - **Site:** [flappynote.com](https://flappynote.com)
 - **Vocal Monitor:** [flappynote.com/vocal-monitor](https://flappynote.com/vocal-monitor)
 - **Metronome:** [flappynote.com/metronome](https://flappynote.com/metronome)
+- **Circle of Fifths:** [flappynote.com/circle-of-fifths](https://flappynote.com/circle-of-fifths)
 - **GitHub:** [github.com/bsod90/flappynote](https://github.com/bsod90/flappynote)

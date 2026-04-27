@@ -5,11 +5,13 @@ import { MAJOR_KEYS, MINOR_KEYS } from './musicTheory.js';
  *   • Selected key name, big and bold
  *   • Mini key-signature staff (treble clef + accidentals)
  *   • The seven diatonic chords with roman numerals; clicking plays them
+ *
+ * The chord row is hidden on mobile (rendered separately under the wheel
+ * by the page) so it doesn't overflow the small hub area.
  */
 export default function KeyHub({ selectedPos, selectedMode, chords, onChordClick }) {
   const major = MAJOR_KEYS[selectedPos];
   const minor = MINOR_KEYS[selectedPos];
-  const tonicLabel = selectedMode === 'major' ? major.tonic : minor.tonic.replace('m', ' minor');
   const sigText = signatureLabel(major.accCount, major.accType);
 
   return (
@@ -30,25 +32,37 @@ export default function KeyHub({ selectedPos, selectedMode, chords, onChordClick
         {sigText}
       </div>
 
-      {/* Diatonic chords — small clickable buttons */}
-      <div className="mt-1 grid grid-cols-7 gap-0.5">
-        {chords?.map((c, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => onChordClick?.(c, i)}
-            className="flex flex-col items-center rounded px-0.5 py-0.5 hover:bg-accent"
-            aria-label={`Play ${c.name}`}
-          >
-            <span className="text-[10px] font-mono tracking-wider text-muted-foreground">
-              {c.numeral}
-            </span>
-            <span className="text-[11px] font-semibold leading-tight">
-              {c.name}
-            </span>
-          </button>
-        ))}
+      {/* Diatonic chords — hidden on mobile (rendered under the wheel instead) */}
+      <div className="mt-1 hidden sm:block">
+        <DiatonicChordRow chords={chords} onChordClick={onChordClick} />
       </div>
+    </div>
+  );
+}
+
+/**
+ * Standalone diatonic-chord row. Used inside the hub on desktop and
+ * rendered under the wheel on mobile.
+ */
+export function DiatonicChordRow({ chords, onChordClick, className = '' }) {
+  return (
+    <div className={`grid grid-cols-7 gap-1 ${className}`}>
+      {chords?.map((c, i) => (
+        <button
+          key={i}
+          type="button"
+          onPointerDown={(e) => { e.preventDefault(); onChordClick?.(c, i); }}
+          className="flex flex-col items-center rounded px-0.5 py-0.5 hover:bg-accent active:bg-accent/80"
+          aria-label={`Play ${c.name}`}
+        >
+          <span className="text-[10px] font-mono tracking-wider text-muted-foreground">
+            {c.numeral}
+          </span>
+          <span className="text-[11px] font-semibold leading-tight">
+            {c.name}
+          </span>
+        </button>
+      ))}
     </div>
   );
 }

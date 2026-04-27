@@ -32,7 +32,7 @@ export const tools = [
     name: 'Circle of Fifths',
     tagline: 'Interactive, color-coded, audible',
     description:
-      'Big interactive circle of fifths with diatonic chord highlighting, key signatures, audible chords for ear training, and genre-tagged chord progressions.',
+      'Big interactive circle of fifths with diatonic chord highlighting, key signatures, audible chords for ear training, and theory overlays for secondary dominants, tritone substitutions, and parallel keys.',
     icon: Aperture,
     Component: CircleOfFifthsPage,
   },

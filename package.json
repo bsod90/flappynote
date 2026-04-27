@@ -1,7 +1,7 @@
 {
   "name": "flappynote",
   "version": "1.0.0",
-  "description": "Free in-browser music practice tools: Vocal Monitor for pitch visualization and a Metronome with mic listen-back.",
+  "description": "Free in-browser music practice tools: Vocal Monitor for pitch visualization, a Metronome with mic listen-back, and an interactive color-coded Circle of Fifths.",
   "homepage": "https://flappynote.com",
   "repository": {
     "type": "git",
@@ -29,7 +29,12 @@
     "listen-back",
     "onset-detection",
     "practice-session",
-    "vocal-training"
+    "vocal-training",
+    "circle-of-fifths",
+    "music-theory",
+    "ear-training",
+    "key-signatures",
+    "diatonic-chords"
   ],
   "author": "",
   "license": "MIT",

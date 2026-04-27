@@ -62,9 +62,9 @@ const DEFAULT_SETTINGS = {
   circleVoicing: 'triad',           // 'triad' | 'seventh'
   circleArticulation: 'block',      // 'block' | 'arpeggio'
   circleVolume: 0.6,
-  circleProgressionGenre: 'pop',
-  circleProgressionBars: 4,
-  circleProgressionTempo: 90,       // BPM for progression playback
+  circleShowSecondaryDoms: false,   // overlay: V/X labels
+  circleShowTritoneSubs: false,     // overlay: ♭II tritone substitutions
+  circleShowParallel: false,        // overlay: link to parallel-mode tonic
 };
 
 export class SharedSettings {

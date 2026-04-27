@@ -5,20 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Help — Musical Playground</title>
-  <meta name="description" content="How to use Musical Playground: Vocal Monitor for pitch visualization and ear training, and the Metronome with mic listen-back for timing accuracy.">
-  <meta name="keywords" content="musical playground help, vocal monitor tutorial, metronome guide, listen back, mic calibration, practice session, drum practice">
+  <meta name="description" content="How to use Musical Playground: Vocal Monitor for pitch visualization, the Metronome with mic listen-back for timing accuracy, and the interactive Circle of Fifths for music theory and ear training.">
+  <meta name="keywords" content="musical playground help, vocal monitor tutorial, metronome guide, listen back, mic calibration, practice session, drum practice, circle of fifths, key signatures, diatonic chords">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://flappynote.com/help.html">
 
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://flappynote.com/help.html">
   <meta property="og:title" content="Help — Musical Playground">
-  <meta property="og:description" content="How to use the Vocal Monitor and the Metronome with mic listen-back.">
+  <meta property="og:description" content="How to use the Vocal Monitor, the Metronome with mic listen-back, and the interactive Circle of Fifths.">
   <meta property="og:image" content="https://flappynote.com/og-image.png">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Help — Musical Playground">
-  <meta name="twitter:description" content="How to use the Vocal Monitor and the Metronome with mic listen-back.">
+  <meta name="twitter:description" content="How to use the Vocal Monitor, the Metronome with mic listen-back, and the interactive Circle of Fifths.">
 
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <style>
@@ -112,7 +112,7 @@
     </a>
 
     <h1>Help</h1>
-    <p class="subtitle">How to use the Vocal Monitor and Metronome.</p>
+    <p class="subtitle">How to use the Vocal Monitor, the Metronome, and the Circle of Fifths.</p>
 
     <div class="requirements">
       <h2>
@@ -122,7 +122,7 @@
         Requirements
       </h2>
       <ul>
-        <li><strong>Microphone access</strong> — both tools listen to you in real time</li>
+        <li><strong>Microphone access</strong> — required for Vocal Monitor and the Metronome's listen-back. The Circle of Fifths does <em>not</em> need a mic.</li>
         <li><strong>Modern browser</strong> — Chrome, Safari, Firefox, or Edge (recent)</li>
         <li><strong>Headphones recommended</strong> — keeps the drone (vocal monitor) and the metronome click out of the mic signal</li>
         <li><strong>Quiet environment</strong> — improves pitch detection and onset detection accuracy</li>
@@ -135,8 +135,8 @@
     <h3>Getting started</h3>
     <ol>
       <li>Open <a href="/" style="color:#4ec0ca">the home page</a> and pick a tool.</li>
-      <li>Allow microphone access when the browser asks.</li>
-      <li>Put on headphones if you can — both tools play audio that the mic might otherwise pick up.</li>
+      <li>Allow microphone access when the browser asks (Vocal Monitor and Metronome listen-back only).</li>
+      <li>Put on headphones if you can — the Vocal Monitor's drone and the Metronome's click can otherwise bleed back into the mic.</li>
     </ol>
 
     <!-- VOCAL MONITOR -->
@@ -270,6 +270,51 @@
       </ol>
       <div class="tip">
         <strong>Sensitivity slider:</strong> higher = catches softer hits, lower = ignores background noise. Watch the waveform: hits should clearly poke above the threshold band.
+      </div>
+    </div>
+
+    <!-- CIRCLE OF FIFTHS -->
+    <div class="tool-section">
+      <div class="tool-header">
+        <span class="tool-icon">⭕</span>
+        <h2>Circle of Fifths</h2>
+      </div>
+      <p class="tool-description">
+        Big interactive, color-coded wheel of all 12 keys. Click any sector to set the tonic — the wheel highlights its three diatonic neighbors (I / IV / V or i / VI / VII) and updates the key-signature staff in the center.
+      </p>
+
+      <h3>The wheel</h3>
+      <ul>
+        <li><strong>Outer ring</strong> — major-key tonics, with the sharp/flat count printed on the rim.</li>
+        <li><strong>Middle ring</strong> — relative minors.</li>
+        <li><strong>Inner ring</strong> — leading-tone diminished chord of each major (passive reference).</li>
+        <li><strong>Click a sector</strong> to switch the active key and hear its tonic chord. Click on the major ring for a major key, the minor ring for a minor key.</li>
+        <li>The selected key's diatonic region (I, IV, V across all rings) is outlined in magenta.</li>
+      </ul>
+
+      <h3>Center hub</h3>
+      <ul>
+        <li>Selected key name + treble-clef key signature.</li>
+        <li>Seven diatonic chord buttons (I, ii, iii, IV, V, vi, vii°) — click any to play it. On mobile they appear under the wheel.</li>
+      </ul>
+
+      <h3>Sound</h3>
+      <ul>
+        <li><strong>Voicing</strong> — Triad or 7th chord.</li>
+        <li><strong>Articulation</strong> — Block (all notes at once) or Arpeggio (one after another).</li>
+        <li><strong>Volume</strong> — independent of the metronome's volume.</li>
+      </ul>
+
+      <h3>Theory overlays</h3>
+      <p>Toggle these in the sidebar to make extra harmony obvious:</p>
+      <ul>
+        <li><strong>Secondary dominants</strong> — V/X labels on the chords that resolve into each diatonic chord (e.g. V/ii, V/V).</li>
+        <li><strong>Tritone substitutions</strong> — ♭II labels on the alternate dominants a tritone away from each V.</li>
+        <li><strong>Parallel key</strong> — dashed line linking the current tonic to its parallel-mode counterpart (same letter, opposite mode).</li>
+      </ul>
+
+      <div class="tip">
+        <strong>Tip:</strong> Click adjacent sectors to hear the I → IV → V → I cadence. Try the same key in major then minor — same letter, very different sound.
       </div>
     </div>
 
