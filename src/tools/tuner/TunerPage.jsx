@@ -1,11 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ChevronsLeft,
-  ChevronsRight,
-  Mic,
-  MicOff,
-  Settings2,
-} from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, Settings2 } from 'lucide-react';
 
 import { SharedSettings, PitchContext } from '@/core';
 import { Button } from '@/components/ui/button';
@@ -114,11 +108,35 @@ export default function TunerPage() {
       enableVocalAnalysis: false,
     });
     pitchContextRef.current = ctx;
+
+    // Auto-start the moment the page mounts. Demo mode skips this so it
+    // can render synthetic readings without the mic. iOS Safari requires a
+    // user gesture before AudioContext / getUserMedia work — if that fails,
+    // we surface an error banner with a "Try again" button.
+    let cancelled = false;
+    if (!demo) {
+      (async () => {
+        try {
+          await ctx.start();
+          if (!cancelled) setIsRecording(true);
+        } catch (e) {
+          if (cancelled) return;
+          console.error('Failed to start tuner:', e);
+          setError(
+            e?.name === 'NotAllowedError'
+              ? 'Microphone permission denied. Allow microphone access in your browser to use the tuner.'
+              : 'Could not start the microphone. Tap the button below to try again.'
+          );
+        }
+      })();
+    }
+
     return () => {
+      cancelled = true;
       ctx.dispose?.();
       pitchContextRef.current = null;
     };
-  }, []);
+  }, [demo]);
 
   // Reset the "tuned" set whenever the tuning shape changes — old indices no
   // longer point at the same notes. We compare against the previous combo
@@ -215,7 +233,9 @@ export default function TunerPage() {
     }
   }, [view.activeIndex, view.cents, isRecording, chromatic, tunedSet]);
 
-  const handleStart = async () => {
+  // Used by the error banner's retry button. Provides the user gesture
+  // that iOS Safari requires for the mic prompt + AudioContext.resume().
+  const handleRetry = async () => {
     const ctx = pitchContextRef.current;
     if (!ctx) return;
     setStarting(true);
@@ -235,14 +255,6 @@ export default function TunerPage() {
     }
   };
 
-  const handleStop = () => {
-    pitchContextRef.current?.stop();
-    setIsRecording(false);
-    setReading(null);
-    setTunedSet(new Set());
-    streakRef.current = { index: -1, count: 0 };
-  };
-
   const handleStringSelect = (idx) => {
     settings.set('tunerSelectedString', idx);
     settings.set('tunerAutoDetect', false);
@@ -250,33 +262,26 @@ export default function TunerPage() {
 
   return (
     <div className="relative flex h-full">
+      {/* Floating mobile-only Settings button (matches Circle of Fifths) */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setSidebarOpen(true)}
+        aria-label="Open settings"
+        className="absolute right-3 top-3 z-10 gap-2 shadow-sm lg:hidden"
+      >
+        <Settings2 className="h-4 w-4" />
+        <span>Settings</span>
+      </Button>
+
       {/* Main panel */}
       <div className="flex flex-1 min-w-0 flex-col">
-        {/* Toolbar */}
-        <div className="flex items-center gap-2 border-b bg-background/60 p-2 backdrop-blur">
-          {isRecording ? (
-            <Button onClick={handleStop} variant="destructive">
-              <MicOff className="h-4 w-4" />
-              Stop
-            </Button>
-          ) : (
-            <Button onClick={handleStart} disabled={starting}>
-              <Mic className="h-4 w-4" />
-              {starting ? 'Starting…' : 'Start'}
-            </Button>
-          )}
-
-          <div className="ml-auto flex items-center gap-2 lg:hidden">
-            <Button variant="outline" size="sm" onClick={() => setSidebarOpen(true)}>
-              <Settings2 className="h-4 w-4" />
-              Settings
-            </Button>
-          </div>
-        </div>
-
         {error && (
-          <div className="border-b bg-destructive/10 px-4 py-2 text-sm text-destructive">
-            {error}
+          <div className="flex items-center gap-3 border-b bg-destructive/10 px-4 py-2 text-sm text-destructive">
+            <span className="flex-1">{error}</span>
+            <Button size="sm" variant="outline" onClick={handleRetry} disabled={starting}>
+              {starting ? 'Starting…' : 'Try again'}
+            </Button>
           </div>
         )}
 
@@ -287,7 +292,6 @@ export default function TunerPage() {
             cents={view.cents}
             frequency={reading?.frequency ?? null}
             targetFrequency={view.targetFrequency}
-            isRecording={isRecording}
             status={status}
           />
 

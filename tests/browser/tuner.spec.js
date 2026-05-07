@@ -15,11 +15,13 @@ test.beforeEach(async ({ page }) => {
 test.describe('Tuner page — desktop', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test('renders the toolbar, big-note placeholder, and a 6-string row for guitar standard', async ({ page }) => {
+  test('renders the visualizer placeholder and a 6-string row for guitar standard', async ({ page }) => {
     await page.goto('/tuner');
 
-    await expect(page.getByRole('button', { name: /^Start$/ })).toBeVisible();
-    await expect(page.getByText('Press Start', { exact: true })).toBeVisible();
+    // The tuner auto-starts on mount; before the mic returns a reading the
+    // visualizer shows a "Listening…" placeholder. (In headless chromium
+    // getUserMedia is rejected, but we still render the placeholder.)
+    await expect(page.getByText(/Listening|In tune|Low|High/).first()).toBeVisible();
     // Sidebar is visible on desktop
     await expect(page.getByText('Instrument', { exact: true })).toBeVisible();
 
@@ -66,7 +68,7 @@ test.describe('Tuner page — desktop', () => {
 
     await expect(page.getByRole('button', { name: /^String \d+ — / })).toHaveCount(0);
     // The big note still shows the silent placeholder
-    await expect(page.getByText('Press Start', { exact: true })).toBeVisible();
+    await expect(page.getByText(/Listening|In tune|Low|High/).first()).toBeVisible();
   });
 
   test('clicking a string in manual mode highlights it', async ({ page }) => {
@@ -112,8 +114,8 @@ test.describe('Tuner page — mobile', () => {
   test('shows a Settings button that opens a drawer', async ({ page }) => {
     await page.goto('/tuner');
 
-    // Sidebar shouldn't be visible inline; Settings button should
-    const settingsBtn = page.getByRole('button', { name: /^Settings$/ });
+    // Sidebar shouldn't be visible inline; the floating Settings button should
+    const settingsBtn = page.getByRole('button', { name: /open settings/i });
     await expect(settingsBtn).toBeVisible();
 
     await settingsBtn.click();

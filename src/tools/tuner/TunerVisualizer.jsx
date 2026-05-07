@@ -19,7 +19,6 @@ export default function TunerVisualizer({
   cents,            // signed cents from target (null = no signal)
   frequency,        // current detected frequency (Hz) or null
   targetFrequency,  // target frequency (Hz) or null
-  isRecording,
   status,           // 'silent' | 'low' | 'in-tune' | 'high'
 }) {
   const { letter, octave } = splitNoteName(noteName);
@@ -34,15 +33,14 @@ export default function TunerVisualizer({
   const stripPos = centsToStripPosition(cents);
   const stripBgPercent = `${(stripPos * 100).toFixed(2)}%`;
 
-  // Resolved status text. We special-case "silent" so the visual stays calm
-  // when the user isn't playing yet.
+  // Resolved status text. The tuner auto-starts on mount, so before the
+  // first reading we show the same calm "Listening…" placeholder we use
+  // for the silent-but-recording state.
   const statusText = (() => {
-    if (!isRecording) return 'Press Start';
-    if (status === 'silent') return 'Listening…';
     if (status === 'in-tune') return 'In tune';
     if (status === 'low') return 'Low';
     if (status === 'high') return 'High';
-    return '';
+    return 'Listening…';
   })();
 
   return (
