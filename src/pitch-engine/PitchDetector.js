@@ -57,6 +57,7 @@ export class PitchDetector {
       minFrequency: this.minFrequency,
       maxFrequency: this.maxFrequency,
       threshold: this.threshold,
+      highPassFreq: options.highPassFreq,
     });
 
     // Detector instances

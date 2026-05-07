@@ -6,6 +6,7 @@ Musical Playground is a suite of browser-based music practice tools:
 - **Vocal Monitor** — real-time pitch visualization on a piano roll, with interactive vocal exercises and rolling-key practice.
 - **Metronome** — rotary BPM dial with subdivisions, accent patterns, tap tempo, skip-pattern training, timed practice sessions, and a mic listen-back mode that scores your timing in real time.
 - **Circle of Fifths** — interactive color-coded SVG wheel of all 12 keys, mini key-signature staff, audible diatonic chords (triad/7th, block/arpeggio), and theory overlays for secondary dominants, tritone substitutions, and parallel keys.
+- **Tuner** — chromatic instrument tuner that snaps to the closest open string (or a manually-picked target) and shows cents-off on a precision strip. Tuning presets for guitar, bass (4- and 5-string), ukulele (high-G / low-G), and violin, plus a chromatic mode. Adjustable A4 reference.
 
 All tools share dark/light theming via shadcn HSL CSS variables and run entirely in the browser — no audio leaves the device.
 
@@ -83,13 +84,21 @@ src/
 │   │   ├── sensitivity.js              - Slider ↔ detector threshold
 │   │   └── Sidebar.jsx
 │   │
-│   └── circle-of-fifths/
-│       ├── CircleOfFifthsPage.jsx      - Page composition + audio lifecycle
-│       ├── CircleOfFifths.jsx          - SVG wheel + sector hit-testing + overlays
-│       ├── KeyHub.jsx                  - Center hub + diatonic chord row
-│       ├── ChordSynth.js               - Web Audio chord synth (triad/7th, block/arp)
-│       ├── musicTheory.js              - Keys, diatonic builder, chord recipes
-│       └── Sidebar.jsx                 - Voicing / articulation / overlays
+│   ├── circle-of-fifths/
+│   │   ├── CircleOfFifthsPage.jsx      - Page composition + audio lifecycle
+│   │   ├── CircleOfFifths.jsx          - SVG wheel + sector hit-testing + overlays
+│   │   ├── KeyHub.jsx                  - Center hub + diatonic chord row
+│   │   ├── ChordSynth.js               - Web Audio chord synth (triad/7th, block/arp)
+│   │   ├── musicTheory.js              - Keys, diatonic builder, chord recipes
+│   │   └── Sidebar.jsx                 - Voicing / articulation / overlays
+│   │
+│   └── tuner/
+│       ├── TunerPage.jsx               - Page composition + PitchContext lifecycle
+│       ├── TunerVisualizer.jsx         - Big note + cents strip + status word
+│       ├── StringRow.jsx               - Per-string pads with active ring + tuned check
+│       ├── tunings.js                  - Instrument + tuning presets, A4-aware frequencies
+│       ├── tunerLogic.js               - Pure cents math + status classification (unit-tested)
+│       └── Sidebar.jsx                 - Instrument / tuning / A4 reference / auto-detect
 │
 ├── core/                      # Shared, non-React systems
 │   ├── PitchContext.js, ScaleManager.js, DroneManager.js
@@ -159,6 +168,16 @@ A pure-SVG concentric wheel with a small Web Audio synth attached.
 - `ChordSynth.js` — single-voice subtractive synth (triangle + sine harmonic + lowpass + ADSR), summed across chord tones. Block plays everything at `currentTime + 0.04s`; arpeggio staggers by 90ms per note. iOS audio handling mirrors the metronome: lazy AudioContext creation inside the first user gesture, silent `<audio playsinline>` to switch the audio session category, and a `Promise.race(resume, 400ms timeout)` before scheduling so the start time is always in the future once the context wakes. `unlock()` is intentionally non-aggressive — only recreates a `closed` context, never a `suspended` one, so rapid clicks don't keep aborting the in-flight resume.
 - `CircleOfFifthsPage.jsx` — wires settings (`circleSelectedPos`, `circleSelectedMode`, `circleVoicing`, `circleArticulation`, `circleVolume`, `circleShow*` overlays), instantiates the synth on mount, renders the wheel + sidebar, and handles sector clicks (set selected key + play tonic chord) and hub-button clicks (play that diatonic chord).
 
+### Tuner: PitchContext + cents math
+
+A thin UI on top of the existing pitch engine.
+
+- `tunings.js` — pure-data: instrument → tuning-name → array of MIDI numbers. Helper `getStrings(instrument, tuning, a4)` materializes a list of `{ midi, noteName, frequency }`, scaling target frequencies by the user's A4 reference (415–446 Hz). The chromatic mode is modeled as an instrument with no fixed strings, which the page treats as snap-to-nearest-semitone instead of snap-to-string.
+- `tunerLogic.js` — pure functions, no DOM, no audio. `cents(freq, target)`, `findClosestString(freq, strings)` (smallest absolute cent distance), `nearestSemitone(freq, a4)` for chromatic mode, `tuningStatus(cents)` → `'silent' | 'low' | 'in-tune' | 'high'`, plus `centsColor` and `centsToStripPosition` for the visualizer. The in-tune band is ±5¢; below ±15¢ classifies as "close" and is colored amber rather than red.
+- `TunerPage.jsx` — owns a single `PitchContext` configured with the **hybrid** detector (no model load — fast start, plenty accurate for monophonic strings) at `bufferSize: 4096`, `minFrequency: 30`, `maxFrequency: 1500`, `highPassFreq: 30`. The high-pass cutoff is the only invasive change to the engine: `AudioAnalyzer`'s default 180Hz HP would silence guitar low E (82Hz) and bass E1 (41Hz), so the analyzer now accepts an `options.highPassFreq` (default 180, kept for vocal monitor / metronome compatibility). Pitch updates flow into a single React `reading` state; a memoized `view` computes the currently-active string and cents-off from that reading on every render. A small streak counter promotes a string to "tuned" (green check) after ~10 consecutive in-tune frames (~½ second of stability).
+- `TunerVisualizer.jsx` — pure presentational: big colored note letter, octave subscript, status word, and a horizontal cents strip with tick marks at -50/-25/0/+25/+50, an in-tune band overlay, and a glowing colored marker that lerps via CSS `transition: left 0.08s linear` to keep the needle smooth without a render loop.
+- `StringRow.jsx` — circular pads ordered low → high. Active string gets a ring colored by current cents-off; tuned strings carry a green check badge. Tapping a pad selects it as the manual target (and flips `tunerAutoDetect` off in `SharedSettings`).
+
 ### URL Routing
 
 `react-router-dom` with `BrowserRouter`:
@@ -166,6 +185,7 @@ A pure-SVG concentric wheel with a small Web Audio synth attached.
 - `/vocal-monitor` → Vocal Monitor
 - `/metronome` → Metronome
 - `/circle-of-fifths` → Circle of Fifths
+- `/tuner` → Tuner
 - `*` → NotFound
 
 SPA fallback is handled by CloudFront (403/404 responses redirected to `/index.html`) for the production AWS hosting; `_redirects` (Netlify) and `404.html` (GitHub Pages) are also bundled for alternate hosts.

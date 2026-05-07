@@ -56,6 +56,13 @@ const DEFAULT_SETTINGS = {
   metronomePracticeSessionMinutes: 10,
   metronomePracticeIntervalMinutes: 1,
 
+  // Tuner
+  tunerInstrument: 'guitar',           // 'guitar' | 'bass' | 'bass5' | 'ukulele' | 'violin' | 'chromatic'
+  tunerTuning: 'standard',             // tuning id within the chosen instrument
+  tunerReferenceA4: 440,               // Hz; common alternates 441/442/432/415
+  tunerAutoDetect: true,               // when true, snap to closest open string
+  tunerSelectedString: 0,              // index into the current tuning's strings (manual mode)
+
   // Circle of Fifths
   circleSelectedPos: 0,             // 0..11 wheel position (0 = C / Am)
   circleSelectedMode: 'major',      // 'major' | 'minor' — which ring's chord is the tonic

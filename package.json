@@ -1,7 +1,7 @@
 {
   "name": "flappynote",
   "version": "1.0.0",
-  "description": "Free in-browser music practice tools: Vocal Monitor for pitch visualization, a Metronome with mic listen-back, and an interactive color-coded Circle of Fifths.",
+  "description": "Free in-browser music practice tools: Vocal Monitor for pitch visualization, a Metronome with mic listen-back, an interactive color-coded Circle of Fifths, and a chromatic Tuner for guitar, bass, ukulele, and violin.",
   "homepage": "https://flappynote.com",
   "repository": {
     "type": "git",
@@ -34,7 +34,14 @@
     "music-theory",
     "ear-training",
     "key-signatures",
-    "diatonic-chords"
+    "diatonic-chords",
+    "tuner",
+    "guitar-tuner",
+    "bass-tuner",
+    "ukulele-tuner",
+    "violin-tuner",
+    "chromatic-tuner",
+    "instrument-tuner"
   ],
   "author": "",
   "license": "MIT",

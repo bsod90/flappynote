@@ -12,6 +12,10 @@ export class AudioAnalyzer {
     this.minFrequency = options.minFrequency || 60;   // ~B1
     this.maxFrequency = options.maxFrequency || 1200; // ~D#6
     this.threshold = options.threshold || 0.005; // RMS threshold (very sensitive)
+    // High-pass cutoff. Default 180Hz removes vocal rumble + drone bleed; lower
+    // it (e.g. 30Hz) for instruments whose lowest fundamental sits below 180Hz
+    // (guitar low E = 82Hz, bass low E = 41Hz).
+    this.highPassFreq = options.highPassFreq ?? 180;
 
     // AGC (Automatic Gain Control) settings
     this.targetRMS = options.targetRMS || 0.12; // Target RMS level for normalization
@@ -84,7 +88,7 @@ export class AudioAnalyzer {
       // This helps eliminate rumble and reduces drone interference
       this.highPassFilter = this.audioContext.createBiquadFilter();
       this.highPassFilter.type = 'highpass';
-      this.highPassFilter.frequency.value = 180; // Cut off below 180Hz
+      this.highPassFilter.frequency.value = this.highPassFreq;
       this.highPassFilter.Q.value = 0.7; // Gentle slope
 
       // Create gain node for automatic gain control

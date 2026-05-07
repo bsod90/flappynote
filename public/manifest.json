@@ -1,7 +1,7 @@
 {
   "name": "Musical Playground",
   "short_name": "Musical Playground",
-  "description": "Free in-browser music practice tools — a Vocal Monitor for pitch visualization, a Metronome with mic listen-back, and an interactive color-coded Circle of Fifths.",
+  "description": "Free in-browser music practice tools — a Vocal Monitor for pitch visualization, a Metronome with mic listen-back, an interactive color-coded Circle of Fifths, and a chromatic Tuner for guitar, bass, ukulele, and violin.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "any",
@@ -36,6 +36,13 @@
       "type": "image/png",
       "form_factor": "wide",
       "label": "Circle of Fifths — interactive, color-coded, audible"
+    },
+    {
+      "src": "/screenshot-tuner.png",
+      "sizes": "3200x1238",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Tuner — chromatic instrument tuner with cents-precision strip"
     }
   ],
   "categories": ["education", "music", "productivity"]

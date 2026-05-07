@@ -1,6 +1,6 @@
 # Musical Playground
 
-Free in-browser music practice tools — a real-time **Vocal Monitor** with pitch trace and exercises, a **Metronome** with mic listen-back and timed practice sessions, and an interactive color-coded **Circle of Fifths** for music theory and ear training.
+Free in-browser music practice tools — a real-time **Vocal Monitor** with pitch trace and exercises, a **Metronome** with mic listen-back and timed practice sessions, an interactive color-coded **Circle of Fifths** for music theory and ear training, and a chromatic **Tuner** for guitar, bass, ukulele, and violin.
 
 **Live at: [flappynote.com](https://flappynote.com)**
 
@@ -12,6 +12,8 @@ Free in-browser music practice tools — a real-time **Vocal Monitor** with pitc
 ![Vocal Monitor — pitch trace on a piano roll](public/screenshot-vocal-monitor.png)
 
 ![Circle of Fifths — interactive, color-coded, audible](public/screenshot-circle-of-fifths.png)
+
+![Tuner — chromatic instrument tuner with cents-precision strip](public/screenshot-tuner.png)
 
 ---
 
@@ -53,12 +55,24 @@ Big interactive, color-coded wheel of all 12 keys with audible chords.
 - **Voicing + articulation** — triad or 7th chord; block or arpeggio. Independent volume control.
 - **Theory overlays** — toggle to show secondary dominants (V/X), tritone substitutions (♭II/X), or a dashed link to the parallel-mode tonic.
 
+### 🎸 Tuner
+
+Chromatic instrument tuner with a cents-precision strip.
+
+- **Tuning presets** — Guitar (Standard, Drop D, Half-step, DADGAD, Open D, Open G), Bass (4-string Standard / Drop D, 5-string Standard), Ukulele (high-G / low-G), Violin, plus a **Chromatic** mode that snaps to any note.
+- **Big note readout** — color-coded letter (red / amber / green) plus octave subscript and live cents-off + frequency readout.
+- **Cents strip** — −50 to +50¢ horizontal precision strip with a glowing in-tune band, snapping to ±5¢ for "in tune".
+- **Auto-detect or manual** — by default the tuner snaps to whichever open string you play; flip the switch to lock onto a specific string.
+- **String row with tuned-state** — each string lights up a colored ring when active and earns a green check after holding in tune for ~½ second.
+- **Reference pitch** — adjustable A4 from 415 Hz (baroque) through 446 Hz, with one-tap chips for 440 / 441 / 442 / 443 / 432.
+- **Pitch engine reuse** — runs on the existing MPM/YIN hybrid detector with a lowered high-pass cutoff so it can hear bass low E (41 Hz).
+
 ---
 
 ## Features that span all tools
 
 - **Dark + light mode** — follows system preference automatically. Theming via shadcn-style CSS HSL tokens; swapping a palette is one block in `src/index.css`.
-- **Bookmarkable URLs** — `/vocal-monitor`, `/metronome`, `/circle-of-fifths`. Add any tool to your iPhone home screen and it opens fullscreen.
+- **Bookmarkable URLs** — `/vocal-monitor`, `/metronome`, `/circle-of-fifths`, `/tuner`. Add any tool to your iPhone home screen and it opens fullscreen.
 - **Progressive Web App** — installable, offline-capable manifest, theme-color aware mobile chrome.
 - **No signup, no install, no upload** — all audio processing happens locally in your browser.
 
@@ -154,13 +168,21 @@ src/
 │       ├── Sidebar.jsx
 │       └── Toolbar.jsx
 │   │
-│   └── circle-of-fifths/
-│       ├── CircleOfFifthsPage.jsx     - Page composition + audio lifecycle
-│       ├── CircleOfFifths.jsx         - SVG wheel, sector hit-testing, overlays
-│       ├── KeyHub.jsx                 - Center hub + diatonic chord row
-│       ├── ChordSynth.js              - Web Audio chord synth (triad/7th, block/arp)
-│       ├── musicTheory.js             - Keys, diatonic builder, chord recipes
-│       └── Sidebar.jsx                - Voicing / articulation / overlays
+│   ├── circle-of-fifths/
+│   │   ├── CircleOfFifthsPage.jsx     - Page composition + audio lifecycle
+│   │   ├── CircleOfFifths.jsx         - SVG wheel, sector hit-testing, overlays
+│   │   ├── KeyHub.jsx                 - Center hub + diatonic chord row
+│   │   ├── ChordSynth.js              - Web Audio chord synth (triad/7th, block/arp)
+│   │   ├── musicTheory.js             - Keys, diatonic builder, chord recipes
+│   │   └── Sidebar.jsx                - Voicing / articulation / overlays
+│   │
+│   └── tuner/
+│       ├── TunerPage.jsx              - Page composition + PitchContext lifecycle
+│       ├── TunerVisualizer.jsx        - Big note + cents strip + status word
+│       ├── StringRow.jsx              - Per-string pads with active ring + tuned check
+│       ├── tunings.js                 - Instrument + tuning presets, A4-aware frequencies
+│       ├── tunerLogic.js              - Pure cents math + status classification (unit-tested)
+│       └── Sidebar.jsx                - Instrument / tuning / A4 reference / auto-detect
 │
 ├── core/                      # Shared, non-React systems
 │   ├── PitchContext.js, ScaleManager.js, DroneManager.js
@@ -189,4 +211,5 @@ Built with AI assistance (Claude by Anthropic).
 - **Vocal Monitor:** [flappynote.com/vocal-monitor](https://flappynote.com/vocal-monitor)
 - **Metronome:** [flappynote.com/metronome](https://flappynote.com/metronome)
 - **Circle of Fifths:** [flappynote.com/circle-of-fifths](https://flappynote.com/circle-of-fifths)
+- **Tuner:** [flappynote.com/tuner](https://flappynote.com/tuner)
 - **GitHub:** [github.com/bsod90/flappynote](https://github.com/bsod90/flappynote)

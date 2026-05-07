@@ -5,20 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Help — Musical Playground</title>
-  <meta name="description" content="How to use Musical Playground: Vocal Monitor for pitch visualization, the Metronome with mic listen-back for timing accuracy, and the interactive Circle of Fifths for music theory and ear training.">
-  <meta name="keywords" content="musical playground help, vocal monitor tutorial, metronome guide, listen back, mic calibration, practice session, drum practice, circle of fifths, key signatures, diatonic chords">
+  <meta name="description" content="How to use Musical Playground: Vocal Monitor for pitch visualization, the Metronome with mic listen-back for timing accuracy, the interactive Circle of Fifths for music theory and ear training, and the chromatic Tuner for guitar, bass, ukulele, and violin.">
+  <meta name="keywords" content="musical playground help, vocal monitor tutorial, metronome guide, listen back, mic calibration, practice session, drum practice, circle of fifths, key signatures, diatonic chords, guitar tuner, chromatic tuner, drop d, dadgad">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://flappynote.com/help.html">
 
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://flappynote.com/help.html">
   <meta property="og:title" content="Help — Musical Playground">
-  <meta property="og:description" content="How to use the Vocal Monitor, the Metronome with mic listen-back, and the interactive Circle of Fifths.">
+  <meta property="og:description" content="How to use the Vocal Monitor, the Metronome with mic listen-back, the interactive Circle of Fifths, and the chromatic Tuner.">
   <meta property="og:image" content="https://flappynote.com/og-image.png">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Help — Musical Playground">
-  <meta name="twitter:description" content="How to use the Vocal Monitor, the Metronome with mic listen-back, and the interactive Circle of Fifths.">
+  <meta name="twitter:description" content="How to use the Vocal Monitor, the Metronome with mic listen-back, the interactive Circle of Fifths, and the chromatic Tuner.">
 
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <style>
@@ -112,7 +112,7 @@
     </a>
 
     <h1>Help</h1>
-    <p class="subtitle">How to use the Vocal Monitor, the Metronome, and the Circle of Fifths.</p>
+    <p class="subtitle">How to use the Vocal Monitor, the Metronome, the Circle of Fifths, and the Tuner.</p>
 
     <div class="requirements">
       <h2>
@@ -122,7 +122,7 @@
         Requirements
       </h2>
       <ul>
-        <li><strong>Microphone access</strong> — required for Vocal Monitor and the Metronome's listen-back. The Circle of Fifths does <em>not</em> need a mic.</li>
+        <li><strong>Microphone access</strong> — required for the Vocal Monitor, the Metronome's listen-back, and the Tuner. The Circle of Fifths does <em>not</em> need a mic.</li>
         <li><strong>Modern browser</strong> — Chrome, Safari, Firefox, or Edge (recent)</li>
         <li><strong>Headphones recommended</strong> — keeps the drone (vocal monitor) and the metronome click out of the mic signal</li>
         <li><strong>Quiet environment</strong> — improves pitch detection and onset detection accuracy</li>
@@ -315,6 +315,53 @@
 
       <div class="tip">
         <strong>Tip:</strong> Click adjacent sectors to hear the I → IV → V → I cadence. Try the same key in major then minor — same letter, very different sound.
+      </div>
+    </div>
+
+    <!-- TUNER -->
+    <div class="tool-section">
+      <div class="tool-header">
+        <span class="tool-icon">🎸</span>
+        <h2>Tuner</h2>
+      </div>
+      <p class="tool-description">
+        A chromatic instrument tuner for guitar, bass, ukulele, and violin — plus a free-form chromatic mode that snaps to the nearest semitone. Pick a tuning preset, play a string, and watch the cents strip lock onto green.
+      </p>
+
+      <h3>Getting started</h3>
+      <ol>
+        <li>Pick your <strong>instrument</strong> in the sidebar (Guitar, Bass 4-string, Bass 5-string, Ukulele, Violin, or Chromatic).</li>
+        <li>Pick a <strong>tuning</strong> if your instrument supports more than one — Standard, Drop D, Half-step, DADGAD, Open D, Open G, Low-G ukulele, etc.</li>
+        <li>Press <strong>Start</strong> and allow microphone access when prompted.</li>
+        <li>Pluck an open string. The big note letter shows the closest target; the cents strip shows how far off you are.</li>
+      </ol>
+
+      <h3>Reading the display</h3>
+      <ul>
+        <li><strong>Big note letter</strong> — the target string the tuner is matching against. Octave subscript (e.g. <em>D₃</em>) tells you which octave that target is in.</li>
+        <li><strong>Color coding</strong> — green when you're within ±5¢ ("in tune"), amber when you're within ±15¢ ("close"), red when you're further off.</li>
+        <li><strong>Cents strip</strong> — −50¢ on the left, +50¢ on the right. The thin emerald band in the middle is the in-tune zone. The colored marker glides as your pitch changes; play steady to settle it.</li>
+        <li><strong>String row</strong> — each string is a circular pad. The active one gets a colored ring; once you hold a string in tune for about half a second it earns a green check.</li>
+      </ul>
+
+      <h3>Auto vs manual</h3>
+      <ul>
+        <li><strong>Auto-detect</strong> (default) — the tuner snaps to whichever string you actually play, by absolute cents distance. Good for running through your strings one by one.</li>
+        <li><strong>Manual</strong> — tap a string in the row (or toggle the switch in the sidebar) to lock onto a specific target. Useful when a string is detuned more than a semitone off and the auto-snap keeps picking a neighbor.</li>
+      </ul>
+
+      <h3>Reference pitch</h3>
+      <p>
+        A4 defaults to 440 Hz. Use the slider or the chips (440 / 441 / 442 / 443 / 432) to match an orchestra or a baroque ensemble; the slider goes from 415 Hz (early-music pitch) up to 446 Hz.
+      </p>
+
+      <h3>Chromatic mode</h3>
+      <p>
+        Pick <em>Chromatic</em> as the instrument when you want to tune anything else — a piano, a tin whistle, a kazoo, a singing voice. The string row hides; the tuner snaps to the nearest semitone of the 12-note chromatic scale at the chosen A4 reference.
+      </p>
+
+      <div class="tip">
+        <strong>Tip:</strong> Plug in a clean, mic'd instrument signal if you can — guitar pickups straight into a USB interface work great. The tuner uses the same hybrid pitch detector as the Vocal Monitor, but with the high-pass filter lowered so it can hear bass low E1 (41 Hz). Heavy strumming and chords confuse it; pluck single strings.
       </div>
     </div>
 

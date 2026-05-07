@@ -1,9 +1,10 @@
 import { lazy } from 'react';
-import { Aperture, AudioLines, CircleGauge } from 'lucide-react';
+import { Aperture, AudioLines, CircleGauge, Guitar } from 'lucide-react';
 
 const VocalMonitorPage = lazy(() => import('./vocal-monitor/VocalMonitorPage.jsx'));
 const MetronomePage = lazy(() => import('./metronome/MetronomePage.jsx'));
 const CircleOfFifthsPage = lazy(() => import('./circle-of-fifths/CircleOfFifthsPage.jsx'));
+const TunerPage = lazy(() => import('./tuner/TunerPage.jsx'));
 
 export const tools = [
   {
@@ -35,6 +36,16 @@ export const tools = [
       'Big interactive circle of fifths with diatonic chord highlighting, key signatures, audible chords for ear training, and theory overlays for secondary dominants, tritone substitutions, and parallel keys.',
     icon: Aperture,
     Component: CircleOfFifthsPage,
+  },
+  {
+    id: 'tuner',
+    path: '/tuner',
+    name: 'Tuner',
+    tagline: 'Chromatic tuner for guitar, bass, ukulele, violin',
+    description:
+      'A real-time chromatic instrument tuner. Pick a tuning preset (standard, drop D, half-step, DADGAD, open D/G, low-G ukulele, …) or chromatic mode, see cents-off on a precision strip, and watch each string light up green as it lands in tune.',
+    icon: Guitar,
+    Component: TunerPage,
   },
 ];
 
