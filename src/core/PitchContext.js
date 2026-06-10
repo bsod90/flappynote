@@ -10,8 +10,10 @@ export class PitchContext {
     this.options = {
       updateInterval: 30,
       threshold: 0.0001,
-      bufferSize: 8192,
-      detector: DetectorType.CREPE, // Use CREPE detector (TensorFlow.js based)
+      // 4096 @ 44.1kHz ≈ 93ms of audio — enough for several periods of the
+      // lowest vocal notes at roughly half the latency of the old 8192.
+      bufferSize: 4096,
+      detector: DetectorType.HYBRID,
       ...options,
     };
 

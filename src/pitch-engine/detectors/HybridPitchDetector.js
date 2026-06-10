@@ -25,7 +25,9 @@ export class HybridPitchDetector extends BasePitchDetector {
     this.bufferSize = options.bufferSize || 2048;
     this.threshold = options.threshold || 0.005;
     this.clarityThreshold = options.clarityThreshold || 0.75; // Lowered for better voice onset
-    this.pitchHistorySize = options.pitchHistorySize || 7; // Increased for stability
+    // Median window: 5 frames flips to a new note after 3 agreeing frames
+    // (~90ms at 30ms updates) while still rejecting 1-2 frame glitches.
+    this.pitchHistorySize = options.pitchHistorySize || 5;
 
     // Octave jump prevention
     this.stablePitch = null;

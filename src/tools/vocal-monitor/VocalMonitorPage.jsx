@@ -182,7 +182,7 @@ function createServices() {
   const pitchContext = new PitchContext({
     updateInterval: 30,
     threshold: 0.0001,
-    bufferSize: 8192,
+    bufferSize: 4096,
   });
 
   const droneManager = new DroneManager();

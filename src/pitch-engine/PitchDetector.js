@@ -1,31 +1,29 @@
 /**
  * PitchDetector - Main pitch detection module
  * Combines AudioAnalyzer and FrequencyConverter for complete pitch detection
- * Supports multiple detection algorithms: 'hybrid' (MPM+YIN) and 'crepe' (ML-based)
+ * Detection algorithm: hybrid MPM (pitchy) with YIN (pitchfinder) fallback
  */
 
 import { AudioAnalyzer } from './AudioAnalyzer.js';
 import { FrequencyConverter } from './FrequencyConverter.js';
 import { HybridPitchDetector } from './detectors/HybridPitchDetector.js';
-import { TFCREPEDetector, TFCREPEState } from './detectors/TFCREPEDetector.js';
 import { VocalAnalyzer } from './VocalAnalyzer.js';
 
 /**
- * Available detector types
+ * Available detector types. 'crepe' was removed — it was never a real CREPE
+ * model (a plain autocorrelation stub gated on a TensorFlow.js CDN load) and
+ * the hybrid detector outperforms it; the constant stays so stored options
+ * resolve to the hybrid path.
  */
 export const DetectorType = {
   HYBRID: 'hybrid',
-  CREPE: 'crepe',
 };
 
 export class PitchDetector {
   /**
    * @param {object} options
-   * @param {string} options.detector - Detector type: 'hybrid' (default) or 'crepe'
-   * @param {boolean} options.fallbackEnabled - Use hybrid if CREPE fails to load (default: true)
-   * @param {function} options.onModelLoading - Callback when CREPE model starts loading
-   * @param {function} options.onModelReady - Callback when CREPE model is ready
-   * @param {function} options.onModelError - Callback when CREPE model fails to load
+   * @param {string} options.detector - Detector type (only 'hybrid' is supported)
+   * @param {function} options.onModelReady - Callback when the detector is ready
    * @param {number} options.bufferSize - Buffer size for detection (default: 2048)
    * @param {number} options.minFrequency - Minimum frequency to detect (default: 60)
    * @param {number} options.maxFrequency - Maximum frequency to detect (default: 1200)
@@ -34,8 +32,8 @@ export class PitchDetector {
    * @param {function} options.onPitchDetected - Callback for pitch detection results
    */
   constructor(options = {}) {
-    // Detector configuration
-    this.detectorType = options.detector || DetectorType.HYBRID;
+    // Detector configuration (any stored legacy value resolves to hybrid)
+    this.detectorType = DetectorType.HYBRID;
     this.fallbackEnabled = options.fallbackEnabled !== false;
 
     // Callbacks
@@ -62,7 +60,6 @@ export class PitchDetector {
 
     // Detector instances
     this.hybridDetector = null;
-    this.crepeDetector = null;
     this.activeDetector = null;
 
     // State
@@ -82,49 +79,12 @@ export class PitchDetector {
    */
   async _initializeDetector() {
     const sampleRate = this.analyzer.getSampleRate();
-
-    if (this.detectorType === DetectorType.CREPE) {
-      try {
-        if (this.onModelLoading) {
-          this.onModelLoading();
-        }
-
-        this.crepeDetector = new TFCREPEDetector({
-          sampleRate,
-          minFrequency: this.minFrequency,
-          maxFrequency: this.maxFrequency,
-          onModelLoading: this.onModelLoading,
-          onModelReady: this.onModelReady,
-          onModelError: this.onModelError,
-        });
-
-        await this.crepeDetector.initialize();
-        this.activeDetector = this.crepeDetector;
-
-        console.log('CREPE detector initialized (TensorFlow.js)');
-
-        if (this.onModelReady) {
-          this.onModelReady();
-        }
-      } catch (error) {
-        console.warn('CREPE initialization failed:', error.message);
-
-        if (this.onModelError) {
-          this.onModelError(error);
-        }
-
-        if (this.fallbackEnabled) {
-          console.log('Falling back to hybrid detector');
-          await this._initializeHybridDetector(sampleRate);
-        } else {
-          throw error;
-        }
-      }
-    } else {
-      await this._initializeHybridDetector(sampleRate);
-    }
-
+    await this._initializeHybridDetector(sampleRate);
     this.detectorReady = true;
+
+    if (this.onModelReady) {
+      this.onModelReady();
+    }
   }
 
   /**
@@ -205,7 +165,7 @@ export class PitchDetector {
 
     if (frequency) {
       const noteInfo = FrequencyConverter.frequencyToNote(frequency);
-      // Calculate RMS from buffer (needed when using CREPE which doesn't call analyzer.detectPitch)
+      // Calculate RMS from buffer (volume level for visualization)
       const rms = this.analyzer.calculateRMS(buffer);
       this.currentPitch = {
         frequency,
@@ -250,23 +210,6 @@ export class PitchDetector {
   }
 
   /**
-   * Switch to a different detector
-   * @param {string} detectorType - 'hybrid' or 'crepe'
-   * @returns {Promise<void>}
-   */
-  async switchDetector(detectorType) {
-    if (detectorType === this.detectorType) return;
-
-    this.detectorType = detectorType;
-    this.detectorReady = false;
-
-    if (this.isRunning) {
-      // Re-initialize with new detector
-      await this._initializeDetector();
-    }
-  }
-
-  /**
    * Get information about the current detector
    * @returns {object} Detector info
    */
@@ -276,8 +219,6 @@ export class PitchDetector {
       active: this.activeDetector?.name || 'none',
       ready: this.detectorReady,
       hybridReady: this.hybridDetector?.isReady ?? false,
-      crepeReady: this.crepeDetector?.isReady ?? false,
-      crepeState: this.crepeDetector?.loadingState ?? TFCREPEState.UNLOADED,
     };
   }
 
@@ -369,11 +310,6 @@ export class PitchDetector {
     if (this.hybridDetector) {
       this.hybridDetector.dispose();
       this.hybridDetector = null;
-    }
-
-    if (this.crepeDetector) {
-      this.crepeDetector.dispose();
-      this.crepeDetector = null;
     }
 
     this.activeDetector = null;

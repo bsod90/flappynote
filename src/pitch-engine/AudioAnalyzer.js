@@ -24,8 +24,9 @@ export class AudioAnalyzer {
     this.agcSpeed = options.agcSpeed || 0.15; // How fast AGC adapts (0-1, higher = faster)
     this.currentGain = 3.5; // Starting gain
 
-    // Temporal smoothing (median filter)
-    this.pitchHistorySize = options.pitchHistorySize || 7; // Number of recent pitches to track (increased for stability)
+    // Temporal smoothing (median filter) — 5 frames flips to a new note
+    // after 3 agreeing frames while still rejecting 1-2 frame glitches
+    this.pitchHistorySize = options.pitchHistorySize || 5;
     this.pitchHistory = []; // Rolling window of recent pitch detections
 
     // Octave jump prevention
