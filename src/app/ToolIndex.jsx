@@ -16,6 +16,13 @@ export default function ToolIndex() {
           A small suite of free, browser-based tools to help you practice singing and
           musicianship. Pick a tool to get started.
         </p>
+        <p className="mt-4 text-sm text-muted-foreground">
+          I&apos;m building these tools mainly to assist my own musical learning journey —
+          I use most of them daily, especially the Vocal Monitor and the Metronome in
+          their exercise modes. Every tool has more depth than its first screen shows,
+          so dig through the settings: there&apos;s a good chance you&apos;ll find something
+          that fits your own workflow.
+        </p>
       </div>
 
       <div className="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-2">

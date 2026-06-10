@@ -4,6 +4,8 @@ Free in-browser music practice tools — a real-time **Vocal Monitor** with pitc
 
 **Live at: [flappynote.com](https://flappynote.com)**
 
+> I'm building these tools mainly to assist my own musical learning journey — I use most of them daily, especially the Vocal Monitor and the Metronome in their exercise modes. Every tool has more depth than its first screen shows, so dig through the settings: there's a good chance you'll find something that fits your own workflow.
+
 ![Built with AI](https://img.shields.io/badge/Built%20with-AI-blueviolet?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
 
