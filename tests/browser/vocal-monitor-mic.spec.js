@@ -44,3 +44,39 @@ test('start begins recording and the pitch pipeline reports ~220Hz', async ({ pa
   await page.getByRole('button', { name: 'Stop' }).click();
   await expect(page.getByRole('button', { name: 'Start' })).toBeVisible();
 });
+
+test('rhythm mode starts a metronome click alongside recording', async ({ page }) => {
+  await page.goto('/vocal-monitor');
+
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e));
+
+  // Enable rhythm mode and set the tempo in the sidebar
+  await page.getByRole('switch', { name: 'Metronome Click' }).click();
+
+  await page.getByRole('button', { name: 'Start' }).click();
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible({ timeout: 15000 });
+
+  // The click engine should be running at the configured tempo
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(() => ({
+          running: window.__vmController?._rhythmEngine?.isRunning ?? false,
+          bpm: window.__vmController?._rhythmEngine?.bpm ?? 0,
+        })),
+      { timeout: 10000 }
+    )
+    .toEqual({ running: true, bpm: 90 });
+
+  // Toggling rhythm off mid-recording stops the click
+  await page.getByRole('switch', { name: 'Metronome Click' }).click();
+  await expect
+    .poll(async () =>
+      page.evaluate(() => window.__vmController?._rhythmEngine?.isRunning ?? false)
+    )
+    .toBe(false);
+
+  await page.getByRole('button', { name: 'Stop' }).click();
+  expect(errors).toEqual([]);
+});

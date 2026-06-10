@@ -134,7 +134,12 @@ const SETTINGS_KEYS = [
   'rollingKeyHighestRoot',
   'rollingKeyDirection',
   'rollingKeyStepType',
+  'vmRhythmEnabled',
+  'vmRhythmBpm',
+  'vmRhythmVolume',
 ];
+
+const RHYTHM_BPM_OPTIONS = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 160, 180];
 
 export default function Sidebar({
   settings,
@@ -322,6 +327,49 @@ export default function Sidebar({
               checked={values.exerciseShowLyrics}
               onCheckedChange={setBool('exerciseShowLyrics')}
             />
+          </>
+        )}
+      </Section>
+
+      <Separator />
+
+      <Section title="Rhythm">
+        <ToggleRow
+          id="rhythm-toggle"
+          label="Metronome Click"
+          checked={values.vmRhythmEnabled}
+          onCheckedChange={setBool('vmRhythmEnabled')}
+        />
+
+        {values.vmRhythmEnabled && (
+          <>
+            <Field label="Tempo">
+              <Select
+                value={String(values.vmRhythmBpm)}
+                onValueChange={(v) => settings.set('vmRhythmBpm', Number(v))}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {RHYTHM_BPM_OPTIONS.map((bpm) => (
+                    <SelectItem key={bpm} value={String(bpm)}>{bpm} BPM</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <Field label="Click Volume">
+              <Select
+                value={String(values.vmRhythmVolume)}
+                onValueChange={(v) => settings.set('vmRhythmVolume', Number(v))}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0.25">Quiet</SelectItem>
+                  <SelectItem value="0.5">Medium</SelectItem>
+                  <SelectItem value="0.8">Loud</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
           </>
         )}
       </Section>

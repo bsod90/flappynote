@@ -33,6 +33,11 @@ const DEFAULT_SETTINGS = {
   rollingKeyDirection: 'ascending', // ascending or descending
   rollingKeyStepType: 'semitone',   // semitone, wholeTone, or scaleDegree
 
+  // Vocal monitor rhythm mode (metronome click while singing)
+  vmRhythmEnabled: false,
+  vmRhythmBpm: 90,
+  vmRhythmVolume: 0.5,
+
   // First-time user flags
   onboardingSeen: false,
 

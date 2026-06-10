@@ -103,8 +103,9 @@ export class VocalMonitorRenderer {
    * @param {object|null} exerciseState - From ExerciseEngine.getState()
    * @param {boolean} showLyrics - Whether to show solfege on exercise targets
    * @param {ScaleTimeline|null} scaleTimeline - Timeline tracking key changes for historical scale rendering
+   * @param {object|null} rhythm - { bpm, anchorMs } when rhythm mode is on; draws the beat grid
    */
-  render(state, scaleManager, pressedKey = null, exerciseState = null, showLyrics = true, scaleTimeline = null) {
+  render(state, scaleManager, pressedKey = null, exerciseState = null, showLyrics = true, scaleTimeline = null, rhythm = null) {
     if (!this.ctx) return;
 
     // Re-read CSS-token-derived theme each frame so dark-mode toggles retint instantly.
@@ -163,6 +164,11 @@ export class VocalMonitorRenderer {
 
     // Render time grid (vertical lines)
     this.renderTimeGrid(mainAreaX, mainAreaWidth, state);
+
+    // Beat grid when rhythm mode is on (over the time grid, under the trace)
+    if (rhythm) {
+      this.renderBeatGrid(mainAreaX, mainAreaWidth, state, rhythm);
+    }
 
     // Render pending/current exercise targets (under pitch trace, as guides)
     if (exerciseState) {
@@ -223,6 +229,36 @@ export class VocalMonitorRenderer {
     this.renderPlayhead(mainAreaX, mainAreaWidth, state);
 
     this.ctx.restore();
+  }
+
+  /**
+   * Render beat lines for rhythm mode: a line per click, stronger every
+   * 4th beat (downbeat). Lines are anchored at `rhythm.anchorMs` — the
+   * monitor time of the first click — and spaced by the beat duration.
+   */
+  renderBeatGrid(x, width, state, rhythm) {
+    const { viewportStart, viewportWidth } = state;
+    const beatMs = 60000 / Math.max(20, rhythm.bpm);
+    const anchor = rhythm.anchorMs ?? 0;
+
+    const firstBeat = Math.max(0, Math.ceil((viewportStart - anchor) / beatMs));
+    const lastBeat = Math.floor((viewportStart + viewportWidth - anchor) / beatMs);
+
+    for (let beat = firstBeat; beat <= lastBeat; beat++) {
+      const time = anchor + beat * beatMs;
+      const normalizedX = (time - viewportStart) / viewportWidth;
+      const pixelX = x + normalizedX * width;
+      const isDownbeat = beat % 4 === 0;
+
+      this.ctx.strokeStyle = this.theme.primary;
+      this.ctx.globalAlpha = isDownbeat ? 0.4 : 0.18;
+      this.ctx.lineWidth = isDownbeat ? 1.5 : 1;
+      this.ctx.beginPath();
+      this.ctx.moveTo(pixelX, 0);
+      this.ctx.lineTo(pixelX, this.height);
+      this.ctx.stroke();
+    }
+    this.ctx.globalAlpha = 1;
   }
 
   /**

@@ -24,6 +24,7 @@ import { ScaleTimeline } from './ScaleTimeline.js';
 import { RollingKeyManager } from './RollingKeyManager.js';
 import { FrequencyConverter } from '../../pitch-engine/index.js';
 import { ROLLING_KEY_LOWS, ROLLING_KEY_HIGHS } from './rollingKeyOptions.js';
+import { MetronomeEngine } from '../metronome/MetronomeEngine.js';
 
 const LOWS_MIDI = ROLLING_KEY_LOWS.map((n) => FrequencyConverter.noteNameToMidi(n));
 const HIGHS_MIDI = ROLLING_KEY_HIGHS.map((n) => FrequencyConverter.noteNameToMidi(n));
@@ -66,6 +67,10 @@ export class VocalMonitorController {
 
     // Drone serialization
     this._dronePending = Promise.resolve();
+
+    // Rhythm mode (optional metronome click while singing)
+    this._rhythmEngine = null;
+    this._rhythmAnchorMs = null; // monitorState time of the first click, for the beat grid
 
     // Subscriptions
     this._unsubscribePitch = null;
@@ -209,6 +214,10 @@ export class VocalMonitorController {
     // Wait for any pending drone ops, then enqueue a final stop
     await this._enqueueDrone(() => this._droneOff());
 
+    this._rhythmEngine?.dispose();
+    this._rhythmEngine = null;
+    this._rhythmAnchorMs = null;
+
     this._unsubscribePitch?.();
     this._unsubscribePitch = null;
     this._unsubscribeSettings?.();
@@ -264,6 +273,11 @@ export class VocalMonitorController {
       this._startEngine();
     }
 
+    // Rhythm mode — click along while singing
+    if (this.settings.get('vmRhythmEnabled')) {
+      await this._rhythmOn();
+    }
+
     this._emitState();
   }
 
@@ -275,6 +289,7 @@ export class VocalMonitorController {
     this.pitchContext.disableDroneCancellation?.();
 
     await this._enqueueDrone(() => this._droneOff());
+    this._rhythmOff();
 
     this.monitorState.stop();
     this.isRecording = false;
@@ -354,6 +369,25 @@ export class VocalMonitorController {
 
       case 'droneMode':
         this._enqueueDrone(() => this._droneSwitchMode());
+        break;
+
+      case 'vmRhythmEnabled':
+        if (this.isRecording) {
+          if (value) this._rhythmOn();
+          else this._rhythmOff();
+        }
+        break;
+
+      case 'vmRhythmBpm':
+        this._rhythmEngine?.setBpm(value || 90);
+        // Re-anchor the beat grid so the visual lines stay aligned to clicks
+        if (this._rhythmEngine?.isRunning) {
+          this._rhythmAnchorMs = this.monitorState.currentTime ?? 0;
+        }
+        break;
+
+      case 'vmRhythmVolume':
+        this._rhythmEngine?.setVolume(value ?? 0.5);
         break;
 
       case 'exerciseEnabled':
@@ -613,6 +647,30 @@ export class VocalMonitorController {
   }
 
   // ──────────────────────────────────────────────────────────────────────
+  // Rhythm mode — optional metronome click while singing
+  // ──────────────────────────────────────────────────────────────────────
+
+  async _rhythmOn() {
+    if (!this._rhythmEngine) {
+      this._rhythmEngine = new MetronomeEngine();
+      this._rhythmEngine.setTimbre('woodblock');
+    }
+    const engine = this._rhythmEngine;
+    engine.setBpm(this.settings.get('vmRhythmBpm') || 90);
+    engine.setVolume(this.settings.get('vmRhythmVolume') ?? 0.5);
+    if (engine.isRunning) return;
+    engine.unlock();
+    await engine.start();
+    // Anchor the visual beat grid to the moment the first click plays
+    this._rhythmAnchorMs = this.monitorState.currentTime ?? 0;
+  }
+
+  _rhythmOff() {
+    this._rhythmEngine?.stop();
+    this._rhythmAnchorMs = null;
+  }
+
+  // ──────────────────────────────────────────────────────────────────────
   // Pitch ingestion + render loop
   // ──────────────────────────────────────────────────────────────────────
 
@@ -637,13 +695,17 @@ export class VocalMonitorController {
     const exerciseState =
       this.exerciseEngine.state !== 'idle' ? this.exerciseEngine.getState() : null;
     const showLyrics = this.settings.get('exerciseShowLyrics');
+    const rhythm = this._rhythmEngine?.isRunning
+      ? { bpm: this._rhythmEngine.bpm, anchorMs: this._rhythmAnchorMs ?? 0 }
+      : null;
     this.renderer.render(
       state,
       this.scaleManager,
       this.pressedKey,
       exerciseState,
       showLyrics,
-      this.scaleTimeline
+      this.scaleTimeline,
+      rhythm
     );
 
     const jumpVisible = state.isRecording && !state.isAutoScrolling;
