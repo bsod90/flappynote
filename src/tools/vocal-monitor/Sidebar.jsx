@@ -93,6 +93,27 @@ const EXERCISE_GROUPS = [
       { value: 'fifthDown', label: 'Perfect Fifth Down' },
     ],
   },
+  {
+    label: 'Passaggio',
+    options: [
+      { value: 'siren', label: 'Siren (Scale Run)' },
+      { value: 'fifthSlide', label: 'Fifth Slide (1→5→1)' },
+      { value: 'octaveLeap', label: 'Octave Leap (1-8-1)' },
+    ],
+  },
+  {
+    label: 'Songs',
+    options: [
+      { value: 'melody:twinkleTwinkle', label: 'Twinkle Twinkle Little Star' },
+      { value: 'melody:maryHadALittleLamb', label: 'Mary Had a Little Lamb' },
+      { value: 'melody:rowYourBoat', label: 'Row Row Row Your Boat' },
+      { value: 'melody:freresJacques', label: 'Frère Jacques' },
+      { value: 'melody:odeToJoy', label: 'Ode to Joy' },
+      { value: 'melody:happyBirthday', label: 'Happy Birthday' },
+      { value: 'melody:whenTheSaints', label: 'When the Saints Go Marching In' },
+      { value: 'melody:londonBridge', label: 'London Bridge' },
+    ],
+  },
 ];
 
 const ROLLING_FLOOR_MIDI = FrequencyConverter.noteNameToMidi(ROLLING_KEY_LOWS[0]);

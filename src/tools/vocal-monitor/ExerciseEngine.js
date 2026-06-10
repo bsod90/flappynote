@@ -223,8 +223,9 @@ export class ExerciseEngine {
       // Accumulate sustain in measured wall time
       this.sustainAccumulated += frameDelta;
 
-      // Check if sustained long enough
-      if (this.sustainAccumulated >= this.sustainDuration) {
+      // Check if sustained long enough (targets may override the duration,
+      // e.g. phrase-ending notes in melodies hold longer)
+      if (this.sustainAccumulated >= this._targetSustainDuration(target)) {
         this._hitTarget(target, currentTime, pitchData);
       }
     } else {
@@ -269,6 +270,13 @@ export class ExerciseEngine {
         }
       }
     }
+  }
+
+  /**
+   * Effective sustain duration for a target (per-target override or default)
+   */
+  _targetSustainDuration(target) {
+    return target?.sustainDuration ?? this.sustainDuration;
   }
 
   /**
@@ -458,15 +466,16 @@ export class ExerciseEngine {
    * @returns {object}
    */
   getState() {
+    const activeSustain = this._targetSustainDuration(this.getCurrentTarget());
     return {
       engineState: this.state,
       phases: this.phases,
       currentPhaseIndex: this.currentPhaseIndex,
       currentTargetIndex: this.currentTargetIndex,
       sustainAccumulated: this.sustainAccumulated,
-      sustainDuration: this.sustainDuration,
-      sustainFraction: this.sustainDuration > 0
-        ? Math.min(1, this.sustainAccumulated / this.sustainDuration)
+      sustainDuration: activeSustain,
+      sustainFraction: activeSustain > 0
+        ? Math.min(1, this.sustainAccumulated / activeSustain)
         : 0,
       progress: this.getProgress(),
       currentTarget: this.getCurrentTarget(),

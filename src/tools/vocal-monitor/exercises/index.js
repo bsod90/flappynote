@@ -28,6 +28,13 @@ export { MinorThirdUpExercise, MajorThirdUpExercise, MinorThirdDownExercise, Maj
 export { FourthUpExercise, FourthDownExercise } from './FourthExercise.js';
 export { FifthUpExercise, FifthDownExercise } from './FifthExercise.js';
 
+// Passaggio exercises
+export { SirenExercise, FifthSlideExercise, OctaveLeapExercise } from './PassaggioExercises.js';
+
+// Melody (sing-along) exercises
+export { MelodyExercise, melodyExerciseClass } from './MelodyExercise.js';
+export { MELODIES } from './melodies.js';
+
 // Legacy export for backwards compatibility
 export { AscendingMajorLadder as ScaleDegreePatternExercise } from './AscendingMajorLadder.js';
 
@@ -49,6 +56,9 @@ import { ToneUpExercise, ToneDownExercise } from './ToneExercise.js';
 import { MinorThirdUpExercise, MajorThirdUpExercise, MinorThirdDownExercise, MajorThirdDownExercise } from './ThirdExercise.js';
 import { FourthUpExercise, FourthDownExercise } from './FourthExercise.js';
 import { FifthUpExercise, FifthDownExercise } from './FifthExercise.js';
+import { SirenExercise, FifthSlideExercise, OctaveLeapExercise } from './PassaggioExercises.js';
+import { melodyExerciseClass } from './MelodyExercise.js';
+import { MELODIES } from './melodies.js';
 
 export const ExerciseRegistry = {
   // Ladders
@@ -78,6 +88,19 @@ export const ExerciseRegistry = {
   fourthDown: FourthDownExercise,
   fifthUp: FifthUpExercise,
   fifthDown: FifthDownExercise,
+
+  // Passaggio
+  siren: SirenExercise,
+  fifthSlide: FifthSlideExercise,
+  octaveLeap: OctaveLeapExercise,
+
+  // Songs (sing-along melodies with lyrics)
+  ...Object.fromEntries(
+    Object.entries(MELODIES).map(([key, melody]) => [
+      `melody:${key}`,
+      melodyExerciseClass(melody),
+    ])
+  ),
 };
 
 /**

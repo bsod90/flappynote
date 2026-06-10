@@ -32,6 +32,25 @@ test.describe('Vocal Monitor — desktop', () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
+  test('exercise mode offers passaggio and song exercises', async ({ page }) => {
+    await page.goto('/vocal-monitor');
+
+    // Enable exercise mode in the sidebar
+    await page.getByRole('switch', { name: 'Exercise Mode' }).click();
+
+    // Open the exercise type select and pick a song
+    const exerciseSelect = page.getByRole('combobox').last();
+    await exerciseSelect.click();
+    await expect(page.getByRole('group').filter({ hasText: 'Passaggio' })).toBeVisible();
+    await page.getByRole('option', { name: 'Twinkle Twinkle Little Star' }).click();
+
+    const stored = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('vocal-trainer-settings') || '{}')
+    );
+    expect(stored.exerciseEnabled).toBe(true);
+    expect(stored.exerciseType).toBe('melody:twinkleTwinkle');
+  });
+
   test('sidebar collapse/expand persists', async ({ page }) => {
     await page.goto('/vocal-monitor');
 
