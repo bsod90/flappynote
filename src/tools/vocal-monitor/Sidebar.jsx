@@ -96,9 +96,13 @@ const EXERCISE_GROUPS = [
   {
     label: 'Passaggio',
     options: [
-      { value: 'siren', label: 'Siren (Scale Run)' },
       { value: 'fifthSlide', label: 'Fifth Slide (1→5→1)' },
+      { value: 'siren', label: 'Siren (Scale Run)' },
+      { value: 'descendingSiren', label: 'Descending Siren (8→1→8)' },
+      { value: 'ninthSlide', label: 'Ninth Slide (1→9→1)' },
       { value: 'octaveLeap', label: 'Octave Leap (1-8-1)' },
+      { value: 'octaveBounce', label: 'Octave Bounce (1-8-1-8-1)' },
+      { value: 'arpeggioTenth', label: 'Arpeggio to the Tenth' },
     ],
   },
   {
@@ -108,10 +112,13 @@ const EXERCISE_GROUPS = [
       { value: 'melody:maryHadALittleLamb', label: 'Mary Had a Little Lamb' },
       { value: 'melody:rowYourBoat', label: 'Row Row Row Your Boat' },
       { value: 'melody:freresJacques', label: 'Frère Jacques' },
-      { value: 'melody:odeToJoy', label: 'Ode to Joy' },
       { value: 'melody:happyBirthday', label: 'Happy Birthday' },
-      { value: 'melody:whenTheSaints', label: 'When the Saints Go Marching In' },
       { value: 'melody:londonBridge', label: 'London Bridge' },
+      { value: 'melody:ohSusanna', label: 'Oh Susanna' },
+      { value: 'melody:myBonnie', label: 'My Bonnie Lies Over the Ocean' },
+      { value: 'melody:clementine', label: 'Clementine' },
+      { value: 'melody:yankeeDoodle', label: 'Yankee Doodle' },
+      { value: 'melody:oldMacDonald', label: 'Old MacDonald' },
     ],
   },
 ];

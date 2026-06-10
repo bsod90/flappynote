@@ -75,21 +75,6 @@ export const MELODIES = {
     ],
   },
 
-  odeToJoy: {
-    name: 'Ode to Joy (Beethoven)',
-    scaleType: 'major',
-    notes: [
-      { s: 4, l: 'Joy' }, { s: 4, l: 'ful' }, { s: 5, l: 'joy' }, { s: 7, l: 'ful' },
-      { s: 7, l: 'we' }, { s: 5, l: 'a' }, { s: 4, l: 'dore' }, { s: 2, l: 'thee' },
-      { s: 0, l: 'God' }, { s: 0, l: 'of' }, { s: 2, l: 'glo' }, { s: 4, l: 'ry' },
-      { s: 4, l: 'Lord' }, { s: 2, l: 'of' }, { s: 2, l: 'love', hold: 2 },
-      { s: 4, l: 'Hearts' }, { s: 4, l: 'un' }, { s: 5, l: 'fold' }, { s: 7, l: 'like' },
-      { s: 7, l: 'flowers' }, { s: 5, l: 'be' }, { s: 4, l: 'fore' }, { s: 2, l: 'thee' },
-      { s: 0, l: 'open' }, { s: 0, l: 'ing' }, { s: 2, l: 'to' }, { s: 4, l: 'the' },
-      { s: 2, l: 'sun' }, { s: 0, l: 'a' }, { s: 0, l: 'bove', hold: 2 },
-    ],
-  },
-
   happyBirthday: {
     name: 'Happy Birthday',
     scaleType: 'major',
@@ -105,22 +90,6 @@ export const MELODIES = {
     ],
   },
 
-  whenTheSaints: {
-    name: 'When the Saints Go Marching In',
-    scaleType: 'major',
-    notes: [
-      { s: 0, l: 'Oh' }, { s: 4, l: 'when' }, { s: 5, l: 'the' }, { s: 7, l: 'saints', hold: 2 },
-      { s: 0, l: 'go' }, { s: 4, l: 'march' }, { s: 5, l: 'ing' }, { s: 7, l: 'in', hold: 2 },
-      { s: 0, l: 'oh' }, { s: 4, l: 'when' }, { s: 5, l: 'the' }, { s: 7, l: 'saints' },
-      { s: 4, l: 'go' }, { s: 0, l: 'march' }, { s: 4, l: 'ing' }, { s: 2, l: 'in', hold: 2 },
-      { s: 4, l: 'Oh' }, { s: 4, l: 'Lord' }, { s: 2, l: 'I' }, { s: 0, l: 'want' },
-      { s: 0, l: 'to' }, { s: 4, l: 'be' }, { s: 7, l: 'in' }, { s: 7, l: 'that' },
-      { s: 5, l: 'num' }, { s: 5, l: 'ber', hold: 2 },
-      { s: 4, l: 'when' }, { s: 5, l: 'the' }, { s: 7, l: 'saints' }, { s: 4, l: 'go' },
-      { s: 0, l: 'march' }, { s: 2, l: 'ing' }, { s: 0, l: 'in', hold: 2 },
-    ],
-  },
-
   londonBridge: {
     name: 'London Bridge Is Falling Down',
     scaleType: 'major',
@@ -132,6 +101,85 @@ export const MELODIES = {
       { s: 7, l: 'Lon' }, { s: 9, l: 'don' }, { s: 7, l: 'bridge' }, { s: 5, l: 'is' },
       { s: 4, l: 'fall' }, { s: 5, l: 'ing' }, { s: 7, l: 'down', hold: 2 },
       { s: 2, l: 'my' }, { s: 7, l: 'fair' }, { s: 4, l: 'la' }, { s: 0, l: 'dy', hold: 2 },
+    ],
+  },
+
+  ohSusanna: {
+    name: 'Oh Susanna',
+    scaleType: 'major',
+    notes: [
+      { s: 0, l: 'I' }, { s: 2, l: 'come' }, { s: 4, l: 'from' }, { s: 7, l: 'Al' },
+      { s: 7, l: 'a' }, { s: 9, l: 'bam' }, { s: 7, l: 'a' }, { s: 4, l: 'with' },
+      { s: 0, l: 'my' }, { s: 2, l: 'ban' }, { s: 4, l: 'jo' }, { s: 4, l: 'on' },
+      { s: 2, l: 'my' }, { s: 2, l: 'knee', hold: 2 },
+      { s: 0, l: "I'm" }, { s: 2, l: 'goin' }, { s: 4, l: 'to' }, { s: 7, l: 'Lou' },
+      { s: 7, l: 'si' }, { s: 9, l: 'an' }, { s: 7, l: 'a' }, { s: 4, l: 'my' },
+      { s: 0, l: 'true' }, { s: 2, l: 'love' }, { s: 4, l: 'for' }, { s: 4, l: 'to' },
+      { s: 2, l: 'see' }, { s: 0, l: '—', hold: 2 },
+      { s: 5, l: 'Oh' }, { s: 5, l: 'Su' }, { s: 9, l: 'san' }, { s: 9, l: 'na', hold: 2 },
+      { s: 9, l: 'oh' }, { s: 7, l: "don't" }, { s: 7, l: 'you' }, { s: 4, l: 'cry' },
+      { s: 0, l: 'for' }, { s: 2, l: 'me', hold: 2 },
+    ],
+  },
+
+  myBonnie: {
+    name: 'My Bonnie Lies Over the Ocean',
+    scaleType: 'major',
+    notes: [
+      { s: -5, l: 'My' }, { s: 4, l: 'Bon' }, { s: 2, l: 'nie' }, { s: 0, l: 'lies' },
+      { s: 2, l: 'o' }, { s: 0, l: 'ver' }, { s: -3, l: 'the' }, { s: -5, l: 'o' },
+      { s: -8, l: 'cean', hold: 2 },
+      { s: -5, l: 'my' }, { s: 4, l: 'Bon' }, { s: 2, l: 'nie' }, { s: 0, l: 'lies' },
+      { s: 0, l: 'o' }, { s: -1, l: 'ver' }, { s: 0, l: 'the' }, { s: 2, l: 'sea', hold: 2 },
+      { s: -5, l: 'Bring' }, { s: 0, l: 'back', hold: 2 },
+      { s: -3, l: 'bring' }, { s: 2, l: 'back', hold: 2 },
+      { s: 0, l: 'oh' }, { s: -1, l: 'bring' }, { s: -1, l: 'back' }, { s: -1, l: 'my' },
+      { s: -1, l: 'Bon' }, { s: -3, l: 'nie' }, { s: -1, l: 'to' }, { s: 0, l: 'me', hold: 2 },
+    ],
+  },
+
+  clementine: {
+    name: 'Clementine (Oh My Darling)',
+    scaleType: 'major',
+    notes: [
+      { s: 0, l: 'Oh' }, { s: 0, l: 'my' }, { s: 0, l: 'dar' }, { s: -5, l: 'ling' },
+      { s: 4, l: 'oh' }, { s: 4, l: 'my' }, { s: 4, l: 'dar' }, { s: 0, l: 'ling' },
+      { s: 0, l: 'oh' }, { s: 4, l: 'my' }, { s: 7, l: 'dar' }, { s: 7, l: 'ling' },
+      { s: 5, l: 'Clem' }, { s: 4, l: 'en' }, { s: 2, l: 'tine', hold: 2 },
+      { s: 2, l: 'thou' }, { s: 4, l: 'art' }, { s: 5, l: 'lost' }, { s: 5, l: 'and' },
+      { s: 4, l: 'gone' }, { s: 2, l: 'for' }, { s: 4, l: 'ev' }, { s: 0, l: 'er' },
+      { s: 0, l: 'dread' }, { s: 4, l: 'ful' }, { s: 2, l: 'sor' }, { s: -5, l: 'ry' },
+      { s: -1, l: 'Clem' }, { s: 2, l: 'en' }, { s: 0, l: 'tine', hold: 2 },
+    ],
+  },
+
+  yankeeDoodle: {
+    name: 'Yankee Doodle',
+    scaleType: 'major',
+    notes: [
+      { s: 0, l: 'Yan' }, { s: 0, l: 'kee' }, { s: 2, l: 'Doo' }, { s: 4, l: 'dle' },
+      { s: 0, l: 'went' }, { s: 4, l: 'to' }, { s: 2, l: 'town' }, { s: -5, l: 'a' },
+      { s: 0, l: 'rid' }, { s: 0, l: 'ing' }, { s: 2, l: 'on' }, { s: 4, l: 'a' },
+      { s: 0, l: 'po' }, { s: -1, l: 'ny', hold: 2 },
+      { s: 0, l: 'stuck' }, { s: 0, l: 'a' }, { s: 2, l: 'feath' }, { s: 4, l: 'er' },
+      { s: 5, l: 'in' }, { s: 4, l: 'his' }, { s: 2, l: 'cap' }, { s: 0, l: 'and' },
+      { s: -1, l: 'called' }, { s: -5, l: 'it' }, { s: -3, l: 'mac' }, { s: -1, l: 'a' },
+      { s: 0, l: 'ro' }, { s: 0, l: 'ni', hold: 2 },
+    ],
+  },
+
+  oldMacDonald: {
+    name: 'Old MacDonald Had a Farm',
+    scaleType: 'major',
+    notes: [
+      { s: 0, l: 'Old' }, { s: 0, l: 'Mac' }, { s: 0, l: 'Don' }, { s: -5, l: 'ald' },
+      { s: -3, l: 'had' }, { s: -3, l: 'a' }, { s: -5, l: 'farm', hold: 2 },
+      { s: 4, l: 'E' }, { s: 4, l: 'I' }, { s: 2, l: 'E' }, { s: 2, l: 'I' },
+      { s: 0, l: 'O', hold: 2 },
+      { s: -5, l: 'And' }, { s: 0, l: 'on' }, { s: 0, l: 'that' }, { s: 0, l: 'farm' },
+      { s: -5, l: 'he' }, { s: -3, l: 'had' }, { s: -3, l: 'a' }, { s: -5, l: 'cow', hold: 2 },
+      { s: 4, l: 'E' }, { s: 4, l: 'I' }, { s: 2, l: 'E' }, { s: 2, l: 'I' },
+      { s: 0, l: 'O', hold: 2 },
     ],
   },
 };

@@ -29,7 +29,15 @@ export { FourthUpExercise, FourthDownExercise } from './FourthExercise.js';
 export { FifthUpExercise, FifthDownExercise } from './FifthExercise.js';
 
 // Passaggio exercises
-export { SirenExercise, FifthSlideExercise, OctaveLeapExercise } from './PassaggioExercises.js';
+export {
+  SirenExercise,
+  FifthSlideExercise,
+  OctaveLeapExercise,
+  NinthSlideExercise,
+  ArpeggioTenthExercise,
+  OctaveBounceExercise,
+  DescendingSirenExercise,
+} from './PassaggioExercises.js';
 
 // Melody (sing-along) exercises
 export { MelodyExercise, melodyExerciseClass } from './MelodyExercise.js';
@@ -56,7 +64,15 @@ import { ToneUpExercise, ToneDownExercise } from './ToneExercise.js';
 import { MinorThirdUpExercise, MajorThirdUpExercise, MinorThirdDownExercise, MajorThirdDownExercise } from './ThirdExercise.js';
 import { FourthUpExercise, FourthDownExercise } from './FourthExercise.js';
 import { FifthUpExercise, FifthDownExercise } from './FifthExercise.js';
-import { SirenExercise, FifthSlideExercise, OctaveLeapExercise } from './PassaggioExercises.js';
+import {
+  SirenExercise,
+  FifthSlideExercise,
+  OctaveLeapExercise,
+  NinthSlideExercise,
+  ArpeggioTenthExercise,
+  OctaveBounceExercise,
+  DescendingSirenExercise,
+} from './PassaggioExercises.js';
 import { melodyExerciseClass } from './MelodyExercise.js';
 import { MELODIES } from './melodies.js';
 
@@ -93,6 +109,10 @@ export const ExerciseRegistry = {
   siren: SirenExercise,
   fifthSlide: FifthSlideExercise,
   octaveLeap: OctaveLeapExercise,
+  ninthSlide: NinthSlideExercise,
+  arpeggioTenth: ArpeggioTenthExercise,
+  octaveBounce: OctaveBounceExercise,
+  descendingSiren: DescendingSirenExercise,
 
   // Songs (sing-along melodies with lyrics)
   ...Object.fromEntries(

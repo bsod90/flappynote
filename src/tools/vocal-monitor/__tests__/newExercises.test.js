@@ -9,6 +9,10 @@ import {
   SirenExercise,
   FifthSlideExercise,
   OctaveLeapExercise,
+  NinthSlideExercise,
+  ArpeggioTenthExercise,
+  OctaveBounceExercise,
+  DescendingSirenExercise,
 } from '../exercises/index.js';
 
 describe('Passaggio exercises', () => {
@@ -36,8 +40,42 @@ describe('Passaggio exercises', () => {
     expect(exercise.sustainDuration).toBeGreaterThanOrEqual(300);
   });
 
+  it('ninth slide climbs past the octave to the ninth and back', () => {
+    const phases = new NinthSlideExercise().generatePhases(scaleManager);
+    const offsets = phases[0].targets.map((t) => t.midiNote - rootMidi);
+    expect(offsets).toEqual([0, 2, 4, 5, 7, 9, 11, 12, 14, 12, 11, 9, 7, 5, 4, 2, 0]);
+  });
+
+  it('arpeggio to the tenth spans 16 semitones (do-mi-sol-do-mi)', () => {
+    const phases = new ArpeggioTenthExercise().generatePhases(scaleManager);
+    const offsets = phases[0].targets.map((t) => t.midiNote - rootMidi);
+    expect(offsets).toEqual([0, 4, 7, 12, 16, 12, 7, 4, 0]);
+  });
+
+  it('octave bounce repeats the leap both directions', () => {
+    const phases = new OctaveBounceExercise().generatePhases(scaleManager);
+    const offsets = phases[0].targets.map((t) => t.midiNote - rootMidi);
+    expect(offsets).toEqual([0, 12, 0, 12, 0]);
+  });
+
+  it('descending siren starts at the octave and dips to the root', () => {
+    const phases = new DescendingSirenExercise().generatePhases(scaleManager);
+    const offsets = phases[0].targets.map((t) => t.midiNote - rootMidi);
+    expect(offsets).toEqual([12, 11, 9, 7, 5, 4, 2, 0, 2, 4, 5, 7, 9, 11, 12]);
+  });
+
+  it('extended degrees label correctly above the octave', () => {
+    const phases = new ArpeggioTenthExercise().generatePhases(scaleManager);
+    const tenth = phases[0].targets[4]; // mi'
+    expect(tenth.label).toBe('Mi');
+    expect(tenth.midiNote - rootMidi).toBe(16);
+  });
+
   it('all passaggio exercises lock the scale to major', () => {
-    for (const Ex of [SirenExercise, FifthSlideExercise, OctaveLeapExercise]) {
+    for (const Ex of [
+      SirenExercise, FifthSlideExercise, OctaveLeapExercise,
+      NinthSlideExercise, ArpeggioTenthExercise, OctaveBounceExercise, DescendingSirenExercise,
+    ]) {
       expect(new Ex().locksScale()).toBe(true);
     }
   });
