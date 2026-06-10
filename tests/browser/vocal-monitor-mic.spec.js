@@ -2,7 +2,9 @@ import { test, expect } from '@playwright/test';
 
 // Runs in the `fake-mic-tone` project: the fake mic produces a sustained
 // 220Hz (A3) tone. Verifies the vocal monitor's full start → detect → render
-// flow using the dev-only window.__vmController hook.
+// flow using the window.__vmController hook.
+// NOTE: the hook is dev-only (import.meta.env.DEV) — these specs require the
+// dev server, not `vite preview`.
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {

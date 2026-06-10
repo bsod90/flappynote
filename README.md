@@ -24,7 +24,8 @@ Free in-browser music practice tools — a real-time **Vocal Monitor** with pitc
 Real-time pitch visualization on a piano roll.
 
 - **Continuous pitch trace** — your voice as a line scrolling over time, scale-degree-aware highlighting, solfège labels.
-- **Vocal exercises** — ladders, tonic-return patterns, triads, sevenths, and intervals (semitone through fifth, up and down). Targets render ahead of the playhead; hits color-fade on contact.
+- **Vocal exercises** — ladders, tonic-return patterns, triads, sevenths, intervals (semitone through fifth, up and down), passaggio drills (sirens, fifth slides, octave leaps), and sing-along songs with lyrics (Twinkle Twinkle, Ode to Joy, Happy Birthday, and more). Targets render ahead of the playhead; hits color-fade on contact.
+- **Rhythm mode** — an optional metronome click while you sing, with a beat grid drawn on the piano roll.
 - **Rolling key** — automatically advances the root through a configurable range (semitone / whole-tone / scale-degree steps; ascending or descending) as exercises complete.
 - **Reference drone** — sustained root tone or full triad. Built-in cancellation keeps the drone out of the pitch detector.
 - **Interactive piano keyboard** — click + drag the keys to play reference tones with portamento.
@@ -111,8 +112,7 @@ npm run preview
 - **Vite 7** + **@vitejs/plugin-react**
 - **Tailwind CSS 3** + **shadcn/ui** (Radix primitives) + **lucide-react**
 - **Web Audio API** — mic capture, lookahead scheduler, oscillator-synthesized clicks, drone and tone generation
-- **TensorFlow.js** + custom CREPE-style model for high-accuracy pitch detection
-- **pitchy** (MPM) as a pitch-detection fallback
+- **pitchy** (MPM) + **pitchfinder** (YIN) hybrid pitch detection with octave-jump correction and median smoothing
 - **Vitest** for unit tests
 
 ---
@@ -152,7 +152,7 @@ src/
 │   │   ├── canvasTheme.js              - Reads CSS HSL vars per frame
 │   │   ├── useSharedSettings.js
 │   │   ├── rollingKeyOptions.js
-│   │   └── exercises/                  - 20+ exercise definitions
+│   │   └── exercises/                  - 30+ exercise definitions (ladders, intervals, passaggio, songs)
 │   │
 │   └── metronome/
 │       ├── MetronomePage.jsx           - Page composition
@@ -188,7 +188,7 @@ src/
 │   ├── PitchContext.js, ScaleManager.js, DroneManager.js
 │   └── SharedSettings.js        - localStorage-backed observable settings
 │
-├── pitch-engine/              # Pitch detection (CREPE / MPM+YIN)
+├── pitch-engine/              # Pitch detection (hybrid MPM+YIN)
 ├── audio/TonePlayer.js
 ├── config/scales.js
 ├── index.css                  # Tailwind base + shadcn HSL theme tokens

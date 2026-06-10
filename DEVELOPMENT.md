@@ -105,7 +105,7 @@ src/
 │   ├── SharedSettings.js        - localStorage-backed observable settings
 │   └── index.js
 │
-├── pitch-engine/              # Pitch detection (CREPE / MPM+YIN)
+├── pitch-engine/              # Pitch detection (hybrid MPM+YIN)
 ├── audio/TonePlayer.js
 ├── config/scales.js
 ├── index.css                  # Tailwind base + shadcn HSL theme tokens
@@ -198,10 +198,8 @@ SPA fallback is handled by CloudFront (403/404 responses redirected to `/index.h
 import { PitchDetector, DetectorType } from './pitch-engine/index.js';
 
 const detector = new PitchDetector({
-  detector: DetectorType.CREPE,  // or DetectorType.HYBRID
+  detector: DetectorType.HYBRID, // MPM (pitchy) + YIN (pitchfinder) hybrid
   onPitchDetected: (pitch) => console.log(pitch),
-  onModelLoading: () => console.log('Loading...'),
-  onModelReady: () => console.log('Ready!'),
 });
 await detector.start();
 ```
@@ -339,7 +337,5 @@ You can also `npm run build` to produce `dist/` and host it elsewhere.
 ## Resources
 
 - [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
-- [TensorFlow.js](https://www.tensorflow.org/js)
-- [CREPE Paper](https://arxiv.org/abs/1802.06182)
 - [Vite Documentation](https://vitejs.dev/)
 - [Vitest Documentation](https://vitest.dev/)
