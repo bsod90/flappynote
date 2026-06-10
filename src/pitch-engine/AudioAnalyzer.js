@@ -365,12 +365,19 @@ export class AudioAnalyzer {
       ? (sorted[mid - 1] + sorted[mid]) / 2
       : sorted[mid];
 
-    // Filter out values that are approximately octave multiples of median
+    // Drop only values that look like octave-class errors relative to the
+    // median (~0.25x, ~0.5x, ~2x, ~4x). Anything else — including large but
+    // genuine pitch jumps (fourths, fifths, sixths) — stays in the history,
+    // so the median can track real note changes instead of sticking to the
+    // old pitch.
     const filtered = pitches.filter(freq => {
       const ratio = freq / prelimMedian;
-      // Keep if within reasonable range (not an octave jump)
-      // Allow ~30% deviation from expected pitch
-      return ratio > 0.7 && ratio < 1.4;
+      const isOctaveOutlier =
+        (ratio > 1.8 && ratio < 2.2) ||
+        (ratio > 0.45 && ratio < 0.55) ||
+        (ratio > 3.6 && ratio < 4.4) ||
+        (ratio > 0.22 && ratio < 0.28);
+      return !isOctaveOutlier;
     });
 
     // If too many were filtered, return original (avoid empty result)

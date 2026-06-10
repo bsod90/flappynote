@@ -157,18 +157,26 @@ export function progressionToChords(romans, tonicSemitone, accType, mode) {
     const rootSemi = (tonicSemitone + d.semitone) % 12;
     const root = spellNote(rootSemi, accType);
     let type = d.type;
-    if (suffix === '7') {
-      // "V7" → dominant 7; "I7" → dominant 7 (blues style); "i7" → minor 7
+    if (suffix === '7' || suffix === 'm7') {
+      // "V7"/"I7" → dominant 7 (blues style); "i7"/"iiim7" → minor 7
       if (type === 'major') type = 'dom';
     } else if (suffix === 'maj7') {
       type = 'major'; // marked separately by quality
+    }
+    // Display name: chordName covers the base quality ("Em", "G7"); append
+    // the seventh marker where the base name doesn't already carry it.
+    let name = chordName(root, type);
+    if (suffix === 'maj7') {
+      name += 'M7';
+    } else if ((suffix === '7' || suffix === 'm7') && type !== 'dom') {
+      name += '7'; // minor/dim sevenths: "Em7", "B°7"
     }
     return {
       numeral: numeralRaw + suffix,
       root,
       type,
       quality: suffix || null,
-      name: chordName(root, type) + (suffix === 'maj7' ? 'M7' : suffix === '7' && type === 'minor' ? '7' : suffix === '7' ? '' : ''),
+      name,
       semitones: rootSemi,
     };
   });
@@ -201,9 +209,6 @@ export function functionMap(selectedPos, mode) {
       };
   for (const offset of [-1, 0, 1]) {
     const wheelPos = (selectedPos + offset + 12) % 12;
-    const ents = map[String(offset >= 0 ? '+' + offset : offset).replace('+0','0')]
-      ?? map[String(offset)]
-      ?? null;
     const m = offset === 0 ? map['0'] : (offset === -1 ? map['-1'] : map['+1']);
     functions[wheelPos] = {
       major: m.major,

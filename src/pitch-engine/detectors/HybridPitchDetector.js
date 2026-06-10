@@ -179,9 +179,16 @@ export class HybridPitchDetector extends BasePitchDetector {
       ? (sorted[mid - 1] + sorted[mid]) / 2
       : sorted[mid];
 
+    // Drop only octave-class outliers (~0.25x, ~0.5x, ~2x, ~4x of median) —
+    // genuine large pitch jumps stay so the median can track note changes.
     const filtered = pitches.filter(freq => {
       const ratio = freq / prelimMedian;
-      return ratio > 0.7 && ratio < 1.4;
+      const isOctaveOutlier =
+        (ratio > 1.8 && ratio < 2.2) ||
+        (ratio > 0.45 && ratio < 0.55) ||
+        (ratio > 3.6 && ratio < 4.4) ||
+        (ratio > 0.22 && ratio < 0.28);
+      return !isOctaveOutlier;
     });
 
     return filtered.length < 3 ? pitches : filtered;

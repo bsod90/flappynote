@@ -29,7 +29,7 @@ export class PitchDetector {
    * @param {number} options.bufferSize - Buffer size for detection (default: 2048)
    * @param {number} options.minFrequency - Minimum frequency to detect (default: 60)
    * @param {number} options.maxFrequency - Maximum frequency to detect (default: 1200)
-   * @param {number} options.threshold - RMS threshold for silence (default: 0.1)
+   * @param {number} options.threshold - RMS threshold for silence, 0..1 (default: 0.005)
    * @param {number} options.updateInterval - Detection interval in ms (default: 50)
    * @param {function} options.onPitchDetected - Callback for pitch detection results
    */
@@ -48,7 +48,7 @@ export class PitchDetector {
     this.bufferSize = options.bufferSize || 2048;
     this.minFrequency = options.minFrequency || 60;
     this.maxFrequency = options.maxFrequency || 1200;
-    this.threshold = options.threshold || 0.1;
+    this.threshold = options.threshold ?? 0.005;
     this.updateInterval = options.updateInterval || 50;
 
     // AudioAnalyzer for audio input (always used)
@@ -137,7 +137,7 @@ export class PitchDetector {
       bufferSize: this.bufferSize,
       minFrequency: this.minFrequency,
       maxFrequency: this.maxFrequency,
-      threshold: this.threshold * 0.05, // Convert to RMS threshold
+      threshold: this.threshold, // same RMS semantics as AudioAnalyzer
     });
 
     await this.hybridDetector.initialize();

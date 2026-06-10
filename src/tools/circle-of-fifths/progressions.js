@@ -21,7 +21,7 @@ export const PROGRESSIONS = [
   { genre: 'pop',   bars: 4, mode: 'major', name: '50s doo-wop',
     numerals: ['I','vi','IV','V'] },
   { genre: 'pop',   bars: 4, mode: 'minor', name: 'Sad pop',
-    numerals: ['vi','IV','I','V'].map(swapMajorToMinorRel), note: '(plays in relative minor)' },
+    numerals: ['vi','IV','I','V'], note: '(plays in relative minor)' },
   { genre: 'pop',   bars: 8, mode: 'major', name: 'Pop ballad',
     numerals: ['I','V','vi','iii','IV','I','IV','V'] },
   { genre: 'pop',   bars: 4, mode: 'major', name: 'Rising fourths',
@@ -131,8 +131,6 @@ export const GENRES = [
   { id: 'metal',  label: 'Metal' },
 ];
 
-// Helper used in some progression definitions to clarify intent.
-function swapMajorToMinorRel(roman) { return roman; }
 
 export function getProgressions({ genre, bars }) {
   return PROGRESSIONS.filter((p) =>

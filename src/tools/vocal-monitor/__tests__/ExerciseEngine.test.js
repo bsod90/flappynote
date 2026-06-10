@@ -311,10 +311,11 @@ describe('ExerciseEngine', () => {
       }
       expect(engine.getState().sustainAccumulated).toBe(198);
 
-      // Gap exceeding grace period: decay by 150ms → 198 - 150 = 48
-      engine.processFrame(null, 330); // 165 + 165ms after last match > 150ms grace
+      // Gap exceeding grace period: decay by elapsed unmatched time
+      // (330 - 165 = 165ms) → 198 - 165 = 33
+      engine.processFrame(null, 330); // 165ms after last match > 150ms grace
 
-      expect(engine.getState().sustainAccumulated).toBe(48);
+      expect(engine.getState().sustainAccumulated).toBe(33);
     });
 
     it('should keep target SUSTAINING when sustain partially decays', () => {

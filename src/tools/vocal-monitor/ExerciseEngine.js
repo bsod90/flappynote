@@ -22,6 +22,11 @@ export const TargetState = {
   HIT: 'hit',
 };
 
+// Frame timing: nominal frame spacing at the ~30Hz pitch update rate, and a
+// cap so a stalled tab doesn't credit one giant frame of sustain.
+const NOMINAL_FRAME_MS = 33;
+const MAX_FRAME_DELTA_MS = 100;
+
 export class ExerciseEngine {
   constructor() {
     this.state = EngineState.IDLE;
@@ -38,6 +43,7 @@ export class ExerciseEngine {
     this.sustainAccumulated = 0;
     this.lastMatchTime = null;
     this.gracePeriod = 150; // ms grace for detection dropouts
+    this._lastFrameTime = null; // for measuring real frame spacing
 
     // Timing
     this.targetHitTime = null;
@@ -85,6 +91,7 @@ export class ExerciseEngine {
     this.lastMatchTime = null;
     this.targetHitTime = null;
     this._restStartTime = null;
+    this._lastFrameTime = null;
 
     this.hitEffects = [];
     this.state = EngineState.ACTIVE;
@@ -156,7 +163,18 @@ export class ExerciseEngine {
    * @param {number} currentTime - Elapsed time in ms
    */
   processFrame(pitchData, currentTime) {
-    if (this.state !== EngineState.ACTIVE) return;
+    if (this.state !== EngineState.ACTIVE) {
+      this._lastFrameTime = null;
+      return;
+    }
+
+    // Measure real spacing between frames so sustain accumulates in wall
+    // time regardless of the caller's frame rate. Fall back to the nominal
+    // ~30Hz frame and clamp big gaps (tab hidden, GC pause) so one frame
+    // can't accumulate a huge chunk of sustain.
+    const rawDelta = this._lastFrameTime != null ? currentTime - this._lastFrameTime : NOMINAL_FRAME_MS;
+    const frameDelta = Math.min(Math.max(rawDelta, 0), MAX_FRAME_DELTA_MS) || NOMINAL_FRAME_MS;
+    this._lastFrameTime = currentTime;
 
     const phase = this.phases[this.currentPhaseIndex];
     if (!phase) return;
@@ -202,9 +220,8 @@ export class ExerciseEngine {
       target.state = TargetState.SUSTAINING;
       this.lastMatchTime = currentTime;
 
-      // Accumulate sustain time (~33ms per frame at 30Hz)
-      const frameDuration = 33;
-      this.sustainAccumulated += frameDuration;
+      // Accumulate sustain in measured wall time
+      this.sustainAccumulated += frameDelta;
 
       // Check if sustained long enough
       if (this.sustainAccumulated >= this.sustainDuration) {
@@ -235,8 +252,9 @@ export class ExerciseEngine {
     if (this.lastMatchTime !== null) {
       const elapsed = currentTime - this.lastMatchTime;
       if (elapsed > this.gracePeriod) {
-        // Decay sustain instead of hard reset
-        this.sustainAccumulated = Math.max(0, this.sustainAccumulated - this.gracePeriod);
+        // Decay sustain by the actual time spent unmatched instead of a
+        // hard reset — longer dropouts cost proportionally more progress
+        this.sustainAccumulated = Math.max(0, this.sustainAccumulated - elapsed);
         this.lastMatchTime = null;
 
         // Only reset target to WAITING if sustain fully decayed
