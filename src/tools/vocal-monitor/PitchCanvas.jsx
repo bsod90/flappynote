@@ -25,6 +25,11 @@ export default function PitchCanvas({ services, onControllerReady, onStateChange
     });
     controllerRef.current = controller;
 
+    if (import.meta.env.DEV) {
+      // Browser tests poke at the controller (e.g. read the current pitch)
+      window.__vmController = controller;
+    }
+
     controller.mount().then(() => {
       if (!cancelled) onControllerReady?.(controller);
     });
@@ -33,6 +38,9 @@ export default function PitchCanvas({ services, onControllerReady, onStateChange
       cancelled = true;
       controller.dispose();
       controllerRef.current = null;
+      if (import.meta.env.DEV && window.__vmController === controller) {
+        delete window.__vmController;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
